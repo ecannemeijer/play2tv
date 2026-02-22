@@ -32,6 +32,10 @@ $routes->group('api', ['filter' => 'jwt'], function ($routes) {
     $routes->post('settings', 'Api\SettingsController::save');
     $routes->get('settings',  'Api\SettingsController::get');
 
+    // Category preferences (live/vod/series)
+    $routes->post('category-prefs', 'Api\CategoryPrefsController::save');
+    $routes->get('category-prefs',  'Api\CategoryPrefsController::index');
+
     // Watch History
     $routes->post('history', 'Api\HistoryController::save');
     $routes->get('history',  'Api\HistoryController::index');
