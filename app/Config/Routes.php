@@ -77,6 +77,16 @@ $routes->group('admin', ['filter' => 'adminauth'], function ($routes) {
     $routes->post('playlists/(:num)/edit',       'Admin\PlaylistController::edit/$1');
     $routes->get('playlists/(:num)/activate',    'Admin\PlaylistController::activate/$1');
     $routes->get('playlists/(:num)/delete',      'Admin\PlaylistController::delete/$1');
+
+    // Admin gebruikers beheer
+    $routes->get('admins',                       'Admin\AdminUsersController::index');
+    $routes->get('admins/create',                'Admin\AdminUsersController::create');
+    $routes->post('admins/create',               'Admin\AdminUsersController::create');
+    $routes->get('admins/change-password',       'Admin\AdminUsersController::changePassword');
+    $routes->post('admins/change-password',      'Admin\AdminUsersController::changePassword');
+    $routes->get('admins/(:num)/edit',           'Admin\AdminUsersController::edit/$1');
+    $routes->post('admins/(:num)/edit',          'Admin\AdminUsersController::edit/$1');
+    $routes->get('admins/(:num)/delete',         'Admin\AdminUsersController::delete/$1');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
