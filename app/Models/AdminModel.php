@@ -23,9 +23,9 @@ class AdminModel extends Model
         'password',
     ];
 
-    protected $useTimestamps = true;
+    protected $useTimestamps = false;
     protected $createdField  = 'created_at';
-    protected $updatedField  = null;
+    protected $updatedField  = 'updated_at';
 
     protected $beforeInsert = ['hashPassword'];
     protected $beforeUpdate = ['hashPasswordOnUpdate'];
