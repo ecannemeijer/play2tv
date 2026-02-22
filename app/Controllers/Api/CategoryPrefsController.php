@@ -8,7 +8,7 @@ use App\Models\UserCategoryPrefModel;
 
 class CategoryPrefsController extends BaseApiController
 {
-    private UserCategoryPrefModel $model;
+    protected UserCategoryPrefModel $model;
 
     public function __construct()
     {
