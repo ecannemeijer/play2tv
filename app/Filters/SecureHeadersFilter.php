@@ -43,11 +43,9 @@ class SecureHeadersFilter implements FilterInterface
     {
         $allowedOrigin = env('cors.allowedOrigins', '*');
 
-        $isLocal = in_array(getenv('CI_ENVIRONMENT') ?: env('CI_ENVIRONMENT', 'production'), ['development', 'testing']);
-
         $response
-            // Only set HSTS in production (HTTPS required)
-            ->setHeader('Strict-Transport-Security', $isLocal ? 'max-age=0' : 'max-age=31536000; includeSubDomains; preload')
+            // HTTPS enforcement (1 year)
+            ->setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
             // Prevent MIME sniffing
             ->setHeader('X-Content-Type-Options', 'nosniff')
             // Prevent clickjacking

@@ -110,42 +110,6 @@
         .alert-danger  { background: #2d0a0a; border-color: #7f1d1d; color: #fca5a5; }
         .alert-warning { background: #2d1f00; border-color: #92400e; color: #fcd34d; }
         canvas { max-height: 220px; }
-        /* ── Dark theme overrides for Bootstrap utilities ── */
-        .text-muted, .form-text { color: #94a3b8 !important; }
-        label, .form-label { color: #cbd5e1; }
-        code { color: #a78bfa; background: #1e1b4b; padding: .1em .35em; border-radius: 4px; }
-        .btn-close { filter: invert(1) grayscale(1); }
-        dt { color: #94a3b8; }
-        dd { color: #e2e8f0; }
-        .card-text, p, li { color: #cbd5e1; }
-        h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 { color: #f1f5f9; }
-        small { color: #94a3b8; }
-        .input-group-text { background: #1a1a2e; border-color: #2d2d44; color: #94a3b8; }
-        /* Outline buttons readable on dark bg */
-        .btn-outline-secondary { color: #94a3b8; border-color: #475569; }
-        .btn-outline-secondary:hover { background: #1e293b; color: #e2e8f0; border-color: #64748b; }
-        .btn-outline-info    { color: #38bdf8; border-color: #38bdf8; }
-        .btn-outline-info:hover { background: rgba(56,189,248,.15); color: #38bdf8; }
-        .btn-outline-primary { color: #a78bfa; border-color: #7c3aed; }
-        .btn-outline-primary:hover { background: rgba(124,58,237,.2); color: #a78bfa; }
-        .btn-outline-danger  { color: #f87171; border-color: #dc2626; }
-        .btn-outline-danger:hover { background: rgba(220,38,38,.15); color: #f87171; }
-        .btn-outline-success { color: #4ade80; border-color: #16a34a; }
-        .btn-outline-success:hover { background: rgba(22,163,74,.15); color: #4ade80; }
-        .btn-outline-warning { color: #fbbf24; border-color: #d97706; }
-        .btn-outline-warning:hover { background: rgba(217,119,6,.15); color: #fbbf24; }
-        /* Table striping override */
-        .table-striped > tbody > tr:nth-of-type(odd) { --bs-table-accent-bg: rgba(255,255,255,.03); }
-        /* Nav pills/tabs */
-        .nav-pills .nav-link { color: #94a3b8; } 
-        .nav-pills .nav-link.active { background: #7c3aed; color: #fff; }
-        /* Form placeholder */
-        ::placeholder { color: #475569 !important; }
-        /* Pagination */
-        .page-link { background: #1a1a2e; border-color: #2d2d44; color: #94a3b8; }
-        .page-link:hover { background: #16213e; color: #e2e8f0; }
-        /* Section dividers */
-        .section-title { color: #a78bfa; font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; font-weight: 700; margin-bottom: .5rem; padding-bottom: .25rem; border-bottom: 1px solid #2d2d44; }
     </style>
     <?= $this->renderSection('head') ?>
 </head>
@@ -168,10 +132,6 @@
         <a href="<?= base_url('admin/playlists') ?>"
            class="nav-link <?= str_starts_with(uri_string(), 'admin/playlists') ? 'active' : '' ?>">
             <i class="bi bi-collection-play"></i> Playlists
-        </a>
-        <a href="<?= base_url('admin/admins') ?>"
-           class="nav-link <?= str_starts_with(uri_string(), 'admin/admins') ? 'active' : '' ?>">
-            <i class="bi bi-shield-lock"></i> Admin beheer
         </a>
     </div>
     <div class="sidebar-footer">

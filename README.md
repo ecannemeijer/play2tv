@@ -176,13 +176,13 @@ Base URL: `https://api.play2tv.nl`
 {
   "iss": "play2tv-api",
   "iat": 1700000000,
-  "exp": 1700604800,
+  "exp": 1731536000,
   "user_id": 42,
   "premium": true
 }
 ```
 
-Geldigheid: **7 dagen**. Stuur mee in elke beveiligde request:
+Geldigheid: **365 dagen** (`31536000` seconden). Stuur mee in elke beveiligde request:
 
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...

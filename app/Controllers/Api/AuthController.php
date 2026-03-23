@@ -193,11 +193,6 @@ class AuthController extends BaseApiController
             'email'         => $user['email'],
             'premium'       => $isPremium,
             'premium_until' => $user['premium_until'],
-            // Xtream Codes credentials — Android app uses these to auto-add the playlist
-            // Store in EncryptedSharedPreferences and pass to IptvRepository.addXtreamPlaylist()
-            'xtream_server'   => $user['xtream_server'] ?? null,
-            'xtream_username' => $user['xtream_username'] ?? null,
-            'xtream_password' => $user['xtream_password'] ?? null,
         ], 'Inloggen geslaagd.');
     }
 

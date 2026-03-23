@@ -33,7 +33,7 @@ class JwtLibrary
     public function __construct()
     {
         $this->secret        = env('jwt.secret', '');
-        $this->expirySeconds = (int) env('jwt.expiry', 604800); // 7 days default
+        $this->expirySeconds = (int) env('jwt.expiry', YEAR); // 365 days default
 
         if (empty($this->secret)) {
             throw new \RuntimeException('JWT secret is not configured in .env');

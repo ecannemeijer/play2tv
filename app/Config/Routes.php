@@ -32,10 +32,6 @@ $routes->group('api', ['filter' => 'jwt'], function ($routes) {
     $routes->post('settings', 'Api\SettingsController::save');
     $routes->get('settings',  'Api\SettingsController::get');
 
-    // Category preferences (live/vod/series)
-    $routes->post('category-prefs', 'Api\CategoryPrefsController::save');
-    $routes->get('category-prefs',  'Api\CategoryPrefsController::index');
-
     // Watch History
     $routes->post('history', 'Api\HistoryController::save');
     $routes->get('history',  'Api\HistoryController::index');
@@ -65,8 +61,6 @@ $routes->group('admin', ['filter' => 'adminauth'], function ($routes) {
 
     // Users
     $routes->get('users',                'Admin\UserController::index');
-    $routes->get('users/create',         'Admin\UserController::createForm');   // must be before (:num)
-    $routes->post('users/create',        'Admin\UserController::create');
     $routes->get('users/(:num)',         'Admin\UserController::view/$1');
     $routes->get('users/(:num)/edit',    'Admin\UserController::edit/$1');
     $routes->post('users/(:num)/edit',   'Admin\UserController::update/$1');
@@ -81,16 +75,6 @@ $routes->group('admin', ['filter' => 'adminauth'], function ($routes) {
     $routes->post('playlists/(:num)/edit',       'Admin\PlaylistController::edit/$1');
     $routes->get('playlists/(:num)/activate',    'Admin\PlaylistController::activate/$1');
     $routes->get('playlists/(:num)/delete',      'Admin\PlaylistController::delete/$1');
-
-    // Admin gebruikers beheer
-    $routes->get('admins',                       'Admin\AdminUsersController::index');
-    $routes->get('admins/create',                'Admin\AdminUsersController::create');
-    $routes->post('admins/create',               'Admin\AdminUsersController::create');
-    $routes->get('admins/change-password',       'Admin\AdminUsersController::changePassword');
-    $routes->post('admins/change-password',      'Admin\AdminUsersController::changePassword');
-    $routes->get('admins/(:num)/edit',           'Admin\AdminUsersController::edit/$1');
-    $routes->post('admins/(:num)/edit',          'Admin\AdminUsersController::edit/$1');
-    $routes->get('admins/(:num)/delete',         'Admin\AdminUsersController::delete/$1');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

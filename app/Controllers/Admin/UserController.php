@@ -81,60 +81,6 @@ class UserController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // GET /admin/users/create
-    // ─────────────────────────────────────────────────────────────────────────
-    public function createForm()
-    {
-        return view('admin/users/create', [
-            'title' => 'Gebruiker aanmaken — Play2TV Admin',
-        ]);
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // POST /admin/users/create
-    // Body: email, password, premium, premium_until, is_active,
-    //       xtream_server, xtream_username, xtream_password
-    // ─────────────────────────────────────────────────────────────────────────
-    public function create()
-    {
-        $email    = strtolower(trim($this->request->getPost('email') ?? ''));
-        $password = $this->request->getPost('password') ?? '';
-
-        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return redirect()->back()->withInput()->with('error', 'Ongeldig e-mailadres.');
-        }
-        if (strlen($password) < 8) {
-            return redirect()->back()->withInput()->with('error', 'Wachtwoord moet minimaal 8 tekens bevatten.');
-        }
-        if ($this->userModel->findByEmail($email)) {
-            return redirect()->back()->withInput()->with('error', 'Dit e-mailadres is al in gebruik.');
-        }
-
-        $premiumUntil = $this->request->getPost('premium_until') ?: null;
-        // Convert datetime-local (Y-m-dTH:i) to DB format
-        if ($premiumUntil) {
-            $premiumUntil = date('Y-m-d H:i:s', strtotime($premiumUntil));
-        }
-
-        $id = $this->userModel->insert([
-            'email'            => $email,
-            'password'         => $password,
-            'premium'          => (int) $this->request->getPost('premium'),
-            'premium_until'    => $premiumUntil,
-            'is_active'        => (int) ($this->request->getPost('is_active') ?? 1),
-            'xtream_server'    => trim($this->request->getPost('xtream_server') ?? '') ?: null,
-            'xtream_username'  => trim($this->request->getPost('xtream_username') ?? '') ?: null,
-            'xtream_password'  => trim($this->request->getPost('xtream_password') ?? '') ?: null,
-        ]);
-
-        if (! $id) {
-            return redirect()->back()->withInput()->with('error', 'Aanmaken mislukt. Probeer opnieuw.');
-        }
-
-        return redirect()->to(base_url('admin/users/' . $id))->with('success', 'Gebruiker aangemaakt.');
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
     // GET /admin/users/{id}
     // ─────────────────────────────────────────────────────────────────────────
     public function view($id)
@@ -192,19 +138,11 @@ class UserController extends Controller
         }
 
         $data = [
-            'email'           => trim($this->request->getPost('email') ?? $user['email']),
-            'premium'         => (int) $this->request->getPost('premium'),
-            'premium_until'   => $this->request->getPost('premium_until') ?: null,
-            'is_active'       => (int) $this->request->getPost('is_active'),
-            'xtream_server'   => trim($this->request->getPost('xtream_server') ?? '') ?: null,
-            'xtream_username' => trim($this->request->getPost('xtream_username') ?? '') ?: null,
-            'xtream_password' => trim($this->request->getPost('xtream_password') ?? '') ?: null,
+            'email'         => trim($this->request->getPost('email') ?? $user['email']),
+            'premium'       => (int) $this->request->getPost('premium'),
+            'premium_until' => $this->request->getPost('premium_until') ?: null,
+            'is_active'     => (int) $this->request->getPost('is_active'),
         ];
-
-        // Fix datetime-local format → MySQL datetime
-        if ($data['premium_until']) {
-            $data['premium_until'] = date('Y-m-d H:i:s', strtotime($data['premium_until']));
-        }
 
         // Only update password if a new one was submitted
         $newPassword = $this->request->getPost('password');

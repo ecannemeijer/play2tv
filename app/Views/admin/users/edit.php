@@ -74,36 +74,6 @@
                             </select>
                         </div>
 
-                        <!-- Xtream Codes -->
-                        <div class="col-12 mt-2">
-                            <div class="section-title"><i class="bi bi-tv me-1"></i>Xtream Codes (Android app playlist)</div>
-                            <div class="text-muted small mb-2">
-                                De Android app gebruikt deze gegevens na inloggen om automatisch een Xtream playlist toe te voegen.
-                            </div>
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label">Server URL</label>
-                            <input type="url" name="xtream_server" class="form-control"
-                                   placeholder="http://jouwserver.com:8080"
-                                   value="<?= esc($user['xtream_server'] ?? '') ?>">
-                            <div class="form-text">Inclusief protocol en poort. Bijv. <code>http://stream.example.com:8080</code></div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Xtream gebruikersnaam</label>
-                            <input type="text" name="xtream_username" class="form-control"
-                                   placeholder="xtream_user"
-                                   value="<?= esc($user['xtream_username'] ?? '') ?>"
-                                   autocomplete="off">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Xtream wachtwoord</label>
-                            <input type="text" name="xtream_password" class="form-control"
-                                   placeholder="xtream_pass"
-                                   value="<?= esc($user['xtream_password'] ?? '') ?>"
-                                   autocomplete="off">
-                            <div class="form-text">Let op: dit wachtwoord wordt leesbaar opgeslagen (Xtream vereist plain-text).</div>
-                        </div>
-
                         <div class="col-12 pt-2">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-lg me-1"></i>Opslaan

@@ -28,9 +28,6 @@ class UserModel extends Model
         'is_active',
         'last_login_ip',
         'last_login_at',
-        'xtream_server',
-        'xtream_username',
-        'xtream_password',
     ];
 
     protected $useTimestamps = true;
