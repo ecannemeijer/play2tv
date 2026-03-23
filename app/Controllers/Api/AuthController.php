@@ -240,12 +240,15 @@ class AuthController extends BaseApiController
         $isPremium = $this->userModel->isPremium($user);
 
         return $this->ok([
-            'id'            => (int) $user['id'],
-            'email'         => $user['email'],
-            'premium'       => $isPremium,
-            'premium_until' => $user['premium_until'],
-            'created_at'    => $user['created_at'],
-            'last_login_at' => $user['last_login_at'],
+            'id'             => (int) $user['id'],
+            'email'          => $user['email'],
+            'premium'        => $isPremium,
+            'premium_until'  => $user['premium_until'],
+            'created_at'     => $user['created_at'],
+            'last_login_at'  => $user['last_login_at'],
+            'xtream_server'  => $user['xtream_server'],
+            'xtream_username'=> $user['xtream_username'],
+            'xtream_password'=> $user['xtream_password'],
         ]);
     }
 }
