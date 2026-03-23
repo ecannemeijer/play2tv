@@ -42,6 +42,9 @@
 <div class="card">
     <div class="card-header py-3 d-flex justify-content-between align-items-center">
         <h6 class="mb-0"><i class="bi bi-people me-2"></i>Gebruikers (<?= count($users) ?>)</h6>
+        <a href="<?= base_url('admin/users/create') ?>" class="btn btn-primary btn-sm">
+            <i class="bi bi-person-plus me-1"></i>Gebruiker aanmaken
+        </a>
     </div>
     <div class="card-body p-0">
         <?php if (empty($users)): ?>

@@ -18,6 +18,8 @@ use CodeIgniter\Controller;
  *
  * Routes (all behind /admin prefix, protected by AdminAuthFilter):
  *   GET  /admin/users            → List all users (search + filter)
+ *   GET  /admin/users/create     → Show create user form
+ *   POST /admin/users/create     → Create user
  *   GET  /admin/users/{id}       → View user detail
  *   GET  /admin/users/{id}/edit  → Edit user form
  *   POST /admin/users/{id}/edit  → Save user changes
@@ -78,6 +80,65 @@ class UserController extends Controller
             'premium' => $premium,
             'active'  => $active,
         ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // GET /admin/users/create
+    // ─────────────────────────────────────────────────────────────────────────
+    public function create()
+    {
+        return view('admin/users/create', [
+            'title' => 'Gebruiker aanmaken — Play2TV Admin',
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // POST /admin/users/create
+    // Body: email, password, premium, premium_until, is_active, xtream_*
+    // ─────────────────────────────────────────────────────────────────────────
+    public function store()
+    {
+        $email           = strtolower(trim((string) ($this->request->getPost('email') ?? '')));
+        $password        = (string) ($this->request->getPost('password') ?? '');
+        $premium         = (int) ($this->request->getPost('premium') ?? 0);
+        $isActive        = (int) ($this->request->getPost('is_active') ?? 1);
+        $premiumUntil    = $this->request->getPost('premium_until') ?: null;
+        $xtreamServer    = trim((string) ($this->request->getPost('xtream_server') ?? ''));
+        $xtreamUsername  = trim((string) ($this->request->getPost('xtream_username') ?? ''));
+        $xtreamPassword  = trim((string) ($this->request->getPost('xtream_password') ?? ''));
+
+        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return redirect()->back()->withInput()->with('error', 'Ongeldig e-mailadres.');
+        }
+
+        if (strlen($password) < 8) {
+            return redirect()->back()->withInput()->with('error', 'Wachtwoord moet minimaal 8 tekens bevatten.');
+        }
+
+        if ($this->userModel->findByEmail($email)) {
+            return redirect()->back()->withInput()->with('error', 'Dit e-mailadres is al in gebruik.');
+        }
+
+        if ($xtreamServer !== '' && ! filter_var($xtreamServer, FILTER_VALIDATE_URL)) {
+            return redirect()->back()->withInput()->with('error', 'Ongeldige Xtream server URL.');
+        }
+
+        $userId = $this->userModel->insert([
+            'email'            => $email,
+            'password'         => $password,
+            'premium'          => $premium,
+            'premium_until'    => $premium ? $premiumUntil : null,
+            'is_active'        => $isActive,
+            'xtream_server'    => $xtreamServer !== '' ? $xtreamServer : null,
+            'xtream_username'  => $xtreamUsername !== '' ? $xtreamUsername : null,
+            'xtream_password'  => $xtreamPassword !== '' ? $xtreamPassword : null,
+        ]);
+
+        if (! $userId) {
+            return redirect()->back()->withInput()->with('error', 'Gebruiker aanmaken mislukt.');
+        }
+
+        return redirect()->to(base_url('admin/users/' . $userId))->with('success', 'Gebruiker aangemaakt.');
     }
 
     // ─────────────────────────────────────────────────────────────────────────

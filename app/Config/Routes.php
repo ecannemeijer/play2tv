@@ -61,6 +61,8 @@ $routes->group('admin', ['filter' => 'adminauth'], function ($routes) {
 
     // Users
     $routes->get('users',                'Admin\UserController::index');
+    $routes->get('users/create',         'Admin\UserController::create');
+    $routes->post('users/create',        'Admin\UserController::store');
     $routes->get('users/(:num)',         'Admin\UserController::view/$1');
     $routes->get('users/(:num)/edit',    'Admin\UserController::edit/$1');
     $routes->post('users/(:num)/edit',   'Admin\UserController::update/$1');

@@ -26,6 +26,9 @@ class UserModel extends Model
         'premium',
         'premium_until',
         'is_active',
+        'xtream_server',
+        'xtream_username',
+        'xtream_password',
         'last_login_ip',
         'last_login_at',
     ];
