@@ -28,6 +28,10 @@ $routes->group('api', ['filter' => 'jwt'], function ($routes) {
     // Auth
     $routes->get('user', 'Api\AuthController::user');
 
+    // Category Preferences
+    $routes->get('category-prefs',  'Api\CategoryPrefsController::index');
+    $routes->post('category-prefs', 'Api\CategoryPrefsController::save');
+
     // Settings
     $routes->post('settings', 'Api\SettingsController::save');
     $routes->get('settings',  'Api\SettingsController::get');
