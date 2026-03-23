@@ -27,7 +27,7 @@
         }
         .brand { font-size: 1.8rem; font-weight: 800; color: #a78bfa; margin-bottom: .25rem; }
         .brand span { color: #fff; }
-        .subtitle { color: #64748b; font-size: .9rem; margin-bottom: 2rem; }
+        .subtitle { color: #94a3b8; font-size: .9rem; margin-bottom: 2rem; }
         .form-control {
             background: #0f0f1a;
             border-color: #2d2d44;
@@ -55,7 +55,7 @@
         .btn-login:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(124, 58, 237, .4); color: #fff; }
         .alert-danger { background: #2d0a0a; border-color: #7f1d1d; color: #fca5a5; }
         .alert-success { background: #052e16; border-color: #166534; color: #86efac; }
-        .footer-text { color: #475569; font-size: .75rem; text-align: center; margin-top: 1.5rem; }
+        .footer-text { color: #94a3b8; font-size: .75rem; text-align: center; margin-top: 1.5rem; }
     </style>
 </head>
 <body>
