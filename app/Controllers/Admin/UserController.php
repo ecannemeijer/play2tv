@@ -6,6 +6,7 @@ namespace App\Controllers\Admin;
 
 use App\Models\UserModel;
 use App\Models\UserDeviceModel;
+use App\Models\UserSettingsModel;
 use App\Models\UserIpsLogModel;
 use App\Models\WatchHistoryModel;
 use App\Models\StorePointsModel;
@@ -29,6 +30,7 @@ class UserController extends Controller
 {
     private UserModel         $userModel;
     private UserDeviceModel   $deviceModel;
+    private UserSettingsModel $settingsModel;
     private UserIpsLogModel   $ipsModel;
     private WatchHistoryModel $historyModel;
     private StorePointsModel  $pointsModel;
@@ -37,6 +39,7 @@ class UserController extends Controller
     {
         $this->userModel   = new UserModel();
         $this->deviceModel = new UserDeviceModel();
+        $this->settingsModel = new UserSettingsModel();
         $this->ipsModel    = new UserIpsLogModel();
         $this->historyModel = new WatchHistoryModel();
         $this->pointsModel  = new StorePointsModel();
@@ -180,9 +183,12 @@ class UserController extends Controller
             return redirect()->to(base_url('admin/users'))->with('error', 'Gebruiker niet gevonden.');
         }
 
+        $settings = $this->settingsModel->getSettings((int) $id);
+
         return view('admin/users/edit', [
-            'title' => 'Gebruiker bewerken — Play2TV Admin',
-            'user'  => $user,
+            'title'    => 'Gebruiker bewerken — Play2TV Admin',
+            'user'     => $user,
+            'settings' => $settings,
         ]);
     }
 
@@ -220,6 +226,13 @@ class UserController extends Controller
         }
 
         $this->userModel->update($id, $data);
+
+        $settings = $this->settingsModel->getSettings((int) $id);
+        $settings['api_sync_opensubtitles_settings'] = $this->request->getPost('api_sync_opensubtitles_settings') === '1';
+        $settings['opensubtitles_api_key'] = trim((string) ($this->request->getPost('opensubtitles_api_key') ?? ''));
+        $settings['opensubtitles_username'] = trim((string) ($this->request->getPost('opensubtitles_username') ?? ''));
+        $settings['opensubtitles_password'] = (string) ($this->request->getPost('opensubtitles_password') ?? '');
+        $this->settingsModel->saveSettings((int) $id, $settings);
 
         return redirect()->to(base_url('admin/users/' . $id))->with('success', 'Gebruiker bijgewerkt.');
     }

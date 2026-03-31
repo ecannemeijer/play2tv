@@ -74,6 +74,62 @@
                             </select>
                         </div>
 
+                        <div class="col-12 pt-3">
+                            <hr>
+                            <h6 class="mb-3"><i class="bi bi-badge-cc me-2"></i>OpenSubtitles synchronisatie</h6>
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="form-check form-switch mt-1">
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    role="switch"
+                                    id="api_sync_opensubtitles_settings"
+                                    name="api_sync_opensubtitles_settings"
+                                    value="1"
+                                    <?= ! empty($settings['api_sync_opensubtitles_settings']) ? 'checked' : '' ?>
+                                >
+                                <label class="form-check-label" for="api_sync_opensubtitles_settings">
+                                    API Synchronize opensubtitles settings
+                                </label>
+                            </div>
+                            <div class="form-text text-muted">Sla de OpenSubtitles API-sleutel, gebruikersnaam en wachtwoord op in user_settings voor deze gebruiker.</div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label">OpenSubtitles API key</label>
+                            <input
+                                type="text"
+                                name="opensubtitles_api_key"
+                                class="form-control"
+                                value="<?= esc((string) ($settings['opensubtitles_api_key'] ?? '')) ?>"
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">OpenSubtitles username</label>
+                            <input
+                                type="text"
+                                name="opensubtitles_username"
+                                class="form-control"
+                                value="<?= esc((string) ($settings['opensubtitles_username'] ?? '')) ?>"
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">OpenSubtitles password</label>
+                            <input
+                                type="text"
+                                name="opensubtitles_password"
+                                class="form-control"
+                                value="<?= esc((string) ($settings['opensubtitles_password'] ?? '')) ?>"
+                                autocomplete="new-password"
+                            >
+                        </div>
+
                         <div class="col-12 pt-2">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-lg me-1"></i>Opslaan
