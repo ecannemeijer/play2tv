@@ -27,7 +27,7 @@ $routes->post('api/logout',   'Api\AuthController::logout');
 $routes->group('api', ['filter' => 'jwt'], function ($routes) {
     // Auth
     $routes->get('user', 'Api\AuthController::user');
-    $routes->get('devices/(:num)', 'Api\DeviceController::index/$1');
+    $routes->get('devices/(:num)', 'Api\DeviceController::show/$1');
     $routes->post('register-device', 'Api\DeviceController::register');
     $routes->post('replace-device', 'Api\DeviceController::replace');
 

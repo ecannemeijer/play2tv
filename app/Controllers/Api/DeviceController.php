@@ -18,11 +18,12 @@ class DeviceController extends BaseApiController
         $this->userModel = new UserModel();
     }
 
-    public function index($userId)
+    public function show($userId = null)
     {
+        $userId = (int) $userId;
         $authUserId = $this->getAuthUserId();
 
-        if ((int) $userId !== $authUserId) {
+        if ($userId !== $authUserId) {
             return $this->error('Geen toegang tot deze apparaten.', 403);
         }
 

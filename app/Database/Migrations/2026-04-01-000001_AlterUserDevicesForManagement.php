@@ -58,6 +58,9 @@ class AlterUserDevicesForManagement extends Migration
             if (in_array('last_used', $fieldNames, true)) {
                 $this->db->query('UPDATE user_devices SET last_seen = COALESCE(last_seen, last_used)');
             }
+
+            $fields = $this->db->getFieldData('user_devices');
+            $fieldNames = array_map(static fn ($field) => strtolower($field->name), $fields);
         }
 
         if (in_array('last_used', $fieldNames, true)) {
