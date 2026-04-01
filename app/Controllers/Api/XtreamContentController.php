@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Models\UserModel;
+use CodeIgniter\HTTP\ResponseInterface;
 
 class XtreamContentController extends BaseApiController
 {
+    private const CAST_TOKEN_TTL = 900;
+
     private UserModel $userModel;
 
     public function __construct()
@@ -88,6 +91,7 @@ class XtreamContentController extends BaseApiController
                 $extension = (string) ($row['container_extension'] ?? 'mp4');
                 $directSource = trim((string) ($row['direct_source'] ?? ''));
                 $url = $this->buildStreamUrl($user, $type, $streamId, $extension, $directSource);
+                $userId = (int) ($user['id'] ?? 0);
 
                 return [
                     'id' => $streamId,
@@ -96,11 +100,108 @@ class XtreamContentController extends BaseApiController
                     'logo' => (string) ($row['stream_icon'] ?? $row['cover'] ?? ''),
                     'type' => $type,
                     'url' => $url,
+                    'cast_url' => $this->buildCastUrl($type, $userId, $streamId, $url),
                     'playback_mode' => $this->resolvePlaybackMode($type, $url, $extension),
                     'extension' => $extension,
                 ];
             }, array_filter($rows, 'is_array'))),
         ]);
+    }
+
+    public function castLivePlaylist()
+    {
+        $userId = (int) ($this->request->getGet('user_id') ?? 0);
+        $streamId = trim((string) ($this->request->getGet('stream_id') ?? ''));
+        $expires = (int) ($this->request->getGet('expires') ?? 0);
+        $signature = trim((string) ($this->request->getGet('signature') ?? ''));
+
+        if ($userId <= 0 || $streamId === '' || $expires <= 0 || $signature === '') {
+            return $this->error('Ongeldige cast playlist aanvraag.', 422);
+        }
+
+        if (! $this->isValidCastSignature('live-playlist', [
+            'user_id' => (string) $userId,
+            'stream_id' => $streamId,
+            'expires' => (string) $expires,
+        ], $signature)) {
+            return $this->error('Cast playlist handtekening ongeldig.', 403);
+        }
+
+        if ($expires < time()) {
+            return $this->error('Cast playlist token verlopen.', 403);
+        }
+
+        $user = $this->userModel->find($userId);
+        if (! $user) {
+            return $this->error('Gebruiker niet gevonden.', 404);
+        }
+
+        $sourceUrl = $this->buildStreamUrl($user, 'live', $streamId, 'm3u8');
+        if (! $sourceUrl) {
+            return $this->error('Kon live stream URL niet bepalen.', 422);
+        }
+
+        try {
+            $result = $this->httpGet($sourceUrl, 'application/vnd.apple.mpegurl, application/x-mpegURL, */*');
+        } catch (\Throwable $exception) {
+            return $this->error($exception->getMessage(), 502);
+        }
+
+        $manifest = $this->rewriteCastPlaylistBody($result['body'], $result['finalUrl'], $userId, $expires);
+
+        return $this->response
+            ->setStatusCode(200)
+            ->setContentType('application/vnd.apple.mpegurl')
+            ->setBody($manifest);
+    }
+
+    public function castMedia()
+    {
+        $userId = (int) ($this->request->getGet('user_id') ?? 0);
+        $expires = (int) ($this->request->getGet('expires') ?? 0);
+        $target = trim((string) ($this->request->getGet('target') ?? ''));
+        $signature = trim((string) ($this->request->getGet('signature') ?? ''));
+
+        if ($userId <= 0 || $expires <= 0 || $target === '' || $signature === '') {
+            return $this->error('Ongeldige cast media aanvraag.', 422);
+        }
+
+        if (! $this->isValidCastSignature('media', [
+            'user_id' => (string) $userId,
+            'target' => $target,
+            'expires' => (string) $expires,
+        ], $signature)) {
+            return $this->error('Cast media handtekening ongeldig.', 403);
+        }
+
+        if ($expires < time()) {
+            return $this->error('Cast media token verlopen.', 403);
+        }
+
+        $decoded = base64_decode(strtr($target, '-_', '+/'), true);
+        if ($decoded === false || $decoded === '') {
+            return $this->error('Ongeldig media target.', 422);
+        }
+
+        if (preg_match('#^https?://#i', $decoded) !== 1) {
+            return $this->error('Media target moet een geldige http(s) URL zijn.', 422);
+        }
+
+        $rangeHeader = trim((string) ($this->request->getHeaderLine('Range') ?? ''));
+        if ($rangeHeader === '' && preg_match('/\.ts($|\?)/i', $decoded) === 1) {
+            $rangeHeader = 'bytes=0-';
+        }
+
+        try {
+            $result = $this->httpGet($decoded, '*/*', $rangeHeader);
+        } catch (\Throwable $exception) {
+            return $this->error($exception->getMessage(), 502);
+        }
+
+        return $this->response
+            ->setStatusCode($result['status'])
+            ->setContentType($result['contentType'] !== '' ? $result['contentType'] : 'application/octet-stream')
+            ->setBody($result['body']);
     }
 
     public function livePlaylist()
@@ -173,7 +274,7 @@ class XtreamContentController extends BaseApiController
             ->setBody($result['body']);
     }
 
-    private function getXtreamUser(): array|\CodeIgniter\HTTP\ResponseInterface
+    private function getXtreamUser(): array|ResponseInterface
     {
         $user = $this->userModel->find($this->getAuthUserId());
 
@@ -321,6 +422,34 @@ class XtreamContentController extends BaseApiController
         return implode("\n", $rewritten);
     }
 
+    private function rewriteCastPlaylistBody(string $body, string $playlistUrl, int $userId, int $expires): string
+    {
+        $lines = preg_split('/\r\n|\r|\n/', $body) ?: [];
+        $rewritten = [];
+
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+
+            if ($trimmed === '' || str_starts_with($trimmed, '#')) {
+                $rewritten[] = $line;
+                continue;
+            }
+
+            $absolute = $this->resolvePlaylistUrl($playlistUrl, $trimmed);
+            $encodedTarget = $this->encodeTarget($absolute);
+            $params = [
+                'user_id' => (string) $userId,
+                'target' => $encodedTarget,
+                'expires' => (string) $expires,
+            ];
+            $params['signature'] = $this->signCastRequest('media', $params);
+
+            $rewritten[] = 'media?' . http_build_query($params);
+        }
+
+        return implode("\n", $rewritten);
+    }
+
     private function resolvePlaylistUrl(string $base, string $candidate): string
     {
         if (preg_match('#^https?://#i', $candidate) === 1) {
@@ -341,6 +470,63 @@ class XtreamContentController extends BaseApiController
     private function encodeTarget(string $url): string
     {
         return rtrim(strtr(base64_encode($url), '+/', '-_'), '=');
+    }
+
+    private function buildCastUrl(string $type, int $userId, string $streamId, ?string $fallbackUrl): ?string
+    {
+        if ($type !== 'live' || $userId <= 0 || $streamId === '') {
+            return $fallbackUrl;
+        }
+
+        try {
+            $this->getCastSigningKey();
+        } catch (\Throwable) {
+            return $fallbackUrl;
+        }
+
+        $expires = time() + self::CAST_TOKEN_TTL;
+        $params = [
+            'user_id' => (string) $userId,
+            'stream_id' => $streamId,
+            'expires' => (string) $expires,
+        ];
+        $params['signature'] = $this->signCastRequest('live-playlist', $params);
+
+        return '/api/content/cast/live-playlist?' . http_build_query($params);
+    }
+
+    private function signCastRequest(string $scope, array $params): string
+    {
+        $payload = [$scope];
+        foreach ($params as $key => $value) {
+            $payload[] = $key . '=' . $value;
+        }
+
+        return hash_hmac('sha256', implode('|', $payload), $this->getCastSigningKey());
+    }
+
+    private function isValidCastSignature(string $scope, array $params, string $signature): bool
+    {
+        return hash_equals($this->signCastRequest($scope, $params), $signature);
+    }
+
+    private function getCastSigningKey(): string
+    {
+        $encryptionConfig = new \Config\Encryption();
+        $key = is_string($encryptionConfig->key) ? trim($encryptionConfig->key) : '';
+
+        if ($key === '') {
+            $envKey = trim((string) (getenv('encryption.key') ?: ''));
+            if ($envKey !== '') {
+                $key = $envKey;
+            }
+        }
+
+        if ($key === '') {
+            throw new \RuntimeException('encryption.key moet zijn ingesteld voor cast ondersteuning.');
+        }
+
+        return $key;
     }
 
     private function buildStreamUrl(array $user, string $type, string $streamId, string $extension, string $directSource = ''): ?string

@@ -22,6 +22,8 @@ use CodeIgniter\Router\RouteCollection;
 $routes->post('api/register', 'Api\AuthController::register');
 $routes->post('api/login',    'Api\AuthController::login');
 $routes->post('api/logout',   'Api\AuthController::logout');
+$routes->get('api/content/cast/live-playlist', 'Api\XtreamContentController::castLivePlaylist');
+$routes->get('api/content/cast/media', 'Api\XtreamContentController::castMedia');
 
 // Protected (JWT required — JwtFilter applied in Filters.php)
 $routes->group('api', ['filter' => 'jwt'], function ($routes) {
