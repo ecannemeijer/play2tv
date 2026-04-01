@@ -99,13 +99,37 @@
                     <p class="text-muted p-3 mb-0">Geen apparaten.</p>
                 <?php else: ?>
                     <table class="table table-sm mb-0">
-                        <thead><tr><th>Device ID</th><th>IP</th><th>Gezien</th></tr></thead>
+                        <thead><tr><th>Naam</th><th>Device ID</th><th>IP</th><th>Laatst gebruikt</th><th class="text-end">Acties</th></tr></thead>
                         <tbody>
                             <?php foreach ($devices as $device): ?>
                             <tr>
-                                <td><small><code><?= esc(substr($device['device_id'], 0, 12)) ?>...</code></small></td>
+                                <td>
+                                    <form method="post" action="<?= base_url('admin/users/' . $user['id'] . '/devices/' . $device['id'] . '/rename') ?>" class="d-flex gap-2 align-items-center">
+                                        <?= csrf_field() ?>
+                                        <input
+                                            type="text"
+                                            name="device_name"
+                                            class="form-control form-control-sm"
+                                            value="<?= esc($device['device_name'] ?? '') ?>"
+                                            placeholder="Woonkamer"
+                                            maxlength="100"
+                                        >
+                                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                                <td><small><code><?= esc($device['device_id']) ?></code></small></td>
                                 <td><small><?= esc($device['ip_address']) ?></small></td>
-                                <td><small><?= $device['last_seen'] ? date('d-m H:i', strtotime($device['last_seen'])) : '—' ?></small></td>
+                                <td><small><?= $device['last_used'] ? date('d-m H:i', strtotime($device['last_used'])) : '—' ?></small></td>
+                                <td class="text-end">
+                                    <form method="post" action="<?= base_url('admin/users/' . $user['id'] . '/devices/' . $device['id'] . '/delete') ?>" onsubmit="return confirm('Weet je zeker dat je dit apparaat wilt verwijderen?');">
+                                        <?= csrf_field() ?>
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>

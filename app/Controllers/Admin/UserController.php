@@ -285,4 +285,38 @@ class UserController extends Controller
 
         return redirect()->to(base_url('admin/users/' . $id))->with('success', 'Punten bijgewerkt.');
     }
+
+    public function renameDevice($userId, $deviceRowId)
+    {
+        $user = $this->userModel->find($userId);
+        $device = $this->deviceModel->find($deviceRowId);
+
+        if (! $user || ! $device || (int) $device['user_id'] !== (int) $userId) {
+            return redirect()->to(base_url('admin/users'))->with('error', 'Apparaat niet gevonden.');
+        }
+
+        $deviceName = trim((string) ($this->request->getPost('device_name') ?? ''));
+
+        if ($deviceName === '') {
+            return redirect()->back()->with('error', 'Apparaatnaam is verplicht.');
+        }
+
+        $this->deviceModel->update((int) $deviceRowId, ['device_name' => $deviceName]);
+
+        return redirect()->to(base_url('admin/users/' . $userId))->with('success', 'Apparaatnaam bijgewerkt.');
+    }
+
+    public function deleteDevice($userId, $deviceRowId)
+    {
+        $user = $this->userModel->find($userId);
+        $device = $this->deviceModel->find($deviceRowId);
+
+        if (! $user || ! $device || (int) $device['user_id'] !== (int) $userId) {
+            return redirect()->to(base_url('admin/users'))->with('error', 'Apparaat niet gevonden.');
+        }
+
+        $this->deviceModel->delete((int) $deviceRowId);
+
+        return redirect()->to(base_url('admin/users/' . $userId))->with('success', 'Apparaat verwijderd.');
+    }
 }

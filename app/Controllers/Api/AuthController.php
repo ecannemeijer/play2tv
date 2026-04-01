@@ -98,11 +98,6 @@ class AuthController extends BaseApiController
         $user = $this->userModel->find($userId);
         $ip   = $this->request->getIPAddress();
 
-        // Log device if sent
-        if ($deviceId) {
-            $this->deviceModel->upsertDevice((int) $userId, $deviceId, $ip);
-        }
-
         // Log IP
         $this->ipsLogModel->log(
             (int) $userId,
@@ -175,11 +170,6 @@ class AuthController extends BaseApiController
 
         // Update login metadata
         $this->userModel->recordLogin((int) $user['id'], $ip);
-
-        // Log device
-        if ($deviceId) {
-            $this->deviceModel->upsertDevice((int) $user['id'], $deviceId, $ip);
-        }
 
         // Log IP + user agent
         $this->ipsLogModel->log((int) $user['id'], $ip, $userAgent);

@@ -27,6 +27,9 @@ $routes->post('api/logout',   'Api\AuthController::logout');
 $routes->group('api', ['filter' => 'jwt'], function ($routes) {
     // Auth
     $routes->get('user', 'Api\AuthController::user');
+    $routes->get('devices/(:num)', 'Api\DeviceController::index/$1');
+    $routes->post('register-device', 'Api\DeviceController::register');
+    $routes->post('replace-device', 'Api\DeviceController::replace');
 
     // Category Preferences
     $routes->get('category-prefs',  'Api\CategoryPrefsController::index');
@@ -72,6 +75,8 @@ $routes->group('admin', ['filter' => 'adminauth'], function ($routes) {
     $routes->post('users/(:num)/edit',   'Admin\UserController::update/$1');
     $routes->get('users/(:num)/delete',  'Admin\UserController::delete/$1');
     $routes->post('users/(:num)/points', 'Admin\UserController::addPoints/$1');
+    $routes->post('users/(:num)/devices/(:num)/rename', 'Admin\UserController::renameDevice/$1/$2');
+    $routes->post('users/(:num)/devices/(:num)/delete', 'Admin\UserController::deleteDevice/$1/$2');
 
     // Playlists
     $routes->get('playlists',                    'Admin\PlaylistController::index');
