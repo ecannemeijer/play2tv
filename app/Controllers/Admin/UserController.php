@@ -141,6 +141,14 @@ class UserController extends Controller
             return redirect()->back()->withInput()->with('error', 'Gebruiker aanmaken mislukt.');
         }
 
+        $settings = $this->settingsModel->getSettings((int) $userId);
+        $settings['api_sync_opensubtitles_settings'] = $this->request->getPost('api_sync_opensubtitles_settings') === '1';
+        $settings['opensubtitles_api_key'] = trim((string) ($this->request->getPost('opensubtitles_api_key') ?? ''));
+        $settings['subdl_api_key'] = trim((string) ($this->request->getPost('subdl_api_key') ?? ''));
+        $settings['opensubtitles_username'] = trim((string) ($this->request->getPost('opensubtitles_username') ?? ''));
+        $settings['opensubtitles_password'] = (string) ($this->request->getPost('opensubtitles_password') ?? '');
+        $this->settingsModel->saveSettings((int) $userId, $settings);
+
         return redirect()->to(base_url('admin/users/' . $userId))->with('success', 'Gebruiker aangemaakt.');
     }
 
@@ -230,6 +238,7 @@ class UserController extends Controller
         $settings = $this->settingsModel->getSettings((int) $id);
         $settings['api_sync_opensubtitles_settings'] = $this->request->getPost('api_sync_opensubtitles_settings') === '1';
         $settings['opensubtitles_api_key'] = trim((string) ($this->request->getPost('opensubtitles_api_key') ?? ''));
+        $settings['subdl_api_key'] = trim((string) ($this->request->getPost('subdl_api_key') ?? ''));
         $settings['opensubtitles_username'] = trim((string) ($this->request->getPost('opensubtitles_username') ?? ''));
         $settings['opensubtitles_password'] = (string) ($this->request->getPost('opensubtitles_password') ?? '');
         $this->settingsModel->saveSettings((int) $id, $settings);

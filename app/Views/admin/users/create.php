@@ -129,6 +129,75 @@
                             <div class="form-text">Let op: wordt leesbaar opgeslagen (Xtream vereist plain-text).</div>
                         </div>
 
+                        <div class="col-12 mt-1">
+                            <div class="section-title"><i class="bi bi-badge-cc me-1"></i>Subtitle providers</div>
+                            <div class="text-muted small mb-2">
+                                Optioneel: sla OpenSubtitles- en SubDL-instellingen direct op voor deze gebruiker.
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="form-check form-switch mt-1">
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    role="switch"
+                                    id="api_sync_opensubtitles_settings"
+                                    name="api_sync_opensubtitles_settings"
+                                    value="1"
+                                    <?= old('api_sync_opensubtitles_settings') ? 'checked' : '' ?>
+                                >
+                                <label class="form-check-label" for="api_sync_opensubtitles_settings">
+                                    API Synchronize subtitle provider settings
+                                </label>
+                            </div>
+                            <div class="form-text text-muted">Sla de OpenSubtitles- en SubDL-instellingen op in user_settings voor deze gebruiker.</div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label">OpenSubtitles API key</label>
+                            <input
+                                type="text"
+                                name="opensubtitles_api_key"
+                                class="form-control"
+                                value="<?= esc(old('opensubtitles_api_key')) ?>"
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label">SubDL API key</label>
+                            <input
+                                type="text"
+                                name="subdl_api_key"
+                                class="form-control"
+                                value="<?= esc(old('subdl_api_key')) ?>"
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">OpenSubtitles username</label>
+                            <input
+                                type="text"
+                                name="opensubtitles_username"
+                                class="form-control"
+                                value="<?= esc(old('opensubtitles_username')) ?>"
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">OpenSubtitles password</label>
+                            <input
+                                type="text"
+                                name="opensubtitles_password"
+                                class="form-control"
+                                value="<?= esc(old('opensubtitles_password')) ?>"
+                                autocomplete="new-password"
+                            >
+                        </div>
+
                         <!-- ── Submit ───────────────────────────────────────── -->
                         <div class="col-12 pt-2 d-flex gap-2">
                             <button type="submit" class="btn btn-primary">

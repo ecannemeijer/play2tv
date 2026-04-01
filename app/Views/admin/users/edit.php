@@ -76,7 +76,7 @@
 
                         <div class="col-12 pt-3">
                             <hr>
-                            <h6 class="mb-3"><i class="bi bi-badge-cc me-2"></i>OpenSubtitles synchronisatie</h6>
+                            <h6 class="mb-3"><i class="bi bi-badge-cc me-2"></i>Subtitle provider synchronisatie</h6>
                         </div>
 
                         <div class="col-md-12">
@@ -91,10 +91,10 @@
                                     <?= ! empty($settings['api_sync_opensubtitles_settings']) ? 'checked' : '' ?>
                                 >
                                 <label class="form-check-label" for="api_sync_opensubtitles_settings">
-                                    API Synchronize opensubtitles settings
+                                    API Synchronize subtitle provider settings
                                 </label>
                             </div>
-                            <div class="form-text text-muted">Sla de OpenSubtitles API-sleutel, gebruikersnaam en wachtwoord op in user_settings voor deze gebruiker.</div>
+                            <div class="form-text text-muted">Sla de OpenSubtitles- en SubDL-instellingen op in user_settings voor deze gebruiker.</div>
                         </div>
 
                         <div class="col-md-12">
@@ -104,6 +104,17 @@
                                 name="opensubtitles_api_key"
                                 class="form-control"
                                 value="<?= esc((string) ($settings['opensubtitles_api_key'] ?? '')) ?>"
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label">SubDL API key</label>
+                            <input
+                                type="text"
+                                name="subdl_api_key"
+                                class="form-control"
+                                value="<?= esc((string) ($settings['subdl_api_key'] ?? '')) ?>"
                                 autocomplete="off"
                             >
                         </div>
