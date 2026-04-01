@@ -49,6 +49,10 @@ $routes->group('api', ['filter' => 'jwt'], function ($routes) {
 
     // Playlist (premium only — checked inside controller)
     $routes->get('playlist', 'Api\PlaylistController::index');
+
+    // Xtream content for the authenticated user
+    $routes->get('content/categories', 'Api\XtreamContentController::categories');
+    $routes->get('content/channels', 'Api\XtreamContentController::channels');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
