@@ -599,7 +599,7 @@ class XtreamContentController extends BaseApiController
     private function logCastDebug(string $event, array $context = []): void
     {
         try {
-            \Config\Services::logger()->info('cast_debug ' . $event . ' ' . json_encode($context, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            \Config\Services::logger()->error('cast_debug ' . $event . ' ' . json_encode($context, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
         } catch (\Throwable) {
         }
     }
