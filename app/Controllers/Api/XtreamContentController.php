@@ -127,7 +127,7 @@ class XtreamContentController extends BaseApiController
             return $this->error($exception->getMessage(), 502);
         }
 
-        $manifest = $this->rewritePlaylistBody($result['body'], $sourceUrl);
+        $manifest = $this->rewritePlaylistBody($result['body'], $result['finalUrl']);
 
         return $this->response
             ->setStatusCode(200)
@@ -152,9 +152,8 @@ class XtreamContentController extends BaseApiController
             return $user;
         }
 
-        $baseUrl = rtrim((string) $user['xtream_server'], '/');
-        if (! str_starts_with($decoded, $baseUrl)) {
-            return $this->error('Media target valt buiten de toegestane Xtream host.', 403);
+        if (preg_match('#^https?://#i', $decoded) !== 1) {
+            return $this->error('Media target moet een geldige http(s) URL zijn.', 422);
         }
 
         $rangeHeader = trim((string) ($this->request->getHeaderLine('Range') ?? ''));
@@ -243,7 +242,7 @@ class XtreamContentController extends BaseApiController
     }
 
     /**
-     * @return array{status:int, body:string, contentType:string}
+    * @return array{status:int, body:string, contentType:string, finalUrl:string}
      */
     private function httpGet(string $url, string $accept, string $rangeHeader = ''): array
     {
@@ -272,9 +271,17 @@ class XtreamContentController extends BaseApiController
 
         $statusCode = 200;
         $contentType = '';
+        $finalUrl = $url;
         foreach ($http_response_header ?? [] as $header) {
             if ($contentType === '' && stripos($header, 'Content-Type:') === 0) {
                 $contentType = trim(substr($header, strlen('Content-Type:')));
+            }
+
+            if (stripos($header, 'Location:') === 0) {
+                $location = trim(substr($header, strlen('Location:')));
+                if ($location !== '') {
+                    $finalUrl = $this->resolvePlaylistUrl($finalUrl, $location);
+                }
             }
 
             if (preg_match('#^HTTP/\S+\s+(\d{3})#', $header, $matches) === 1) {
@@ -290,6 +297,7 @@ class XtreamContentController extends BaseApiController
             'status' => $statusCode,
             'body' => $body,
             'contentType' => $contentType,
+            'finalUrl' => $finalUrl,
         ];
     }
 
