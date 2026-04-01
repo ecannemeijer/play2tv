@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Models\UserModel;
-use Config\Services;
 
 class XtreamContentController extends BaseApiController
 {
@@ -119,26 +118,47 @@ class XtreamContentController extends BaseApiController
      */
     private function xtreamRequest(array $user, string $action, array $query = []): array
     {
-        $client = Services::curlrequest();
         $baseUrl = rtrim((string) $user['xtream_server'], '/');
 
-        $response = $client->get($baseUrl . '/player_api.php', [
-            'query' => [
-                'username' => (string) $user['xtream_username'],
-                'password' => (string) $user['xtream_password'],
-                'action' => $action,
-                ...$query,
-            ],
-            'http_errors' => false,
-            'timeout' => 20,
-            'connect_timeout' => 10,
+        $url = $baseUrl . '/player_api.php?' . http_build_query([
+            'username' => (string) $user['xtream_username'],
+            'password' => (string) $user['xtream_password'],
+            'action' => $action,
+            ...$query,
         ]);
 
-        if ($response->getStatusCode() >= 400) {
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'timeout' => 20,
+                'ignore_errors' => true,
+                'header' => "Accept: application/json\r\nUser-Agent: Play2TV-XtreamProxy/1.0\r\n",
+            ],
+            'ssl' => [
+                'verify_peer' => true,
+                'verify_peer_name' => true,
+            ],
+        ]);
+
+        $body = @file_get_contents($url, false, $context);
+
+        if ($body === false) {
+            throw new \RuntimeException('Xtream bron kon niet worden bereikt.');
+        }
+
+        $statusCode = 200;
+        foreach ($http_response_header ?? [] as $header) {
+            if (preg_match('#^HTTP/\S+\s+(\d{3})#', $header, $matches) === 1) {
+                $statusCode = (int) $matches[1];
+                break;
+            }
+        }
+
+        if ($statusCode >= 400) {
             throw new \RuntimeException('Xtream bron antwoordde niet succesvol.');
         }
 
-        $payload = json_decode($response->getBody(), true);
+        $payload = json_decode($body, true);
         if (! is_array($payload)) {
             throw new \RuntimeException('Xtream bron retourneerde ongeldige data.');
         }
