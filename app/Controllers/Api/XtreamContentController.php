@@ -157,8 +157,13 @@ class XtreamContentController extends BaseApiController
             return $this->error('Media target valt buiten de toegestane Xtream host.', 403);
         }
 
+        $rangeHeader = trim((string) ($this->request->getHeaderLine('Range') ?? ''));
+        if ($rangeHeader === '' && preg_match('/\.ts($|\?)/i', $decoded) === 1) {
+            $rangeHeader = 'bytes=0-';
+        }
+
         try {
-            $result = $this->httpGet($decoded, '*/*');
+            $result = $this->httpGet($decoded, '*/*', $rangeHeader);
         } catch (\Throwable $exception) {
             return $this->error($exception->getMessage(), 502);
         }
@@ -240,14 +245,19 @@ class XtreamContentController extends BaseApiController
     /**
      * @return array{status:int, body:string, contentType:string}
      */
-    private function httpGet(string $url, string $accept): array
+    private function httpGet(string $url, string $accept, string $rangeHeader = ''): array
     {
+        $headers = "Accept: {$accept}\r\nUser-Agent: Play2TV-XtreamProxy/1.0\r\nConnection: close\r\n";
+        if ($rangeHeader !== '') {
+            $headers .= "Range: {$rangeHeader}\r\n";
+        }
+
         $context = stream_context_create([
             'http' => [
                 'method' => 'GET',
                 'timeout' => 20,
                 'ignore_errors' => true,
-                'header' => "Accept: {$accept}\r\nUser-Agent: Play2TV-XtreamProxy/1.0\r\n",
+                'header' => $headers,
             ],
             'ssl' => [
                 'verify_peer' => true,
