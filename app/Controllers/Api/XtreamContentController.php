@@ -115,7 +115,20 @@ class XtreamContentController extends BaseApiController
         $expires = (int) ($this->request->getGet('expires') ?? 0);
         $signature = trim((string) ($this->request->getGet('signature') ?? ''));
 
+        $this->logCastDebug('cast_live_playlist_request', [
+            'user_id' => $userId,
+            'stream_id' => $streamId,
+            'expires' => $expires,
+            'ip' => $this->request->getIPAddress(),
+            'user_agent' => $this->request->getUserAgent()->getAgentString(),
+        ]);
+
         if ($userId <= 0 || $streamId === '' || $expires <= 0 || $signature === '') {
+            $this->logCastDebug('cast_live_playlist_invalid_request', [
+                'user_id' => $userId,
+                'stream_id' => $streamId,
+                'expires' => $expires,
+            ]);
             return $this->error('Ongeldige cast playlist aanvraag.', 422);
         }
 
@@ -124,10 +137,20 @@ class XtreamContentController extends BaseApiController
             'stream_id' => $streamId,
             'expires' => (string) $expires,
         ], $signature)) {
+            $this->logCastDebug('cast_live_playlist_invalid_signature', [
+                'user_id' => $userId,
+                'stream_id' => $streamId,
+                'expires' => $expires,
+            ]);
             return $this->error('Cast playlist handtekening ongeldig.', 403);
         }
 
         if ($expires < time()) {
+            $this->logCastDebug('cast_live_playlist_expired', [
+                'user_id' => $userId,
+                'stream_id' => $streamId,
+                'expires' => $expires,
+            ]);
             return $this->error('Cast playlist token verlopen.', 403);
         }
 
@@ -144,8 +167,19 @@ class XtreamContentController extends BaseApiController
         try {
             $result = $this->httpGet($sourceUrl, 'application/vnd.apple.mpegurl, application/x-mpegURL, */*');
         } catch (\Throwable $exception) {
+            $this->logCastDebug('cast_live_playlist_upstream_error', [
+                'user_id' => $userId,
+                'stream_id' => $streamId,
+                'message' => $exception->getMessage(),
+            ]);
             return $this->error($exception->getMessage(), 502);
         }
+
+        $this->logCastDebug('cast_live_playlist_success', [
+            'user_id' => $userId,
+            'stream_id' => $streamId,
+            'final_url' => $result['finalUrl'],
+        ]);
 
         $manifest = $this->rewriteCastPlaylistBody($result['body'], $result['finalUrl'], $userId, $expires);
 
@@ -162,7 +196,20 @@ class XtreamContentController extends BaseApiController
         $target = trim((string) ($this->request->getGet('target') ?? ''));
         $signature = trim((string) ($this->request->getGet('signature') ?? ''));
 
+        $this->logCastDebug('cast_media_request', [
+            'user_id' => $userId,
+            'expires' => $expires,
+            'target' => substr($target, 0, 80),
+            'range' => $this->request->getHeaderLine('Range'),
+            'ip' => $this->request->getIPAddress(),
+        ]);
+
         if ($userId <= 0 || $expires <= 0 || $target === '' || $signature === '') {
+            $this->logCastDebug('cast_media_invalid_request', [
+                'user_id' => $userId,
+                'expires' => $expires,
+                'target' => substr($target, 0, 80),
+            ]);
             return $this->error('Ongeldige cast media aanvraag.', 422);
         }
 
@@ -171,10 +218,18 @@ class XtreamContentController extends BaseApiController
             'target' => $target,
             'expires' => (string) $expires,
         ], $signature)) {
+            $this->logCastDebug('cast_media_invalid_signature', [
+                'user_id' => $userId,
+                'expires' => $expires,
+            ]);
             return $this->error('Cast media handtekening ongeldig.', 403);
         }
 
         if ($expires < time()) {
+            $this->logCastDebug('cast_media_expired', [
+                'user_id' => $userId,
+                'expires' => $expires,
+            ]);
             return $this->error('Cast media token verlopen.', 403);
         }
 
@@ -195,8 +250,20 @@ class XtreamContentController extends BaseApiController
         try {
             $result = $this->httpGet($decoded, '*/*', $rangeHeader);
         } catch (\Throwable $exception) {
+            $this->logCastDebug('cast_media_upstream_error', [
+                'user_id' => $userId,
+                'message' => $exception->getMessage(),
+                'target_url' => $decoded,
+            ]);
             return $this->error($exception->getMessage(), 502);
         }
+
+        $this->logCastDebug('cast_media_success', [
+            'user_id' => $userId,
+            'status' => $result['status'],
+            'content_type' => $result['contentType'],
+            'target_url' => $decoded,
+        ]);
 
         return $this->response
             ->setStatusCode($result['status'])
@@ -527,6 +594,14 @@ class XtreamContentController extends BaseApiController
         }
 
         return $key;
+    }
+
+    private function logCastDebug(string $event, array $context = []): void
+    {
+        try {
+            \Config\Services::logger()->info('cast_debug ' . $event . ' ' . json_encode($context, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        } catch (\Throwable) {
+        }
     }
 
     private function buildStreamUrl(array $user, string $type, string $streamId, string $extension, string $directSource = ''): ?string
