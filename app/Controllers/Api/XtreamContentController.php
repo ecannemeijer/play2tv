@@ -92,6 +92,8 @@ class XtreamContentController extends BaseApiController
                 $directSource = trim((string) ($row['direct_source'] ?? ''));
                 $url = $this->buildStreamUrl($user, $type, $streamId, $extension, $directSource);
                 $userId = (int) ($user['id'] ?? 0);
+                $categoryIds = $this->extractCategoryIds($row);
+                $primaryCategoryId = $categoryIds[0] ?? '';
 
                 return [
                     'id' => $streamId,
@@ -99,6 +101,9 @@ class XtreamContentController extends BaseApiController
                     'name' => (string) ($row['name'] ?? 'Unnamed'),
                     'logo' => (string) ($row['stream_icon'] ?? $row['cover'] ?? ''),
                     'type' => $type,
+                    'category_id' => $primaryCategoryId,
+                    'category_ids' => $categoryIds,
+                    'category' => (string) ($row['category_name'] ?? $row['genre'] ?? ''),
                     'url' => $url,
                     'cast_url' => $this->buildCastUrl($type, $userId, $streamId, $url),
                     'playback_mode' => $this->resolvePlaybackMode($type, $url, $extension),
@@ -644,5 +649,44 @@ class XtreamContentController extends BaseApiController
         return in_array(strtolower($extension), ['mp4', 'mkv', 'mov', 'webm', 'm4v'], true)
             ? 'file'
             : 'file';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function extractCategoryIds(array $row): array
+    {
+        $rawValue = $row['category_id'] ?? $row['category_ids'] ?? [];
+
+        if (is_array($rawValue)) {
+            return array_values(array_filter(array_map(
+                static fn ($value): string => trim((string) $value),
+                $rawValue,
+            ), static fn (string $value): bool => $value !== ''));
+        }
+
+        $text = trim((string) $rawValue);
+        if ($text === '') {
+            return [];
+        }
+
+        if (str_starts_with($text, '[') && str_ends_with($text, ']')) {
+            $decoded = json_decode($text, true);
+            if (is_array($decoded)) {
+                return array_values(array_filter(array_map(
+                    static fn ($value): string => trim((string) $value),
+                    $decoded,
+                ), static fn (string $value): bool => $value !== ''));
+            }
+        }
+
+        if (str_contains($text, ',')) {
+            return array_values(array_filter(array_map(
+                static fn (string $value): string => trim($value),
+                explode(',', $text),
+            ), static fn (string $value): bool => $value !== ''));
+        }
+
+        return [$text];
     }
 }
