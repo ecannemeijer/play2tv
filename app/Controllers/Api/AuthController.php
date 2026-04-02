@@ -8,6 +8,7 @@ use App\Models\AdminModel;
 use App\Models\UserModel;
 use App\Models\UserDeviceModel;
 use App\Models\UserIpsLogModel;
+use App\Libraries\UserBootstrapBuilder;
 use App\Libraries\JwtLibrary;
 
 /**
@@ -35,6 +36,7 @@ class AuthController extends BaseApiController
     private UserDeviceModel $deviceModel;
     private UserIpsLogModel $ipsLogModel;
     private JwtLibrary      $jwt;
+    private UserBootstrapBuilder $bootstrapBuilder;
 
     public function __construct()
     {
@@ -42,6 +44,7 @@ class AuthController extends BaseApiController
         $this->deviceModel = new UserDeviceModel();
         $this->ipsLogModel = new UserIpsLogModel();
         $this->jwt         = new JwtLibrary();
+        $this->bootstrapBuilder = new UserBootstrapBuilder();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -176,6 +179,7 @@ class AuthController extends BaseApiController
 
         // Generate JWT
         $token = $this->jwt->generate((int) $user['id'], $isPremium);
+        $bootstrap = $this->bootstrapBuilder->buildForUser($user, $deviceId, $ip);
 
         return $this->ok([
             'token'         => $token,
@@ -183,6 +187,8 @@ class AuthController extends BaseApiController
             'email'         => $user['email'],
             'premium'       => $isPremium,
             'premium_until' => $user['premium_until'],
+            'profile'       => $bootstrap['profile'],
+            'bootstrap'     => $bootstrap,
         ], 'Inloggen geslaagd.');
     }
 

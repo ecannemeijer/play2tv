@@ -53,6 +53,7 @@ $routes->group('api', ['filter' => 'jwt'], function ($routes) {
     $routes->get('playlist', 'Api\PlaylistController::index');
 
     // Xtream content for the authenticated user
+    $routes->get('bootstrap', 'Api\BootstrapController::index');
     $routes->get('content/categories', 'Api\XtreamContentController::categories');
     $routes->get('content/channels', 'Api\XtreamContentController::channels');
     $routes->get('content/live-playlist', 'Api\XtreamContentController::livePlaylist');
