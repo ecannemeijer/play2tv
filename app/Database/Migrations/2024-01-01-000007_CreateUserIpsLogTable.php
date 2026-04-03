@@ -91,12 +91,7 @@ class CreateUserIpsLogTable extends Migration
                 'constraint' => 45,
                 'null'       => false,
             ],
-            'timestamp' => [
-                'type'     => 'INT',
-                'unsigned' => true,
-                'default'  => 0,
-                'null'     => false,
-            ],
+            '`timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP',
             'data' => [
                 'type' => 'BLOB',
                 'null' => false,
