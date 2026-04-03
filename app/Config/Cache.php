@@ -201,11 +201,20 @@ class Cache extends BaseConfig
         parent::__construct();
 
         $handler = strtolower(trim((string) env('cache.handler', $this->handler)));
+        if (in_array($handler, ['redis', 'predis'], true) && ! class_exists('Redis')) {
+            log_message('warning', 'Redis cache handler requested but PHP Redis extension is not loaded. Falling back to file cache.');
+            $handler = 'file';
+        }
+
         if ($handler !== '' && isset($this->validHandlers[$handler])) {
             $this->handler = $handler;
         }
 
         $backupHandler = strtolower(trim((string) env('cache.backupHandler', $this->backupHandler)));
+        if (in_array($backupHandler, ['redis', 'predis'], true) && ! class_exists('Redis')) {
+            $backupHandler = 'file';
+        }
+
         if ($backupHandler !== '' && isset($this->validHandlers[$backupHandler])) {
             $this->backupHandler = $backupHandler;
         }

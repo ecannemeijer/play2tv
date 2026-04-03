@@ -129,11 +129,18 @@ class Session extends BaseConfig
         parent::__construct();
 
         $driver = strtolower(trim((string) env('session.driver', 'database')));
-        $this->driver = match ($driver) {
+        $selectedDriver = match ($driver) {
             'file' => FileHandler::class,
             'redis' => RedisHandler::class,
             default => DatabaseHandler::class,
         };
+
+        if ($selectedDriver === RedisHandler::class && ! class_exists('Redis')) {
+            log_message('warning', 'Redis session driver requested but PHP Redis extension is not loaded. Falling back to database sessions.');
+            $selectedDriver = DatabaseHandler::class;
+        }
+
+        $this->driver = $selectedDriver;
 
         $this->savePath = match ($this->driver) {
             FileHandler::class => (string) env('session.fileSavePath', WRITEPATH . 'session'),
