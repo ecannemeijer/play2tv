@@ -12,6 +12,13 @@
         </a>
     </div>
 
+    <form method="post" action="<?= base_url('admin/security/events/clear') ?>" onsubmit="return confirm('Weet je zeker dat je alle security events wilt verwijderen?');">
+        <?= csrf_field() ?>
+        <button type="submit" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-trash3 me-1"></i>Leeg events tabel
+        </button>
+    </form>
+
     <form method="get" class="row g-2 align-items-end">
         <div class="col-auto">
             <label class="form-label small text-muted">Zoeken</label>
@@ -39,8 +46,9 @@
 </div>
 
 <div class="card">
-    <div class="card-header py-3">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
         <h6 class="mb-0"><i class="bi bi-shield-lock me-2"></i><?= $suspiciousOnly ? 'Verdachte activiteit' : 'Security events' ?></h6>
+        <span class="badge bg-secondary"><?= number_format($totalEvents) ?> totaal</span>
     </div>
     <div class="card-body p-0">
         <?php if (empty($events)): ?>
@@ -72,7 +80,15 @@
                             </td>
                             <td><code><?= esc($event['event_type']) ?></code></td>
                             <td>
-                                <span class="badge <?= ($event['severity'] ?? '') === 'critical' ? 'bg-danger' : (($event['severity'] ?? '') === 'error' ? 'bg-warning text-dark' : 'bg-secondary') ?>">
+                                <?php
+                                    $severityClass = match ($event['severity'] ?? '') {
+                                        'critical', 'alert' => 'bg-danger',
+                                        'error' => 'bg-warning text-dark',
+                                        'warning' => 'bg-primary',
+                                        default => 'bg-secondary',
+                                    };
+                                ?>
+                                <span class="badge <?= $severityClass ?>">
                                     <?= esc($event['severity']) ?>
                                 </span>
                             </td>
@@ -92,5 +108,29 @@
         <?php endif; ?>
     </div>
 </div>
+
+<?php if ($totalPages > 1): ?>
+    <nav class="mt-3" aria-label="Security events pagination">
+        <ul class="pagination pagination-sm mb-0">
+            <?php
+                $previousQuery = http_build_query(array_merge($baseQuery, ['page' => max(1, $page - 1)]));
+                $nextQuery = http_build_query(array_merge($baseQuery, ['page' => min($totalPages, $page + 1)]));
+            ?>
+            <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
+                <a class="page-link" href="<?= $page <= 1 ? '#' : current_url() . '?' . $previousQuery ?>">Vorige</a>
+            </li>
+            <?php for ($currentPage = max(1, $page - 2); $currentPage <= min($totalPages, $page + 2); $currentPage++): ?>
+                <li class="page-item <?= $currentPage === $page ? 'active' : '' ?>">
+                    <a class="page-link" href="<?= current_url() . '?' . http_build_query(array_merge($baseQuery, ['page' => $currentPage])) ?>">
+                        <?= $currentPage ?>
+                    </a>
+                </li>
+            <?php endfor; ?>
+            <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
+                <a class="page-link" href="<?= $page >= $totalPages ? '#' : current_url() . '?' . $nextQuery ?>">Volgende</a>
+            </li>
+        </ul>
+    </nav>
+<?php endif; ?>
 
 <?= $this->endSection() ?>

@@ -67,6 +67,7 @@ $routes->group('admin', ['filter' => 'adminauth'], function ($routes) {
     // Security
     $routes->get('security/events', 'Admin\SecurityController::events');
     $routes->get('security/suspicious', 'Admin\SecurityController::suspicious');
+    $routes->post('security/events/clear', 'Admin\SecurityController::clear');
 
     // Users
     $routes->get('users',                'Admin\UserController::index');
@@ -79,8 +80,10 @@ $routes->group('admin', ['filter' => 'adminauth'], function ($routes) {
     $routes->post('users/(:num)/points', 'Admin\UserController::addPoints/$1');
     $routes->post('users/(:num)/force-logout', 'Admin\UserController::forceLogout/$1');
     $routes->post('users/(:num)/tokens/(:num)/revoke', 'Admin\UserController::revokeToken/$1/$2');
+    $routes->post('users/(:num)/token-families/(:segment)/revoke', 'Admin\UserController::revokeTokenFamily/$1/$2');
     $routes->post('users/(:num)/devices/(:num)/rename', 'Admin\UserController::renameDevice/$1/$2');
     $routes->post('users/(:num)/devices/(:num)/delete', 'Admin\UserController::deleteDevice/$1/$2');
+    $routes->post('users/(:num)/devices/delete-all', 'Admin\UserController::deleteAllDevices/$1');
     $routes->post('users/(:num)/xtream-diagnostics', 'Admin\UserController::xtreamDiagnostics/$1');
 
     // Playlists

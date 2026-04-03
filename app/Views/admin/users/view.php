@@ -97,8 +97,16 @@
     <!-- Devices -->
     <div class="col-md-4">
         <div class="card">
-            <div class="card-header py-3">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0"><i class="bi bi-phone me-2"></i>Apparaten (<?= count($devices) ?>)</h6>
+                <?php if (! empty($devices)): ?>
+                    <form method="post" action="<?= base_url('admin/users/' . $user['id'] . '/devices/delete-all') ?>" onsubmit="return confirm('Alle apparaten verwijderen en gekoppelde tokens intrekken?');">
+                        <?= csrf_field() ?>
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-trash3 me-1"></i>Alles verwijderen
+                        </button>
+                    </form>
+                <?php endif; ?>
             </div>
             <div class="card-body p-0">
                 <?php if (empty($devices)): ?>
@@ -156,11 +164,12 @@
                     <p class="text-muted p-3 mb-0">Geen recente tokens gevonden.</p>
                 <?php else: ?>
                     <table class="table table-sm mb-0">
-                        <thead><tr><th>Selector</th><th>Device</th><th>Laatst gebruikt</th><th>Status</th><th class="text-end">Actie</th></tr></thead>
+                        <thead><tr><th>Selector</th><th>Family</th><th>Device</th><th>Laatst gebruikt</th><th>Status</th><th class="text-end">Actie</th></tr></thead>
                         <tbody>
                             <?php foreach ($tokens as $token): ?>
                             <tr>
                                 <td><code><?= esc(substr((string) $token['selector'], 0, 12)) ?>...</code></td>
+                                <td><small><code><?= esc(substr((string) ($token['family_id'] ?? ''), 0, 10)) ?>...</code></small></td>
                                 <td><small><?= esc($token['device_id'] ?: '—') ?></small></td>
                                 <td><small><?= $token['last_used_at'] ? date('d-m-Y H:i', strtotime($token['last_used_at'])) : '—' ?></small></td>
                                 <td>
@@ -174,12 +183,22 @@
                                 </td>
                                 <td class="text-end">
                                     <?php if (empty($token['revoked_at']) && strtotime((string) $token['expires_at']) >= time()): ?>
-                                        <form method="post" action="<?= base_url('admin/users/' . $user['id'] . '/tokens/' . $token['id'] . '/revoke') ?>" onsubmit="return confirm('Deze token intrekken?');">
-                                            <?= csrf_field() ?>
-                                            <button type="submit" class="btn btn-outline-danger btn-sm">
-                                                <i class="bi bi-slash-circle"></i>
-                                            </button>
-                                        </form>
+                                        <div class="d-flex justify-content-end gap-1">
+                                            <form method="post" action="<?= base_url('admin/users/' . $user['id'] . '/tokens/' . $token['id'] . '/revoke') ?>" onsubmit="return confirm('Deze token intrekken?');">
+                                                <?= csrf_field() ?>
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Revoke token">
+                                                    <i class="bi bi-slash-circle"></i>
+                                                </button>
+                                            </form>
+                                            <?php if (! empty($token['family_id'])): ?>
+                                                <form method="post" action="<?= base_url('admin/users/' . $user['id'] . '/token-families/' . rawurlencode((string) $token['family_id']) . '/revoke') ?>" onsubmit="return confirm('Volledige token family intrekken?');">
+                                                    <?= csrf_field() ?>
+                                                    <button type="submit" class="btn btn-outline-warning btn-sm" title="Revoke family">
+                                                        <i class="bi bi-collection"></i>
+                                                    </button>
+                                                </form>
+                                            <?php endif; ?>
+                                        </div>
                                     <?php else: ?>
                                         <small class="text-muted"><?= esc($token['revoked_reason'] ?? '—') ?></small>
                                     <?php endif; ?>

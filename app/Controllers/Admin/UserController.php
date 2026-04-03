@@ -329,6 +329,28 @@ class UserController extends Controller
         return redirect()->to(base_url('admin/users/' . $id))->with('success', 'Token ingetrokken.');
     }
 
+    public function revokeTokenFamily($id, $familyId)
+    {
+        $user = $this->userModel->find($id);
+        if (! $user) {
+            return redirect()->to(base_url('admin/users'))->with('error', 'Gebruiker niet gevonden.');
+        }
+
+        $familyId = trim((string) $familyId);
+        if ($familyId === '') {
+            return redirect()->to(base_url('admin/users/' . $id))->with('error', 'Token family ontbreekt.');
+        }
+
+        $token = $this->refreshTokenModel->where('user_id', (int) $id)->where('family_id', $familyId)->first();
+        if (! $token) {
+            return redirect()->to(base_url('admin/users/' . $id))->with('error', 'Token family niet gevonden.');
+        }
+
+        $this->refreshTokenModel->revokeFamily($familyId, 'admin_family_revoked');
+
+        return redirect()->to(base_url('admin/users/' . $id))->with('success', 'Volledige token family ingetrokken.');
+    }
+
     public function renameDevice($id, $devicePk)
     {
         $device = $this->deviceModel->findOwnedDevice((int) $id, (int) $devicePk);
@@ -357,6 +379,25 @@ class UserController extends Controller
         $this->deviceModel->delete((int) $devicePk);
 
         return redirect()->to(base_url('admin/users/' . $id))->with('success', 'Apparaat verwijderd en gekoppelde tokens ingetrokken.');
+    }
+
+    public function deleteAllDevices($id)
+    {
+        $user = $this->userModel->find($id);
+        if (! $user) {
+            return redirect()->to(base_url('admin/users'))->with('error', 'Gebruiker niet gevonden.');
+        }
+
+        $devices = $this->deviceModel->getDevicesForUser((int) $id);
+        foreach ($devices as $device) {
+            if (! empty($device['device_id'])) {
+                $this->refreshTokenModel->revokeByDeviceId((int) $id, (string) $device['device_id'], 'admin_all_devices_removed');
+            }
+        }
+
+        $this->deviceModel->where('user_id', (int) $id)->delete();
+
+        return redirect()->to(base_url('admin/users/' . $id))->with('success', 'Alle apparaten verwijderd en gekoppelde tokens ingetrokken.');
     }
 
     public function xtreamDiagnostics($id)

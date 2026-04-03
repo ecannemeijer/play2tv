@@ -63,4 +63,68 @@ class SecurityEventModel extends Model
 
         return $builder->get()->getResultArray();
     }
+
+    /**
+     * @param array<string, mixed> $filters
+     * @return array{rows: array<int, array<string, mixed>>, total: int}
+     */
+    public function getPagedWithUsers(int $page, int $perPage, array $filters = []): array
+    {
+        $page = max(1, $page);
+        $perPage = max(1, min(100, $perPage));
+
+        $builder = $this->db->table($this->table . ' se')
+            ->select('se.*, u.email')
+            ->join('users u', 'u.id = se.user_id', 'left');
+
+        $this->applyFilters($builder, $filters);
+
+        $total = (int) $builder->countAllResults(false);
+        $rows = $builder
+            ->orderBy('se.created_at', 'DESC')
+            ->limit($perPage, ($page - 1) * $perPage)
+            ->get()
+            ->getResultArray();
+
+        return [
+            'rows' => $rows,
+            'total' => $total,
+        ];
+    }
+
+    /**
+     * @param \CodeIgniter\Database\BaseBuilder $builder
+     * @param array<string, mixed> $filters
+     */
+    private function applyFilters($builder, array $filters): void
+    {
+        if (! empty($filters['user_id'])) {
+            $builder->where('se.user_id', (int) $filters['user_id']);
+        }
+
+        if (! empty($filters['severity'])) {
+            $builder->where('se.severity', (string) $filters['severity']);
+        }
+
+        if (! empty($filters['query'])) {
+            $query = trim((string) $filters['query']);
+            $builder->groupStart()
+                ->like('se.event_type', $query)
+                ->orLike('se.route', $query)
+                ->orLike('u.email', $query)
+                ->groupEnd();
+        }
+
+        if (! empty($filters['suspicious_only'])) {
+            $builder->groupStart()
+                ->whereIn('se.severity', ['error', 'critical', 'alert'])
+                ->orLike('se.event_type', 'failed')
+                ->orLike('se.event_type', 'invalid')
+                ->orLike('se.event_type', 'mismatch')
+                ->orLike('se.event_type', 'reuse')
+                ->orLike('se.event_type', 'denied')
+                ->orLike('se.event_type', 'rate_limit')
+                ->groupEnd();
+        }
+    }
 }
