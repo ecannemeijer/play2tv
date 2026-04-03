@@ -28,6 +28,7 @@ $routes->post('api/logout',   'Api\AuthController::logout');
 $routes->group('api', ['filter' => 'jwt'], function ($routes) {
     // Auth
     $routes->get('user', 'Api\AuthController::user');
+    $routes->get('bootstrap', 'Api\BootstrapController::index');
 
     // Category Preferences
     $routes->get('category-prefs',  'Api\CategoryPrefsController::index');
@@ -49,6 +50,15 @@ $routes->group('api', ['filter' => 'jwt'], function ($routes) {
     $routes->get('devices/(:num)', 'Api\DeviceController::show/$1');
     $routes->post('devices/register', 'Api\DeviceController::register');
     $routes->post('devices/replace', 'Api\DeviceController::replace');
+    $routes->post('register-device', 'Api\DeviceController::register');
+
+    // Xtream content
+    $routes->get('content/categories', 'Api\XtreamContentController::categories');
+    $routes->get('content/channels', 'Api\XtreamContentController::channels');
+    $routes->get('content/live-playlist', 'Api\XtreamContentController::livePlaylist');
+    $routes->get('content/media', 'Api\XtreamContentController::media');
+    $routes->get('content/cast/live-playlist', 'Api\XtreamContentController::castLivePlaylist');
+    $routes->get('content/cast/media', 'Api\XtreamContentController::castMedia');
 
     // Playlist (premium only — checked inside controller)
     $routes->get('playlist', 'Api\PlaylistController::index');
