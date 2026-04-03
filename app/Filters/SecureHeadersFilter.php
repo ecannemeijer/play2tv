@@ -28,7 +28,7 @@ class SecureHeadersFilter implements FilterInterface
 {
     public function before(RequestInterface $request, $arguments = null)
     {
-        if ($request->getMethod() === 'options') {
+        if ($request->getMethod() === 'options' && $this->isApiRequest($request)) {
             $origin = $this->resolveAllowedOrigin($request->getHeaderLine('Origin'));
 
             if ($origin === null) {
@@ -48,8 +48,8 @@ class SecureHeadersFilter implements FilterInterface
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
     {
-        $allowedOrigin = $this->resolveAllowedOrigin($request->getHeaderLine('Origin'));
-        $connectSrc    = implode(' ', $this->getAllowedOrigins());
+        $isApiRequest  = $this->isApiRequest($request);
+        $allowedOrigin = $isApiRequest ? $this->resolveAllowedOrigin($request->getHeaderLine('Origin')) : null;
 
         $response
             ->setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
@@ -57,11 +57,15 @@ class SecureHeadersFilter implements FilterInterface
             ->setHeader('X-Frame-Options', 'DENY')
             ->setHeader('Referrer-Policy', 'no-referrer')
             ->setHeader('Permissions-Policy', 'camera=(), geolocation=(), microphone=(), fullscreen=(self)')
-            ->setHeader('Content-Security-Policy', "default-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; connect-src 'self' {$connectSrc}; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'")
-            ->setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-            ->setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Api-Key, X-Timestamp, X-Signature, X-Device-Id');
+            ->setHeader('Content-Security-Policy', $isApiRequest ? $this->getApiCsp() : $this->getAdminCsp());
 
-        if ($allowedOrigin !== null) {
+        if ($isApiRequest) {
+            $response
+                ->setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+                ->setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Api-Key, X-Timestamp, X-Signature, X-Device-Id');
+        }
+
+        if ($isApiRequest && $allowedOrigin !== null) {
             $response
                 ->setHeader('Access-Control-Allow-Origin', $allowedOrigin)
                 ->setHeader('Access-Control-Allow-Credentials', 'true')
@@ -73,6 +77,36 @@ class SecureHeadersFilter implements FilterInterface
         }
 
         return $response;
+    }
+
+    private function isApiRequest(RequestInterface $request): bool
+    {
+        return str_starts_with(trim($request->getUri()->getPath(), '/'), 'api/');
+    }
+
+    private function getApiCsp(): string
+    {
+        $connectSrc = implode(' ', $this->getAllowedOrigins());
+
+        return "default-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; connect-src 'self' {$connectSrc}; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'";
+    }
+
+    private function getAdminCsp(): string
+    {
+        return implode('; ', [
+            "default-src 'self'",
+            "base-uri 'self'",
+            "frame-ancestors 'none'",
+            "form-action 'self'",
+            "connect-src 'self'",
+            "img-src 'self' data:",
+            "font-src 'self' https://cdn.jsdelivr.net data:",
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+            "style-src-elem 'self' https://cdn.jsdelivr.net",
+            "script-src 'self' https://cdn.jsdelivr.net",
+            "script-src-elem 'self' https://cdn.jsdelivr.net",
+            "object-src 'none'",
+        ]);
     }
 
     /**
