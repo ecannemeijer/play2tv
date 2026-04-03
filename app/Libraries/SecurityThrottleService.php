@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Libraries;
 
 use CodeIgniter\Cache\CacheInterface;
+use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\RequestInterface;
 use Config\Services;
 
@@ -129,6 +130,18 @@ class SecurityThrottleService
      */
     private function extractJsonBody(RequestInterface $request): array
     {
+        $path = trim($request->getUri()->getPath(), '/');
+        $contentType = strtolower($request->getHeaderLine('Content-Type'));
+
+        if (in_array($path, ['api/login', 'api/register', 'api/refresh', 'api/logout'], true)
+            && (str_contains($contentType, 'application/x-www-form-urlencoded')
+                || str_contains($contentType, 'multipart/form-data')
+                || $contentType === '')) {
+            $body = $request instanceof IncomingRequest ? $request->getPost() : [];
+
+            return is_array($body) ? $body : [];
+        }
+
         $raw = trim((string) $request->getBody());
         if ($raw === '') {
             return [];

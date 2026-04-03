@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filters;
 
 use CodeIgniter\Filters\FilterInterface;
+use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
 use JsonException;
@@ -13,14 +14,16 @@ class ApiRequestFilter implements FilterInterface
 {
     public function before(RequestInterface $request, $arguments = null)
     {
+        $path = trim($request->getUri()->getPath(), '/');
         $method = strtoupper($request->getMethod());
+        $isSecureRequest = $request instanceof IncomingRequest ? $request->isSecure() : true;
 
         if (in_array($method, ['TRACE', 'TRACK', 'CONNECT'], true)) {
             return $this->jsonError('HTTP-methode niet toegestaan.', 405);
         }
 
-        if (str_starts_with(trim($request->getUri()->getPath(), '/'), 'api/')
-            && ! $request->isSecure()
+        if (str_starts_with($path, 'api/')
+            && ! $isSecureRequest
             && (bool) env('security.rejectInsecureApiRequests', ENVIRONMENT === 'production')) {
             return $this->jsonError('HTTPS is verplicht voor API-verkeer.', 400);
         }
@@ -33,6 +36,10 @@ class ApiRequestFilter implements FilterInterface
         $body        = trim((string) $request->getBody());
 
         if ($body === '') {
+            return null;
+        }
+
+        if ($this->allowsLegacyFormBody($path, $contentType)) {
             return null;
         }
 
@@ -65,5 +72,16 @@ class ApiRequestFilter implements FilterInterface
                 'success' => false,
                 'message' => $message,
             ]);
+    }
+
+    private function allowsLegacyFormBody(string $path, string $contentType): bool
+    {
+        if (! in_array($path, ['api/login', 'api/register', 'api/refresh', 'api/logout'], true)) {
+            return false;
+        }
+
+        return str_contains($contentType, 'application/x-www-form-urlencoded')
+            || str_contains($contentType, 'multipart/form-data')
+            || $contentType === '';
     }
 }

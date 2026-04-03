@@ -99,8 +99,25 @@ class BaseApiController extends ResourceController
     protected function getJsonBody(array $required = []): array|false
     {
         $this->validationErrors = [];
+        $path = trim($this->request->getUri()->getPath(), '/');
         $contentType = strtolower($this->request->getHeaderLine('Content-Type'));
         $rawBody     = trim((string) $this->request->getBody());
+
+        if ($this->allowsLegacyFormBody($path, $contentType)) {
+            $body = $this->request->getPost();
+            if (! is_array($body)) {
+                $body = [];
+            }
+
+            foreach ($required as $field) {
+                if (! isset($body[$field]) || $body[$field] === '') {
+                    $this->validationErrors[$field] = "Veld '{$field}' is verplicht.";
+                    return false;
+                }
+            }
+
+            return $body;
+        }
 
         if ($rawBody !== '' && ! str_contains($contentType, 'application/json')) {
             $this->validationErrors = ['content_type' => 'Gebruik application/json voor API-aanvragen.'];
@@ -133,6 +150,17 @@ class BaseApiController extends ResourceController
         }
 
         return $body;
+    }
+
+    private function allowsLegacyFormBody(string $path, string $contentType): bool
+    {
+        if (! in_array($path, ['api/login', 'api/register', 'api/refresh', 'api/logout'], true)) {
+            return false;
+        }
+
+        return str_contains($contentType, 'application/x-www-form-urlencoded')
+            || str_contains($contentType, 'multipart/form-data')
+            || $contentType === '';
     }
 
     protected function validatePayload(array $payload, array $rules, array $messages = []): bool

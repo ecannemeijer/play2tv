@@ -249,10 +249,12 @@ class DashboardController extends Controller
             $pong = $redis->ping();
             $redis->close();
 
+            $isHealthy = $pong === true || $pong === 1 || str_contains(strtolower((string) $pong), 'pong');
+
             return [
-                'status' => str_contains(strtolower((string) $pong), 'pong') ? 'ok' : 'warning',
+                'status' => $isHealthy ? 'ok' : 'warning',
                 'label' => 'Redis',
-                'message' => 'Redis ping ' . $pong,
+                'message' => 'Redis ping ' . ($pong === true ? 'PONG' : (string) $pong),
                 'meta' => [
                     'host' => $host,
                     'port' => $port,
