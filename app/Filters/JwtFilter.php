@@ -48,7 +48,7 @@ class JwtFilter implements FilterInterface
         }
 
         $token    = substr($authHeader, 7);
-        $deviceId = trim($request->getHeaderLine('X-Device-Id')) ?: null;
+    $deviceId = $this->resolveDeviceId($request);
 
         try {
             $decoded = $tokens->validateAccessToken(
@@ -101,5 +101,41 @@ class JwtFilter implements FilterInterface
                 'success' => false,
                 'message' => $message,
             ]);
+    }
+
+    private function resolveDeviceId(RequestInterface $request): ?string
+    {
+        $headerDeviceId = trim($request->getHeaderLine('X-Device-Id'));
+        if ($headerDeviceId !== '') {
+            return $headerDeviceId;
+        }
+
+        if ($request instanceof IncomingRequest) {
+            foreach (['current_device_id', 'device_id'] as $key) {
+                $queryValue = trim((string) ($request->getGet($key) ?? ''));
+                if ($queryValue !== '') {
+                    return $queryValue;
+                }
+            }
+
+            $postValue = trim((string) ($request->getPost('device_id') ?? ''));
+            if ($postValue !== '') {
+                return $postValue;
+            }
+
+            $rawBody = trim((string) $request->getBody());
+            if ($rawBody !== '') {
+                try {
+                    $decoded = json_decode($rawBody, true, 512, JSON_THROW_ON_ERROR);
+                    $bodyDeviceId = trim((string) ($decoded['device_id'] ?? $decoded['current_device_id'] ?? ''));
+                    if ($bodyDeviceId !== '') {
+                        return $bodyDeviceId;
+                    }
+                } catch (\JsonException) {
+                }
+            }
+        }
+
+        return null;
     }
 }
