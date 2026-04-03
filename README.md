@@ -1,7 +1,7 @@
 # Play2TV Backend API
 
 Productie-klare REST API backend voor de Play2TV Android-app.  
-Gebouwd met **PHP 8.2**, **CodeIgniter 4**, **MySQL** en **JWT-authenticatie**.
+Gebouwd met **PHP 8.2**, **CodeIgniter 4**, **MySQL**, **Redis** en **JWT-authenticatie**.
 
 ---
 
@@ -12,6 +12,8 @@ Gebouwd met **PHP 8.2**, **CodeIgniter 4**, **MySQL** en **JWT-authenticatie**.
 | Runtime | PHP 8.2 |
 | Framework | CodeIgniter 4 |
 | Database | MySQL 8.0+ |
+| Cache | File cache of Redis |
+| Sessies | Database, files of Redis (env-driven) |
 | Webserver | Apache2 + mod_rewrite |
 | Auth (API) | JWT Bearer token (firebase/php-jwt) |
 | Auth (Admin) | Session-based + CSRF |
@@ -27,7 +29,8 @@ play2tv/
 │   ├── Config/
 │   │   ├── Filters.php          ← Filter registraties (jwt, adminauth, ratelimit)
 │   │   ├── Routes.php           ← Alle API + admin routes
-│   │   └── Session.php          ← DatabaseHandler sessie config
+│   │   ├── Session.php          ← Env-driven sessie driver (database/file/redis)
+│   │   └── Cache.php            ← Env-driven cache driver (file/redis)
 │   ├── Controllers/
 │   │   ├── Api/
 │   │   │   ├── AuthController.php         ← register/login/logout/user
@@ -99,7 +102,7 @@ cp .env.example .env
 nano .env
 ```
 
-Vul in:
+Vul minimaal in:
 - `database.*` → MySQL credentials
 - `jwt.secret` → genereer via `openssl rand -base64 64`
 - `app.baseURL` → jouw domein
@@ -136,11 +139,150 @@ a2enmod rewrite ssl
 systemctl reload apache2
 ```
 
-### 7. Rechten instellen
+### 7. Redis installeren en activeren (optioneel, aanbevolen voor productie)
+
+Redis is vooral nuttig voor:
+- snellere caching van playlist- en Xtream metadata
+- minder databasebelasting bij hoge API-load
+- Redis-gebaseerde sessies voor admin/login
+
+#### Debian / Ubuntu
+
+```bash
+apt update
+apt install -y redis-server php-redis
+systemctl enable redis-server
+systemctl restart redis-server
+```
+
+#### AlmaLinux / Rocky / RHEL
+
+```bash
+dnf install -y redis php-pecl-redis
+systemctl enable redis
+systemctl restart redis
+```
+
+#### Redis beveiligen
+
+Open het Redis configuratiebestand:
+
+```bash
+nano /etc/redis/redis.conf
+```
+
+Controleer of zet minimaal:
+
+```conf
+bind 127.0.0.1
+protected-mode yes
+requirepass JOUW_STERKE_REDIS_WACHTWOORD
+```
+
+Herstart daarna Redis:
+
+```bash
+systemctl restart redis-server
+```
+
+Of op RHEL-achtige systemen:
+
+```bash
+systemctl restart redis
+```
+
+### 8. Redis in `.env` configureren
+
+Voor cache:
+
+```ini
+cache.handler = redis
+cache.backupHandler = file
+cache.prefix = play2tv:
+cache.ttl = 120
+
+cache.redis.host = 127.0.0.1
+cache.redis.port = 6379
+cache.redis.password = "JOUW_STERKE_REDIS_WACHTWOORD"
+cache.redis.database = 0
+```
+
+Voor sessies:
+
+```ini
+session.driver = redis
+session.redisSavePath = "tcp://127.0.0.1:6379?database=1&prefix=play2tv_session:&auth=JOUW_STERKE_REDIS_WACHTWOORD"
+session.expiration = 7200
+session.timeToUpdate = 300
+session.regenerateDestroy = true
+```
+
+Belangrijk:
+- gebruik voor `cache.redis.password` het normale Redis wachtwoord
+- gebruik voor `session.redisSavePath` een URL-encoded wachtwoord als het speciale tekens bevat
+- voorbeelden: `!` wordt `%21`, `@` wordt `%40`, `#` wordt `%23`
+
+Voorbeeld met encoded wachtwoord:
+
+```ini
+session.redisSavePath = "tcp://127.0.0.1:6379?database=1&prefix=play2tv_session:&auth=MijnWachtwoord%21"
+```
+
+Als Redis niet beschikbaar is of de PHP Redis extensie ontbreekt, valt de applicatie terug op een veiligere fallback-configuratie.
+
+### 9. Controleren of Redis werkt
+
+Test eerst Redis zelf:
+
+```bash
+redis-cli -a "JOUW_STERKE_REDIS_WACHTWOORD" ping
+```
+
+Verwachte output:
+
+```text
+PONG
+```
+
+Controleer daarna of de PHP Redis extensie geladen is:
+
+```bash
+php -m | grep redis
+```
+
+Controleer tenslotte of sessiesleutels verschijnen:
+
+```bash
+redis-cli -a "JOUW_STERKE_REDIS_WACHTWOORD"
+```
+
+In de Redis shell:
+
+```text
+SELECT 1
+KEYS play2tv_session:*
+```
+
+### 10. Rechten instellen
 
 ```bash
 chown -R www-data:www-data /var/www/play2tv/writable
 chmod -R 775 /var/www/play2tv/writable
+```
+
+### 11. PHP / webserver herstarten na `.env` wijzigingen
+
+Bij Apache mod_php:
+
+```bash
+systemctl restart apache2
+```
+
+Bij PHP-FPM:
+
+```bash
+systemctl restart php8.2-fpm
+systemctl restart apache2
 ```
 
 ---
@@ -149,42 +291,58 @@ chmod -R 775 /var/www/play2tv/writable
 
 Base URL: `https://api.play2tv.nl`
 
-### Authenticatie (geen JWT vereist)
+### Authenticatie (geen access token vereist)
 
 | Methode | Endpoint | Beschrijving |
 |---|---|---|
-| POST | `/api/register` | Nieuw account aanmaken |
-| POST | `/api/login` | Inloggen, JWT token ontvangen |
-| POST | `/api/logout` | Uitloggen (client verwijdert token) |
+| POST | `/api/register` | Nieuw account aanmaken en token-paar ontvangen |
+| POST | `/api/login` | Inloggen en token-paar ontvangen |
+| POST | `/api/refresh` | Access token vernieuwen via refresh token |
+| POST | `/api/logout` | Refresh token / token family intrekken |
 
-### Gebruiker (JWT vereist)
+### Gebruiker (JWT access token vereist)
 
 | Methode | Endpoint | Beschrijving |
 |---|---|---|
 | GET | `/api/user` | Huidig gebruikersprofiel |
+| GET | `/api/category-prefs` | Categorievoorkeuren ophalen |
+| POST | `/api/category-prefs` | Categorievoorkeuren opslaan |
 | POST | `/api/settings` | App-instellingen opslaan |
 | GET | `/api/settings` | App-instellingen ophalen |
-| POST | `/api/history` | Kijkgeschiednis opslaan |
-| GET | `/api/history` | Kijkgeschiednis ophalen |
+| POST | `/api/history` | Kijkgeschiedenis opslaan |
+| GET | `/api/history` | Kijkgeschiedenis ophalen |
 | POST | `/api/store-points` | Punten toevoegen/aftrekken |
 | GET | `/api/store-points` | Punten saldo + geschiedenis |
-| GET | `/api/playlist` | M3U playlist (alleen premium) |
+| GET | `/api/playlist` | Actieve M3U playlist ophalen (alleen premium) |
 
-### JWT Token Structure
+### Access Token Structure
 
 ```json
 {
   "iss": "play2tv-api",
+  "aud": "play2tv-clients",
   "iat": 1700000000,
-  "exp": 1731536000,
+  "nbf": 1700000000,
+  "exp": 1700000900,
+  "typ": "access",
+  "jti": "random-jwt-id",
+  "sub": 42,
   "user_id": 42,
-  "premium": true
+  "role": "user",
+  "premium": true,
+  "av": 3,
+  "fp": "fingerprint-hash",
+  "fam": "token-family-id"
 }
 ```
 
-Geldigheid: **365 dagen** (`31536000` seconden). Stuur mee in elke beveiligde request:
+Standaard geldigheid:
+- access token: `900` seconden (15 minuten)
+- refresh token: `2592000` seconden (30 dagen)
 
-```
+Gebruik voor beveiligde requests:
+
+```text
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 ```
 
@@ -199,10 +357,34 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
   "message": "Inloggen geslaagd.",
   "data": {
     "token": "eyJhbGciOiJIUzI1NiJ9...",
+    "access_token": "eyJhbGciOiJIUzI1NiJ9...",
+    "token_type": "Bearer",
+    "expires_in": 900,
+    "refresh_token": "selector.validator",
+    "refresh_expires_in": 2592000,
+    "refresh_expires_at": "2026-05-03 12:00:00",
     "user_id": 1,
     "email": "user@example.com",
+    "role": "user",
     "premium": true,
     "premium_until": "2025-12-31 00:00:00"
+  }
+}
+```
+
+### POST /api/refresh → 200 OK
+```json
+{
+  "success": true,
+  "message": "Token vernieuwd.",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiJ9...",
+    "access_token": "eyJhbGciOiJIUzI1NiJ9...",
+    "token_type": "Bearer",
+    "expires_in": 900,
+    "refresh_token": "selector.validator",
+    "refresh_expires_in": 2592000,
+    "refresh_expires_at": "2026-05-03 12:00:00"
   }
 }
 ```
@@ -219,7 +401,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 ```json
 {
   "success": false,
-  "message": "Te veel inlogpogingen. Probeer het opnieuw na 287 seconden.",
+  "message": "Te veel inlogpogingen. Wacht voordat je opnieuw probeert.",
   "retry_after": 287
 }
 ```
@@ -237,7 +419,6 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 ## Voorbeeld Android Retrofit Calls
 
 ```kotlin
-// Interface definities
 interface Play2TVApi {
     @POST("api/login")
     suspend fun login(@Body body: LoginRequest): Response<LoginResponse>
@@ -245,8 +426,23 @@ interface Play2TVApi {
     @POST("api/register")
     suspend fun register(@Body body: RegisterRequest): Response<LoginResponse>
 
+  @POST("api/refresh")
+  suspend fun refresh(@Body body: RefreshRequest): Response<LoginResponse>
+
+  @POST("api/logout")
+  suspend fun logout(@Body body: LogoutRequest): Response<ApiResponse>
+
     @GET("api/user")
     suspend fun getUser(@Header("Authorization") token: String): Response<UserResponse>
+
+  @GET("api/category-prefs")
+  suspend fun getCategoryPrefs(@Header("Authorization") token: String): Response<CategoryPrefsResponse>
+
+  @POST("api/category-prefs")
+  suspend fun saveCategoryPrefs(
+    @Header("Authorization") token: String,
+    @Body body: CategoryPrefsRequest
+  ): Response<ApiResponse>
 
     @POST("api/settings")
     suspend fun saveSettings(
@@ -275,8 +471,10 @@ interface Play2TVApi {
     ): Response<ResponseBody> // Raw M3U text
 }
 
-// Data klassen
 data class LoginRequest(val email: String, val password: String, val device_id: String? = null)
+data class RefreshRequest(val refresh_token: String, val device_id: String? = null)
+data class LogoutRequest(val refresh_token: String? = null)
+data class CategoryPrefsRequest(val hidden_category_ids: List<String>)
 data class WatchHistoryRequest(
     val content_type: String, // "movie" of "series"
     val content_id: String,
@@ -291,16 +489,38 @@ data class StorePointsRequest(val points: Int, val reason: String = "watch_rewar
 
 ## Beveiliging
 
-- ✅ JWT Bearer authenticatie (HS256, 7 dagen)
-- ✅ Bcrypt password hashing (cost 12)
-- ✅ Rate limiting op login (5 pogingen / 5 minuten per IP)
-- ✅ CSRF bescherming op admin panel (uitgesloten voor /api/*)
-- ✅ Session-based admin authenticatie
-- ✅ SQL injection bescherming via CI4 Query Builder
-- ✅ XSS filtering op alle inputs
-- ✅ Secure HTTP headers op alle responses (HSTS, X-Frame-Options, etc.)
-- ✅ HTTPS-only via Apache2
-- ✅ Gebruiker deactivering controle bij elke JWT request
+- ✅ Korte access tokens met refresh-token rotatie
+- ✅ Refresh-token hashing in database
+- ✅ Replay-detectie en revoke van complete token families
+- ✅ Device/IP/user-agent fingerprinting voor token-validatie
+- ✅ API rate limiting en login backoff met tijdelijke account lock
+- ✅ Strikte JSON payload-validatie voor API requests
+- ✅ Session-based admin authenticatie met CSRF bescherming
+- ✅ Secure headers op responses, inclusief HSTS, CSP en X-Frame-Options
+- ✅ HTTPS-only productie-opzet
+- ✅ Gebruiker-, rol- en auth-version controle bij protected requests
+- ✅ Security event logging voor verdachte auth-events
+
+## Performance
+
+- Redis-ready cache en sessieconfiguratie via `.env`
+- Gerichte caching voor playlist- en Xtream metadata endpoints
+- Extra database-indexen voor high-growth tabellen
+- Cleanup command voor refresh tokens, security events, IP logs, watch history en sessies
+
+## Server Requirements
+
+PHP 8.2 of hoger is vereist, met minimaal deze extensies:
+
+- intl
+- mbstring
+- json
+- mysqlnd
+- curl
+
+Aanbevolen voor productie:
+
+- redis
 
 ---
 
@@ -319,70 +539,9 @@ php spark db:seed AdminSeeder
 # Routes bekijken
 php spark routes
 
+# Oude operationele data opschonen
+php spark maintenance:prune-data
+
 # Ontwikkelserver starten (alleen dev)
 php spark serve --port=8080
 ```
-More information can be found at the [official site](https://codeigniter.com).
-
-This repository holds a composer-installable app starter.
-It has been built from the
-[development repository](https://github.com/codeigniter4/CodeIgniter4).
-
-More information about the plans for version 4 can be found in [CodeIgniter 4](https://forum.codeigniter.com/forumdisplay.php?fid=28) on the forums.
-
-You can read the [user guide](https://codeigniter.com/user_guide/)
-corresponding to the latest version of the framework.
-
-## Installation & updates
-
-`composer create-project codeigniter4/appstarter` then `composer update` whenever
-there is a new release of the framework.
-
-When updating, check the release notes to see if there are any changes you might need to apply
-to your `app` folder. The affected files can be copied or merged from
-`vendor/codeigniter4/framework/app`.
-
-## Setup
-
-Copy `env` to `.env` and tailor for your app, specifically the baseURL
-and any database settings.
-
-## Important Change with index.php
-
-`index.php` is no longer in the root of the project! It has been moved inside the *public* folder,
-for better security and separation of components.
-
-This means that you should configure your web server to "point" to your project's *public* folder, and
-not to the project root. A better practice would be to configure a virtual host to point there. A poor practice would be to point your web server to the project root and expect to enter *public/...*, as the rest of your logic and the
-framework are exposed.
-
-**Please** read the user guide for a better explanation of how CI4 works!
-
-## Repository Management
-
-We use GitHub issues, in our main repository, to track **BUGS** and to track approved **DEVELOPMENT** work packages.
-We use our [forum](http://forum.codeigniter.com) to provide SUPPORT and to discuss
-FEATURE REQUESTS.
-
-This repository is a "distribution" one, built by our release preparation script.
-Problems with it can be raised on our forum, or as issues in the main repository.
-
-## Server Requirements
-
-PHP version 8.2 or higher is required, with the following extensions installed:
-
-- [intl](http://php.net/manual/en/intl.requirements.php)
-- [mbstring](http://php.net/manual/en/mbstring.installation.php)
-
-> [!WARNING]
-> - The end of life date for PHP 7.4 was November 28, 2022.
-> - The end of life date for PHP 8.0 was November 26, 2023.
-> - The end of life date for PHP 8.1 was December 31, 2025.
-> - If you are still using below PHP 8.2, you should upgrade immediately.
-> - The end of life date for PHP 8.2 will be December 31, 2026.
-
-Additionally, make sure that the following extensions are enabled in your PHP:
-
-- json (enabled by default - don't turn it off)
-- [mysqlnd](http://php.net/manual/en/mysqlnd.install.php) if you plan to use MySQL
-- [libcurl](http://php.net/manual/en/curl.requirements.php) if you plan to use the HTTP\CURLRequest library
