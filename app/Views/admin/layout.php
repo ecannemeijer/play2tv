@@ -201,6 +201,10 @@
            class="nav-link <?= str_starts_with(uri_string(), 'admin/playlists') ? 'active' : '' ?>">
             <i class="bi bi-collection-play"></i> Playlists
         </a>
+        <a href="<?= base_url('admin/security/events') ?>"
+           class="nav-link <?= str_starts_with(uri_string(), 'admin/security') ? 'active' : '' ?>">
+            <i class="bi bi-shield-lock"></i> Security
+        </a>
     </div>
     <div class="sidebar-footer">
         Ingelogd als <strong><?= esc(session()->get('admin_username') ?? '') ?></strong><br>

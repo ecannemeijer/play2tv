@@ -52,6 +52,42 @@
     </div>
 </div>
 
+<div class="card mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-heart-pulse me-2"></i>System Health</h6>
+        <small class="text-muted">DB, Redis, cache en prune-backlog</small>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <?php foreach ($health as $item): ?>
+                <?php
+                    $badgeClass = match ($item['status']) {
+                        'ok' => 'bg-success',
+                        'warning' => 'bg-warning text-dark',
+                        default => 'bg-danger',
+                    };
+                ?>
+                <div class="col-md-6 col-xl-3">
+                    <div class="border rounded-3 p-3 h-100" style="border-color:#2d2d44 !important; background:#141427;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong><?= esc($item['label']) ?></strong>
+                            <span class="badge <?= $badgeClass ?>"><?= esc(strtoupper($item['status'])) ?></span>
+                        </div>
+                        <div class="small mb-2"><?= esc($item['message']) ?></div>
+                        <?php if (! empty($item['meta'])): ?>
+                            <ul class="small text-muted mb-0 ps-3">
+                                <?php foreach ($item['meta'] as $key => $value): ?>
+                                    <li><?= esc((string) $key) ?>: <?= esc(is_scalar($value) ? (string) $value : json_encode($value)) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</div>
+
 <!-- Charts -->
 <div class="row g-3 mb-4">
     <div class="col-md-6">

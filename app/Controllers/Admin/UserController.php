@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Libraries\XtreamDiagnosticsService;
+use App\Models\AuthRefreshTokenModel;
+use App\Models\SecurityEventModel;
 use App\Models\UserModel;
 use App\Models\UserSettingsModel;
 use App\Models\UserDeviceModel;
@@ -34,6 +37,9 @@ class UserController extends Controller
     private UserIpsLogModel   $ipsModel;
     private WatchHistoryModel $historyModel;
     private StorePointsModel  $pointsModel;
+    private AuthRefreshTokenModel $refreshTokenModel;
+    private SecurityEventModel $securityEventModel;
+    private XtreamDiagnosticsService $xtreamDiagnostics;
 
     public function __construct()
     {
@@ -43,6 +49,9 @@ class UserController extends Controller
         $this->ipsModel    = new UserIpsLogModel();
         $this->historyModel = new WatchHistoryModel();
         $this->pointsModel  = new StorePointsModel();
+        $this->refreshTokenModel = new AuthRefreshTokenModel();
+        $this->securityEventModel = new SecurityEventModel();
+        $this->xtreamDiagnostics = new XtreamDiagnosticsService();
         helper(['url', 'form']);
     }
 
@@ -165,6 +174,8 @@ class UserController extends Controller
         $history = $this->historyModel->getHistory((int) $id, 20);
         $points  = $this->pointsModel->getHistory((int) $id, 20);
         $total   = $this->pointsModel->getTotalPoints((int) $id);
+        $tokens  = $this->refreshTokenModel->getRecentForUser((int) $id, 20);
+        $events  = $this->securityEventModel->getRecentWithUsers(12, ['user_id' => (int) $id]);
 
         return view('admin/users/view', [
             'title'      => 'Gebruiker #' . $id . ' — Play2TV Admin',
@@ -174,6 +185,9 @@ class UserController extends Controller
             'history'    => $history,
             'points'     => $points,
             'totalPoints' => $total,
+            'tokens'     => $tokens,
+            'events'     => $events,
+            'xtreamDiagnostics' => session()->getFlashdata('xtreamDiagnostics'),
         ]);
     }
 
@@ -283,6 +297,84 @@ class UserController extends Controller
         $this->pointsModel->addPoints((int) $id, $points, $reason);
 
         return redirect()->to(base_url('admin/users/' . $id))->with('success', 'Punten bijgewerkt.');
+    }
+
+    public function forceLogout($id)
+    {
+        $user = $this->userModel->find($id);
+        if (! $user) {
+            return redirect()->to(base_url('admin/users'))->with('error', 'Gebruiker niet gevonden.');
+        }
+
+        $this->refreshTokenModel->revokeUserTokens((int) $id, 'admin_force_logout');
+        $this->userModel->bumpAuthVersion((int) $id);
+
+        return redirect()->to(base_url('admin/users/' . $id))->with('success', 'Alle tokens en sessies van deze gebruiker zijn ingetrokken.');
+    }
+
+    public function revokeToken($id, $tokenId)
+    {
+        $user = $this->userModel->find($id);
+        if (! $user) {
+            return redirect()->to(base_url('admin/users'))->with('error', 'Gebruiker niet gevonden.');
+        }
+
+        $token = $this->refreshTokenModel->where('id', (int) $tokenId)->where('user_id', (int) $id)->first();
+        if (! $token) {
+            return redirect()->to(base_url('admin/users/' . $id))->with('error', 'Token niet gevonden.');
+        }
+
+        $this->refreshTokenModel->revokeById((int) $tokenId, 'admin_revoked');
+
+        return redirect()->to(base_url('admin/users/' . $id))->with('success', 'Token ingetrokken.');
+    }
+
+    public function renameDevice($id, $devicePk)
+    {
+        $device = $this->deviceModel->findOwnedDevice((int) $id, (int) $devicePk);
+        if (! $device) {
+            return redirect()->to(base_url('admin/users/' . $id))->with('error', 'Apparaat niet gevonden.');
+        }
+
+        $deviceName = trim((string) ($this->request->getPost('device_name') ?? ''));
+        if ($deviceName === '') {
+            return redirect()->to(base_url('admin/users/' . $id))->with('error', 'Apparaatnaam mag niet leeg zijn.');
+        }
+
+        $this->deviceModel->update((int) $devicePk, ['device_name' => mb_substr($deviceName, 0, 100)]);
+
+        return redirect()->to(base_url('admin/users/' . $id))->with('success', 'Apparaatnaam bijgewerkt.');
+    }
+
+    public function deleteDevice($id, $devicePk)
+    {
+        $device = $this->deviceModel->findOwnedDevice((int) $id, (int) $devicePk);
+        if (! $device) {
+            return redirect()->to(base_url('admin/users/' . $id))->with('error', 'Apparaat niet gevonden.');
+        }
+
+        $this->refreshTokenModel->revokeByDeviceId((int) $id, (string) $device['device_id'], 'admin_device_removed');
+        $this->deviceModel->delete((int) $devicePk);
+
+        return redirect()->to(base_url('admin/users/' . $id))->with('success', 'Apparaat verwijderd en gekoppelde tokens ingetrokken.');
+    }
+
+    public function xtreamDiagnostics($id)
+    {
+        $user = $this->userModel->find($id);
+        if (! $user) {
+            return redirect()->to(base_url('admin/users'))->with('error', 'Gebruiker niet gevonden.');
+        }
+
+        $diagnostics = $this->xtreamDiagnostics->run($user);
+        $statusMessage = ($diagnostics['summary'] ?? 'error') === 'ok'
+            ? 'Xtream diagnose succesvol uitgevoerd.'
+            : 'Xtream diagnose uitgevoerd met waarschuwingen of fouten.';
+
+        return redirect()
+            ->to(base_url('admin/users/' . $id))
+            ->with('xtreamDiagnostics', $diagnostics)
+            ->with(($diagnostics['summary'] ?? 'error') === 'error' ? 'error' : 'success', $statusMessage);
     }
 
     /**

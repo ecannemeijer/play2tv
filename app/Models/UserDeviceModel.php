@@ -115,4 +115,11 @@ class UserDeviceModel extends Model
             ->orderBy('id', 'DESC')
             ->findAll();
     }
+
+    public function findOwnedDevice(int $userId, int $devicePk): ?array
+    {
+        return $this->where('id', $devicePk)
+            ->where('user_id', $userId)
+            ->first();
+    }
 }

@@ -9,6 +9,12 @@
     <a href="<?= base_url('admin/users/' . $user['id'] . '/edit') ?>" class="btn btn-outline-primary btn-sm ms-2">
         <i class="bi bi-pencil me-1"></i>Bewerken
     </a>
+    <form method="post" action="<?= base_url('admin/users/' . $user['id'] . '/force-logout') ?>" class="d-inline ms-2" onsubmit="return confirm('Alle sessies en tokens van deze gebruiker intrekken?');">
+        <?= csrf_field() ?>
+        <button type="submit" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-box-arrow-right me-1"></i>Force logout
+        </button>
+    </form>
 </div>
 
 <div class="row g-3">
@@ -139,6 +145,105 @@
         </div>
     </div>
 
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-shield-lock me-2"></i>Actieve sessies / refresh tokens</h6>
+                <span class="badge bg-secondary"><?= count($tokens) ?></span>
+            </div>
+            <div class="card-body p-0">
+                <?php if (empty($tokens)): ?>
+                    <p class="text-muted p-3 mb-0">Geen recente tokens gevonden.</p>
+                <?php else: ?>
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>Selector</th><th>Device</th><th>Laatst gebruikt</th><th>Status</th><th class="text-end">Actie</th></tr></thead>
+                        <tbody>
+                            <?php foreach ($tokens as $token): ?>
+                            <tr>
+                                <td><code><?= esc(substr((string) $token['selector'], 0, 12)) ?>...</code></td>
+                                <td><small><?= esc($token['device_id'] ?: '—') ?></small></td>
+                                <td><small><?= $token['last_used_at'] ? date('d-m-Y H:i', strtotime($token['last_used_at'])) : '—' ?></small></td>
+                                <td>
+                                    <?php if (! empty($token['revoked_at'])): ?>
+                                        <span class="badge bg-danger">Revoked</span>
+                                    <?php elseif (strtotime((string) $token['expires_at']) < time()): ?>
+                                        <span class="badge bg-secondary">Expired</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-success">Active</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-end">
+                                    <?php if (empty($token['revoked_at']) && strtotime((string) $token['expires_at']) >= time()): ?>
+                                        <form method="post" action="<?= base_url('admin/users/' . $user['id'] . '/tokens/' . $token['id'] . '/revoke') ?>" onsubmit="return confirm('Deze token intrekken?');">
+                                            <?= csrf_field() ?>
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                <i class="bi bi-slash-circle"></i>
+                                            </button>
+                                        </form>
+                                    <?php else: ?>
+                                        <small class="text-muted"><?= esc($token['revoked_reason'] ?? '—') ?></small>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-broadcast me-2"></i>Xtream diagnose</h6>
+                <form method="post" action="<?= base_url('admin/users/' . $user['id'] . '/xtream-diagnostics') ?>">
+                    <?= csrf_field() ?>
+                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-play-circle me-1"></i>Test verbinding
+                    </button>
+                </form>
+            </div>
+            <div class="card-body">
+                <dl class="row small mb-3">
+                    <dt class="col-4 text-muted">Server</dt>
+                    <dd class="col-8"><?= esc($user['xtream_server'] ?? '—') ?></dd>
+                    <dt class="col-4 text-muted">Username</dt>
+                    <dd class="col-8"><?= esc($user['xtream_username'] ?? '—') ?></dd>
+                </dl>
+
+                <?php if (! empty($xtreamDiagnostics)): ?>
+                    <div class="mb-2">
+                        <span class="badge <?= ($xtreamDiagnostics['summary'] ?? '') === 'ok' ? 'bg-success' : (($xtreamDiagnostics['summary'] ?? '') === 'warning' ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                            <?= esc(strtoupper((string) ($xtreamDiagnostics['summary'] ?? 'unknown'))) ?>
+                        </span>
+                        <small class="text-muted ms-2">Runtime: <?= esc((string) ($xtreamDiagnostics['duration_ms'] ?? 0)) ?> ms</small>
+                    </div>
+                    <?php foreach (($xtreamDiagnostics['checks'] ?? []) as $check): ?>
+                        <div class="border rounded-3 p-2 mb-2" style="border-color:#2d2d44 !important; background:#141427;">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong><?= esc($check['label'] ?? 'Check') ?></strong>
+                                <span class="badge <?= ($check['status'] ?? '') === 'ok' ? 'bg-success' : (($check['status'] ?? '') === 'warning' ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                                    <?= esc(strtoupper((string) ($check['status'] ?? 'unknown'))) ?>
+                                </span>
+                            </div>
+                            <div class="small"><?= esc($check['message'] ?? '—') ?></div>
+                            <?php if (! empty($check['meta'])): ?>
+                                <ul class="small text-muted mt-2 mb-0 ps-3">
+                                    <?php foreach ($check['meta'] as $metaKey => $metaValue): ?>
+                                        <li><?= esc((string) $metaKey) ?>: <?= esc((string) $metaValue) ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <p class="text-muted mb-0">Nog geen diagnose uitgevoerd voor deze gebruiker.</p>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
     <!-- Watch History -->
     <div class="col-md-6">
         <div class="card">
@@ -218,6 +323,36 @@
                                 <td><?= esc($pt['reason'] ?? '—') ?></td>
                                 <td><small><?= $pt['created_at'] ? date('d-m-Y H:i', strtotime($pt['created_at'])) : '—' ?></small></td>
                             </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-shield-exclamation me-2"></i>Security events</h6>
+                <a href="<?= base_url('admin/security/events?user_id=' . $user['id']) ?>" class="btn btn-outline-secondary btn-sm">Alles bekijken</a>
+            </div>
+            <div class="card-body p-0">
+                <?php if (empty($events)): ?>
+                    <p class="text-muted p-3 mb-0">Geen security events voor deze gebruiker.</p>
+                <?php else: ?>
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>Tijd</th><th>Type</th><th>Severity</th><th>Route</th><th>Details</th></tr></thead>
+                        <tbody>
+                            <?php foreach ($events as $event): ?>
+                                <?php $details = json_decode((string) ($event['details'] ?? '{}'), true) ?: []; ?>
+                                <tr>
+                                    <td><small><?= $event['created_at'] ? date('d-m-Y H:i', strtotime($event['created_at'])) : '—' ?></small></td>
+                                    <td><code><?= esc($event['event_type']) ?></code></td>
+                                    <td><span class="badge <?= ($event['severity'] ?? '') === 'critical' ? 'bg-danger' : (($event['severity'] ?? '') === 'error' ? 'bg-warning text-dark' : 'bg-secondary') ?>"><?= esc($event['severity']) ?></span></td>
+                                    <td><small><?= esc($event['route'] ?: '—') ?></small></td>
+                                    <td><small class="text-muted"><?= esc((string) ($details['ip'] ?? $details['email'] ?? $details['device_id'] ?? '—')) ?></small></td>
+                                </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>

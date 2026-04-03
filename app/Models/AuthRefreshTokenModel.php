@@ -58,6 +58,14 @@ class AuthRefreshTokenModel extends Model
             ->findAll();
     }
 
+    public function getRecentForUser(int $userId, int $limit = 20): array
+    {
+        return $this->where('user_id', $userId)
+            ->orderBy('last_used_at', 'DESC')
+            ->orderBy('created_at', 'DESC')
+            ->findAll(max(1, $limit));
+    }
+
     public function revokeById(int $id, string $reason, ?string $replacedBySelector = null): void
     {
         $payload = [
@@ -91,6 +99,18 @@ class AuthRefreshTokenModel extends Model
     {
         $this->builder()
             ->where('user_id', $userId)
+            ->where('revoked_at', null)
+            ->update([
+                'revoked_at'     => date('Y-m-d H:i:s'),
+                'revoked_reason' => substr($reason, 0, 80),
+            ]);
+    }
+
+    public function revokeByDeviceId(int $userId, string $deviceId, string $reason): void
+    {
+        $this->builder()
+            ->where('user_id', $userId)
+            ->where('device_id', $deviceId)
             ->where('revoked_at', null)
             ->update([
                 'revoked_at'     => date('Y-m-d H:i:s'),
