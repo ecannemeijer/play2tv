@@ -9,7 +9,7 @@ use Config\Services;
 
 class ApiCacheService
 {
-    private const PLAYLIST_VERSION_KEY = 'perf:playlist:version';
+    private const PLAYLIST_VERSION_KEY = 'perf-playlist-version';
 
     private \CodeIgniter\Cache\CacheInterface $cache;
     private Performance $config;
@@ -44,7 +44,11 @@ class ApiCacheService
      */
     public function rememberActivePlaylist(callable $resolver): ?array
     {
-        $key = 'perf:playlist:' . $this->getPlaylistVersion();
+        $key = implode('-', [
+            'perf',
+            'playlist',
+            $this->getPlaylistVersion(),
+        ]);
 
         return $this->remember($key, $this->ttl('playlist'), $resolver);
     }
@@ -56,7 +60,7 @@ class ApiCacheService
      */
     public function rememberXtreamCategories(array $user, string $type, callable $resolver): array
     {
-        $key = implode(':', [
+        $key = implode('-', [
             'perf',
             'xtream',
             'categories',
@@ -75,7 +79,7 @@ class ApiCacheService
      */
     public function rememberXtreamChannels(array $user, string $type, string $categoryId, callable $resolver): array
     {
-        $key = implode(':', [
+        $key = implode('-', [
             'perf',
             'xtream',
             'channels',
@@ -95,7 +99,7 @@ class ApiCacheService
      */
     public function rememberBootstrapCategories(array $user, string $type, callable $resolver): array
     {
-        $key = implode(':', [
+        $key = implode('-', [
             'perf',
             'bootstrap',
             'categories',
