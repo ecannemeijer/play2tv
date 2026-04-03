@@ -74,7 +74,8 @@ class AuthTokenService
         }
 
         $currentFingerprint = $this->fingerprints->buildFingerprintHash($userAgent, $ipAddress, $deviceId);
-        if (! hash_equals((string) $row['fingerprint_hash'], $currentFingerprint)) {
+        if ($this->shouldEnforceFingerprint($deviceId)
+            && ! hash_equals((string) $row['fingerprint_hash'], $currentFingerprint)) {
             $this->compromiseTokenFamily($row, 'refresh_token_fingerprint_mismatch', $ipAddress, $userAgent, $deviceId);
             throw new SecurityException('Verdachte sessie gedetecteerd.', 401);
         }
@@ -106,7 +107,8 @@ class AuthTokenService
         }
 
         $expectedFingerprint = $this->fingerprints->buildFingerprintHash($userAgent, $ipAddress, $deviceId);
-        if (! hash_equals((string) ($payload->fp ?? ''), $expectedFingerprint)) {
+        if ($this->shouldEnforceFingerprint($deviceId)
+            && ! hash_equals((string) ($payload->fp ?? ''), $expectedFingerprint)) {
             $this->compromiseUserSessions($userId, (string) ($payload->fam ?? ''), 'access_token_fingerprint_mismatch', $ipAddress, $userAgent, $deviceId);
             throw new SecurityException('Verdachte sessie gedetecteerd.', 401);
         }
@@ -264,5 +266,10 @@ class AuthTokenService
     private function randomToken(int $bytes): string
     {
         return bin2hex(random_bytes($bytes));
+    }
+
+    private function shouldEnforceFingerprint(?string $deviceId): bool
+    {
+        return trim((string) $deviceId) !== '';
     }
 }
