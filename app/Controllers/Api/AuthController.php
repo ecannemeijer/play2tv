@@ -123,8 +123,10 @@ class AuthController extends BaseApiController
             'data'    => [
                 'user_id'       => $userId,
                 'email'         => $email,
+                'role'          => $user['role'] ?? 'user',
                 'premium'       => false,
                 'premium_until' => null,
+                ...$this->buildLegacyClientPayload($user),
                 ...$tokenPair,
             ],
         ], 201);
@@ -227,6 +229,7 @@ class AuthController extends BaseApiController
             'role'          => $user['role'] ?? 'user',
             'premium'       => $isPremium,
             'premium_until' => $user['premium_until'],
+            ...$this->buildLegacyClientPayload($user),
             ...$tokenPair,
         ], 'Inloggen geslaagd.');
     }
@@ -327,9 +330,27 @@ class AuthController extends BaseApiController
             'premium_until'  => $user['premium_until'],
             'created_at'     => $user['created_at'],
             'last_login_at'  => $user['last_login_at'],
-            'xtream_server'  => $user['xtream_server'],
-            'xtream_username'=> $user['xtream_username'],
-            'has_xtream_password' => ! empty($user['xtream_password']),
+            ...$this->buildLegacyClientPayload($user),
         ]);
+    }
+
+    /**
+     * Older Android clients still expect Xtream credentials in auth responses.
+     * Keeping these fields preserves compatibility while the app is migrated.
+     *
+     * @param array<string, mixed> $user
+     * @return array<string, mixed>
+     */
+    private function buildLegacyClientPayload(array $user): array
+    {
+        $playlistUrl = base_url('api/playlist');
+
+        return [
+            'xtream_server' => $user['xtream_server'] ?? null,
+            'xtream_username' => $user['xtream_username'] ?? null,
+            'xtream_password' => $user['xtream_password'] ?? null,
+            'has_xtream_password' => ! empty($user['xtream_password']),
+            'playlist_url' => $playlistUrl,
+        ];
     }
 }

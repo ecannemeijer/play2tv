@@ -45,6 +45,11 @@ $routes->group('api', ['filter' => 'jwt'], function ($routes) {
     $routes->post('store-points', 'Api\StorePointsController::add');
     $routes->get('store-points',  'Api\StorePointsController::index');
 
+    // Devices
+    $routes->get('devices/(:num)', 'Api\DeviceController::show/$1');
+    $routes->post('devices/register', 'Api\DeviceController::register');
+    $routes->post('devices/replace', 'Api\DeviceController::replace');
+
     // Playlist (premium only — checked inside controller)
     $routes->get('playlist', 'Api\PlaylistController::index');
 });
