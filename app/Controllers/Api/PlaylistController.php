@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
+use App\Libraries\ApiCacheService;
 use App\Models\PlaylistModel;
 use App\Models\UserModel;
 
@@ -38,11 +39,13 @@ class PlaylistController extends BaseApiController
 {
     private PlaylistModel $playlistModel;
     private UserModel     $userModel;
+    private ApiCacheService $apiCache;
 
     public function __construct()
     {
         $this->playlistModel = new PlaylistModel();
         $this->userModel     = new UserModel();
+        $this->apiCache      = new ApiCacheService();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -77,7 +80,7 @@ class PlaylistController extends BaseApiController
             );
         }
 
-        $playlist = $this->playlistModel->getActivePlaylist();
+        $playlist = $this->apiCache->rememberActivePlaylist(fn (): ?array => $this->playlistModel->getActivePlaylist());
 
         if (! $playlist || empty($playlist['m3u_content'])) {
             return $this->error('Geen actieve playlist beschikbaar.', 404);

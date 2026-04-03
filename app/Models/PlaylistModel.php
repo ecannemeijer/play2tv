@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Libraries\ApiCacheService;
 use CodeIgniter\Model;
 
 /**
@@ -30,6 +31,9 @@ class PlaylistModel extends Model
     protected $useTimestamps = true;
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
+    protected $afterInsert   = ['invalidatePlaylistCache'];
+    protected $afterUpdate   = ['invalidatePlaylistCache'];
+    protected $afterDelete   = ['invalidatePlaylistCache'];
 
     /**
      * Get the currently active playlist
@@ -49,5 +53,12 @@ class PlaylistModel extends Model
     {
         $this->db->table('playlists')->update(['is_active' => 0]);
         $this->update($playlistId, ['is_active' => 1]);
+    }
+
+    protected function invalidatePlaylistCache(array $data): array
+    {
+        (new ApiCacheService())->bumpPlaylistVersion();
+
+        return $data;
     }
 }

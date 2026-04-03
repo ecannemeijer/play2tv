@@ -195,4 +195,29 @@ class Cache extends BaseConfig
      * @var list<int>
      */
     public array $cacheStatusCodes = [];
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $handler = strtolower(trim((string) env('cache.handler', $this->handler)));
+        if ($handler !== '' && isset($this->validHandlers[$handler])) {
+            $this->handler = $handler;
+        }
+
+        $backupHandler = strtolower(trim((string) env('cache.backupHandler', $this->backupHandler)));
+        if ($backupHandler !== '' && isset($this->validHandlers[$backupHandler])) {
+            $this->backupHandler = $backupHandler;
+        }
+
+        $this->prefix = (string) env('cache.prefix', $this->prefix !== '' ? $this->prefix : 'play2tv:');
+        $this->ttl    = max(30, (int) env('cache.ttl', $this->ttl));
+
+        $this->redis['host']       = (string) env('cache.redis.host', (string) $this->redis['host']);
+        $this->redis['password']   = env('cache.redis.password', $this->redis['password']);
+        $this->redis['port']       = (int) env('cache.redis.port', (int) $this->redis['port']);
+        $this->redis['timeout']    = (int) env('cache.redis.timeout', (int) $this->redis['timeout']);
+        $this->redis['persistent'] = (bool) env('cache.redis.persistent', (bool) $this->redis['persistent']);
+        $this->redis['database']   = (int) env('cache.redis.database', (int) $this->redis['database']);
+    }
 }

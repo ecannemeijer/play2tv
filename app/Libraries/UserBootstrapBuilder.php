@@ -15,6 +15,7 @@ class UserBootstrapBuilder
     private UserDeviceModel $deviceModel;
     private UserSettingsModel $settingsModel;
     private UserCategoryPrefModel $categoryPrefModel;
+    private ApiCacheService $apiCache;
 
     public function __construct()
     {
@@ -22,6 +23,7 @@ class UserBootstrapBuilder
         $this->deviceModel = new UserDeviceModel();
         $this->settingsModel = new UserSettingsModel();
         $this->categoryPrefModel = new UserCategoryPrefModel();
+        $this->apiCache = new ApiCacheService();
     }
 
     /**
@@ -113,7 +115,11 @@ class UserBootstrapBuilder
         };
 
         try {
-            $rows = $this->xtreamRequest($user, $action);
+            $rows = $this->apiCache->rememberBootstrapCategories(
+                $user,
+                $type,
+                fn (): array => $this->xtreamRequest($user, $action)
+            );
         } catch (\Throwable) {
             return [];
         }

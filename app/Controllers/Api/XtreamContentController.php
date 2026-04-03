@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
+use App\Libraries\ApiCacheService;
 use App\Models\UserModel;
 use CodeIgniter\HTTP\ResponseInterface;
 
@@ -12,10 +13,12 @@ class XtreamContentController extends BaseApiController
     private const CAST_TOKEN_TTL = 900;
 
     private UserModel $userModel;
+    private ApiCacheService $apiCache;
 
     public function __construct()
     {
         $this->userModel = new UserModel();
+        $this->apiCache = new ApiCacheService();
     }
 
     public function categories()
@@ -38,7 +41,11 @@ class XtreamContentController extends BaseApiController
         };
 
         try {
-            $rows = $this->xtreamRequest($user, $action);
+            $rows = $this->apiCache->rememberXtreamCategories(
+                $user,
+                $type,
+                fn (): array => $this->xtreamRequest($user, $action)
+            );
         } catch (\Throwable $exception) {
             return $this->error($exception->getMessage(), 502);
         }
@@ -80,7 +87,12 @@ class XtreamContentController extends BaseApiController
         }
 
         try {
-            $rows = $this->xtreamRequest($user, $action, $query);
+            $rows = $this->apiCache->rememberXtreamChannels(
+                $user,
+                $type,
+                $categoryId,
+                fn (): array => $this->xtreamRequest($user, $action, $query)
+            );
         } catch (\Throwable $exception) {
             return $this->error($exception->getMessage(), 502);
         }
