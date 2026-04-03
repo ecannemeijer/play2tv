@@ -18,6 +18,9 @@ use App\Filters\JwtFilter;
 use App\Filters\AdminAuthFilter;
 use App\Filters\RateLimitFilter;
 use App\Filters\SecureHeadersFilter;
+use App\Filters\ApiRequestFilter;
+use App\Filters\ApiSignatureFilter;
+use App\Filters\RoleFilter;
 
 class Filters extends BaseFilters
 {
@@ -45,8 +48,11 @@ class Filters extends BaseFilters
         // Play2TV custom filters
         'jwt'            => JwtFilter::class,        // Validates JWT Bearer token
         'adminauth'      => AdminAuthFilter::class,  // Validates admin session
-        'ratelimit'      => RateLimitFilter::class,  // Rate limits login endpoint
+        'ratelimit'      => RateLimitFilter::class,  // Rate limits API endpoints
         'secureheadersapi' => SecureHeadersFilter::class, // Security headers
+        'apirequest'     => ApiRequestFilter::class,
+        'apisignature'   => ApiSignatureFilter::class,
+        'role'           => RoleFilter::class,
     ];
 
     /**
@@ -65,13 +71,10 @@ class Filters extends BaseFilters
     public array $required = [
         'before' => [
             'forcehttps', // Force Global Secure Requests
-            'pagecache',  // Web Page Caching
         ],
-        'after' => [
-            'pagecache',   // Web Page Caching
-            'performance', // Performance Metrics
-            'toolbar',     // Debug Toolbar
-        ],
+        'after' => ENVIRONMENT === 'production'
+            ? ['performance']
+            : ['performance', 'toolbar'],
     ];
 
     /**
@@ -122,7 +125,13 @@ class Filters extends BaseFilters
     public array $filters = [
         // Rate limit POST /api/login to prevent brute-force attacks
         'ratelimit' => [
-            'before' => ['api/login'],
+            'before' => ['api/*'],
+        ],
+        'apirequest' => [
+            'before' => ['api/*'],
+        ],
+        'apisignature' => [
+            'before' => ['api/*'],
         ],
     ];
 }

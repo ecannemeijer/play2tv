@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
+use App\Libraries\AuthContext;
 use CodeIgniter\RESTful\ResourceController;
+use JsonException;
 
 /**
  * BaseApiController
@@ -19,6 +21,7 @@ use CodeIgniter\RESTful\ResourceController;
 class BaseApiController extends ResourceController
 {
     protected $format = 'json';
+    protected array $validationErrors = [];
 
     /**
      * Return the authenticated user's ID from the JWT payload.
@@ -26,7 +29,7 @@ class BaseApiController extends ResourceController
      */
     protected function getAuthUserId(): int
     {
-        return (int) $this->request->jwtPayload->user_id;
+        return (int) (AuthContext::get()?->user_id ?? 0);
     }
 
     /**
@@ -34,7 +37,12 @@ class BaseApiController extends ResourceController
      */
     protected function getAuthUserPremium(): bool
     {
-        return (bool) ($this->request->jwtPayload->premium ?? false);
+        return (bool) (AuthContext::get()?->premium ?? false);
+    }
+
+    protected function getAuthRole(): string
+    {
+        return (string) (AuthContext::get()?->role ?? 'user');
     }
 
     /**
@@ -68,12 +76,18 @@ class BaseApiController extends ResourceController
     /**
      * Shorthand: return error JSON with given status code
      */
-    protected function error(string $message, int $status = 400): \CodeIgniter\HTTP\ResponseInterface
+    protected function error(string $message, int $status = 400, array $errors = []): \CodeIgniter\HTTP\ResponseInterface
     {
-        return $this->respond([
+        $payload = [
             'success' => false,
             'message' => $message,
-        ], $status);
+        ];
+
+        if ($errors !== []) {
+            $payload['errors'] = $errors;
+        }
+
+        return $this->respond($payload, $status);
     }
 
     /**
@@ -84,15 +98,80 @@ class BaseApiController extends ResourceController
      */
     protected function getJsonBody(array $required = []): array|false
     {
-        $body = $this->request->getJSON(true) ?? [];
+        $this->validationErrors = [];
+        $contentType = strtolower($this->request->getHeaderLine('Content-Type'));
+        $rawBody     = trim((string) $this->request->getBody());
+
+        if ($rawBody !== '' && ! str_contains($contentType, 'application/json')) {
+            $this->validationErrors = ['content_type' => 'Gebruik application/json voor API-aanvragen.'];
+            return false;
+        }
+
+        if ($rawBody === '') {
+            $body = [];
+        } else {
+            try {
+                $decoded = json_decode($rawBody, true, 512, JSON_THROW_ON_ERROR);
+            } catch (JsonException) {
+                $this->validationErrors = ['body' => 'Ongeldige JSON payload.'];
+                return false;
+            }
+
+            if (! is_array($decoded)) {
+                $this->validationErrors = ['body' => 'JSON payload moet een object zijn.'];
+                return false;
+            }
+
+            $body = $decoded;
+        }
 
         foreach ($required as $field) {
             if (! isset($body[$field]) || $body[$field] === '') {
-                $this->error("Veld '{$field}' is verplicht.");
+                $this->validationErrors[$field] = "Veld '{$field}' is verplicht.";
                 return false;
             }
         }
 
         return $body;
+    }
+
+    protected function validatePayload(array $payload, array $rules, array $messages = []): bool
+    {
+        $validation = service('validation');
+        $validation->reset()->setRules($rules, $messages);
+
+        if (! $validation->run($payload)) {
+            $this->validationErrors = $validation->getErrors();
+            return false;
+        }
+
+        $this->validationErrors = [];
+
+        return true;
+    }
+
+    protected function getValidationErrors(): array
+    {
+        return $this->validationErrors;
+    }
+
+    protected function sanitizeText(?string $value, int $maxLength = 255): string
+    {
+        $clean = trim(strip_tags((string) $value));
+        $clean = preg_replace('/[[:cntrl:]]/', '', $clean) ?? '';
+
+        return substr($clean, 0, $maxLength);
+    }
+
+    protected function rateLimitError(string $message, int $retryAfter): \CodeIgniter\HTTP\ResponseInterface
+    {
+        return $this->response
+            ->setStatusCode(429)
+            ->setHeader('Retry-After', (string) $retryAfter)
+            ->setJSON([
+                'success'     => false,
+                'message'     => $message,
+                'retry_after' => $retryAfter,
+            ]);
     }
 }

@@ -29,11 +29,15 @@ class JwtLibrary
 {
     private string $secret;
     private int    $expirySeconds;
+    private string $issuer;
+    private string $audience;
 
     public function __construct()
     {
-        $this->secret        = env('jwt.secret', '');
-        $this->expirySeconds = (int) env('jwt.expiry', YEAR); // 365 days default
+        $this->secret        = (string) env('jwt.secret', '');
+        $this->expirySeconds = (int) env('jwt.accessTtl', 900);
+        $this->issuer        = (string) env('jwt.issuer', 'play2tv-api');
+        $this->audience      = (string) env('jwt.audience', 'play2tv-clients');
 
         if (empty($this->secret)) {
             throw new \RuntimeException('JWT secret is not configured in .env');
@@ -49,14 +53,44 @@ class JwtLibrary
      */
     public function generate(int $userId, bool $premium): string
     {
+        return $this->generateAccessToken(
+            $userId,
+            'user',
+            $premium,
+            1,
+            '',
+            '',
+            bin2hex(random_bytes(16))
+        );
+    }
+
+    public function generateAccessToken(
+        int $userId,
+        string $role,
+        bool $premium,
+        int $authVersion,
+        string $fingerprintHash,
+        string $familyId,
+        string $jwtId
+    ): string
+    {
         $now = time();
 
         $payload = [
-            'iss'     => 'play2tv-api',
+            'iss'     => $this->issuer,
+            'aud'     => $this->audience,
             'iat'     => $now,
+            'nbf'     => $now,
             'exp'     => $now + $this->expirySeconds,
+            'typ'     => 'access',
+            'jti'     => $jwtId,
+            'sub'     => $userId,
             'user_id' => $userId,
+            'role'    => $role,
             'premium' => $premium,
+            'av'      => $authVersion,
+            'fp'      => $fingerprintHash,
+            'fam'     => $familyId,
         ];
 
         return JWT::encode($payload, $this->secret, 'HS256');
@@ -71,5 +105,10 @@ class JwtLibrary
     public function decode(string $token): object
     {
         return JWT::decode($token, new Key($this->secret, 'HS256'));
+    }
+
+    public function getAccessTtl(): int
+    {
+        return $this->expirySeconds;
     }
 }

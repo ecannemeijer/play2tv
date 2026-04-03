@@ -40,7 +40,7 @@ class ContentSecurityPolicy extends BaseConfig
      * HTTP to HTTPS. This directive is for websites with
      * large numbers of old URLs that need to be rewritten.
      */
-    public bool $upgradeInsecureRequests = false;
+    public bool $upgradeInsecureRequests = true;
 
     // -------------------------------------------------------------------------
     // CSP DIRECTIVES SETTINGS
@@ -59,7 +59,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string
      */
-    public $scriptSrc = 'self';
+    public $scriptSrc = ['self'];
 
     /**
      * Specifies valid sources for JavaScript <script> elements.
@@ -81,7 +81,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string
      */
-    public $styleSrc = 'self';
+    public $styleSrc = ['self'];
 
     /**
      * Specifies valid sources for stylesheets <link> elements.
@@ -103,7 +103,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string
      */
-    public $imageSrc = 'self';
+    public $imageSrc = ['self', 'data:'];
 
     /**
      * Restricts the URLs that can appear in a page's `<base>` element.
@@ -127,7 +127,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string
      */
-    public $connectSrc = 'self';
+    public $connectSrc = ['self', 'https://app.play2tv.nl', 'https://dashboard.play2tv.nl'];
 
     /**
      * Specifies the origins that can serve web fonts.
@@ -141,7 +141,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string
      */
-    public $formAction = 'self';
+    public $formAction = ['self'];
 
     /**
      * Specifies the sources that can embed the current page.
@@ -173,7 +173,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string
      */
-    public $objectSrc = 'self';
+    public $objectSrc = 'none';
 
     /**
      * @var list<string>|string|null
@@ -213,4 +213,19 @@ class ContentSecurityPolicy extends BaseConfig
      * Replace nonce tag automatically?
      */
     public bool $autoNonce = true;
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $configuredOrigins = trim((string) env('cors.allowedOrigins', ''));
+        if ($configuredOrigins !== '') {
+            $origins = array_values(array_filter(array_map('trim', explode(',', $configuredOrigins))));
+            $this->connectSrc = array_merge(['self'], $origins);
+        }
+
+        $this->defaultSrc = 'none';
+        $this->baseURI = ['self'];
+        $this->frameAncestors = 'none';
+    }
 }

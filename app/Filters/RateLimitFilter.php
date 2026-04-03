@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filters;
 
+use App\Libraries\SecurityThrottleService;
 use CodeIgniter\Filters\FilterInterface;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -24,15 +25,10 @@ class RateLimitFilter implements FilterInterface
 {
     public function before(RequestInterface $request, $arguments = null)
     {
-        $throttler = \Config\Services::throttler();
-        $ip        = $request->getIPAddress();
+        $limits = (new SecurityThrottleService())->enforce($request);
 
-        $maxAttempts = (int) (env('rateLimit.loginMaxAttempts', 5));
-        $window      = (int) (env('rateLimit.loginWindowSeconds', 300));
-
-        // Allow $maxAttempts per $window seconds per IP
-        if (! $throttler->check('login_' . $ip, $maxAttempts, $window)) {
-            $retryAfter = $throttler->getTokenTime();
+        if ($limits !== null) {
+            $retryAfter = max(1, (int) ($limits['retry_after'] ?? 60));
 
             return response()
                 ->setStatusCode(429)
@@ -40,7 +36,7 @@ class RateLimitFilter implements FilterInterface
                 ->setContentType('application/json')
                 ->setJSON([
                     'success'     => false,
-                    'message'     => 'Te veel inlogpogingen. Probeer het opnieuw na ' . $retryAfter . ' seconden.',
+                    'message'     => (string) ($limits['message'] ?? 'Te veel verzoeken.'),
                     'retry_after' => $retryAfter,
                 ]);
         }
@@ -48,6 +44,6 @@ class RateLimitFilter implements FilterInterface
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
     {
-        // Not used
+        return $response;
     }
 }

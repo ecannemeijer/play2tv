@@ -16,7 +16,7 @@ class App extends BaseConfig
      *
      * E.g., http://example.com/
      */
-    public string $baseURL = 'http://localhost:8080/';
+    public string $baseURL = 'https://api.play2tv.nl/';
 
     /**
      * Allowed Hostnames in the Site URL other than the hostname in the baseURL.
@@ -157,7 +157,7 @@ class App extends BaseConfig
      * secure, the user will be redirected to a secure version of the page
      * and the HTTP Strict Transport Security (HSTS) header will be set.
      */
-    public bool $forceGlobalSecureRequests = false;
+    public bool $forceGlobalSecureRequests = true;
 
     /**
      * --------------------------------------------------------------------------
@@ -198,5 +198,18 @@ class App extends BaseConfig
      * @see http://www.html5rocks.com/en/tutorials/security/content-security-policy/
      * @see http://www.w3.org/TR/CSP/
      */
-    public bool $CSPEnabled = false;
+    public bool $CSPEnabled = true;
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->baseURL = (string) env('app.baseURL', $this->baseURL);
+        $this->forceGlobalSecureRequests = (bool) env('app.forceHTTPS', true);
+
+        $allowedHostnames = trim((string) env('app.allowedHostnames', ''));
+        if ($allowedHostnames !== '') {
+            $this->allowedHostnames = array_values(array_filter(array_map('trim', explode(',', $allowedHostnames))));
+        }
+    }
 }

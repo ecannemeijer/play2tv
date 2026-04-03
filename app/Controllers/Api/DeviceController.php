@@ -39,12 +39,20 @@ class DeviceController extends BaseApiController
     {
         $body = $this->getJsonBody(['user_id', 'device_id', 'device_name']);
         if ($body === false) {
-            return $this->error('Ongeldige apparaataanvraag.', 422);
+            return $this->error('Ongeldige apparaataanvraag.', 422, $this->getValidationErrors());
+        }
+
+        if (! $this->validatePayload($body, [
+            'user_id'     => 'required|integer|greater_than[0]',
+            'device_id'   => 'required|max_length[255]',
+            'device_name' => 'required|max_length[120]',
+        ])) {
+            return $this->error('Apparaatvalidatie mislukt.', 422, $this->getValidationErrors());
         }
 
         $userId = (int) ($body['user_id'] ?? 0);
-        $deviceId = trim((string) ($body['device_id'] ?? ''));
-        $deviceName = trim((string) ($body['device_name'] ?? ''));
+        $deviceId = $this->sanitizeText((string) ($body['device_id'] ?? ''), 255);
+        $deviceName = $this->sanitizeText((string) ($body['device_name'] ?? ''), 120);
 
         $guard = $this->guardDeviceAction($userId, $deviceId, $deviceName);
         if ($guard !== null) {
@@ -65,13 +73,22 @@ class DeviceController extends BaseApiController
     {
         $body = $this->getJsonBody(['user_id', 'old_device_id', 'new_device_id', 'device_name']);
         if ($body === false) {
-            return $this->error('Ongeldige vervangingsaanvraag.', 422);
+            return $this->error('Ongeldige vervangingsaanvraag.', 422, $this->getValidationErrors());
+        }
+
+        if (! $this->validatePayload($body, [
+            'user_id'       => 'required|integer|greater_than[0]',
+            'old_device_id' => 'required|max_length[255]',
+            'new_device_id' => 'required|max_length[255]',
+            'device_name'   => 'required|max_length[120]',
+        ])) {
+            return $this->error('Vervangingsvalidatie mislukt.', 422, $this->getValidationErrors());
         }
 
         $userId = (int) ($body['user_id'] ?? 0);
-        $oldDeviceId = trim((string) ($body['old_device_id'] ?? ''));
-        $newDeviceId = trim((string) ($body['new_device_id'] ?? ''));
-        $deviceName = trim((string) ($body['device_name'] ?? ''));
+        $oldDeviceId = $this->sanitizeText((string) ($body['old_device_id'] ?? ''), 255);
+        $newDeviceId = $this->sanitizeText((string) ($body['new_device_id'] ?? ''), 255);
+        $deviceName = $this->sanitizeText((string) ($body['device_name'] ?? ''), 120);
 
         $guard = $this->guardDeviceAction($userId, $newDeviceId, $deviceName);
         if ($guard !== null) {

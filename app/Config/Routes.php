@@ -21,17 +21,13 @@ use CodeIgniter\Router\RouteCollection;
 // Public (no JWT required)
 $routes->post('api/register', 'Api\AuthController::register');
 $routes->post('api/login',    'Api\AuthController::login');
+$routes->post('api/refresh',  'Api\AuthController::refresh');
 $routes->post('api/logout',   'Api\AuthController::logout');
-$routes->get('api/content/cast/live-playlist', 'Api\XtreamContentController::castLivePlaylist');
-$routes->get('api/content/cast/media', 'Api\XtreamContentController::castMedia');
 
 // Protected (JWT required — JwtFilter applied in Filters.php)
 $routes->group('api', ['filter' => 'jwt'], function ($routes) {
     // Auth
     $routes->get('user', 'Api\AuthController::user');
-    $routes->get('devices/(:num)', 'Api\DeviceController::show/$1');
-    $routes->post('register-device', 'Api\DeviceController::register');
-    $routes->post('replace-device', 'Api\DeviceController::replace');
 
     // Category Preferences
     $routes->get('category-prefs',  'Api\CategoryPrefsController::index');
@@ -51,13 +47,6 @@ $routes->group('api', ['filter' => 'jwt'], function ($routes) {
 
     // Playlist (premium only — checked inside controller)
     $routes->get('playlist', 'Api\PlaylistController::index');
-
-    // Xtream content for the authenticated user
-    $routes->get('bootstrap', 'Api\BootstrapController::index');
-    $routes->get('content/categories', 'Api\XtreamContentController::categories');
-    $routes->get('content/channels', 'Api\XtreamContentController::channels');
-    $routes->get('content/live-playlist', 'Api\XtreamContentController::livePlaylist');
-    $routes->get('content/media', 'Api\XtreamContentController::media');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -84,8 +73,6 @@ $routes->group('admin', ['filter' => 'adminauth'], function ($routes) {
     $routes->post('users/(:num)/edit',   'Admin\UserController::update/$1');
     $routes->get('users/(:num)/delete',  'Admin\UserController::delete/$1');
     $routes->post('users/(:num)/points', 'Admin\UserController::addPoints/$1');
-    $routes->post('users/(:num)/devices/(:num)/rename', 'Admin\UserController::renameDevice/$1/$2');
-    $routes->post('users/(:num)/devices/(:num)/delete', 'Admin\UserController::deleteDevice/$1/$2');
 
     // Playlists
     $routes->get('playlists',                    'Admin\PlaylistController::index');

@@ -23,9 +23,12 @@ class UserModel extends Model
     protected $allowedFields = [
         'email',
         'password',
+        'role',
         'premium',
         'premium_until',
         'is_active',
+        'auth_version',
+        'locked_until',
         'xtream_server',
         'xtream_username',
         'xtream_password',
@@ -131,7 +134,36 @@ class UserModel extends Model
         $this->update($userId, [
             'last_login_ip' => $ip,
             'last_login_at' => date('Y-m-d H:i:s'),
+            'locked_until'  => null,
         ]);
+    }
+
+    public function isLocked(array $user): bool
+    {
+        return isset($user['locked_until'])
+            && $user['locked_until'] !== null
+            && strtotime((string) $user['locked_until']) > time();
+    }
+
+    public function setLockUntil(int $userId, int $seconds): void
+    {
+        $this->update($userId, [
+            'locked_until' => date('Y-m-d H:i:s', time() + max(1, $seconds)),
+        ]);
+    }
+
+    public function clearLock(int $userId): void
+    {
+        $this->update($userId, ['locked_until' => null]);
+    }
+
+    public function bumpAuthVersion(int $userId): void
+    {
+        $this->builder()
+            ->where('id', $userId)
+            ->set('auth_version', 'auth_version + 1', false)
+            ->set('locked_until', null)
+            ->update();
     }
 
     /**

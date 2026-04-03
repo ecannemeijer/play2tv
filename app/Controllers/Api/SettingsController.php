@@ -55,17 +55,31 @@ class SettingsController extends BaseApiController
     public function save()
     {
         $userId   = $this->getAuthUserId();
-        $settings = $this->request->getJSON(true) ?? [];
+        $settings = $this->getJsonBody();
 
-        if (empty($settings)) {
+        if ($settings === false) {
+            return $this->error('Ongeldige instellingenpayload.', 422, $this->getValidationErrors());
+        }
+
+        if ($settings === []) {
             return $this->error('Geen instellingen ontvangen.', 422);
         }
 
-        // Sanitize keys to prevent XSS in JSON keys
         $clean = [];
         foreach ($settings as $key => $value) {
-            $safeKey        = htmlspecialchars(strip_tags((string) $key));
-            $clean[$safeKey] = $value;
+            $safeKey = preg_replace('/[^a-z0-9_\-]/i', '', (string) $key) ?? '';
+
+            if ($safeKey === '') {
+                continue;
+            }
+
+            $clean[$safeKey] = is_string($value)
+                ? $this->sanitizeText($value, 1000)
+                : $value;
+        }
+
+        if ($clean === []) {
+            return $this->error('Geen geldige instellingen ontvangen.', 422);
         }
 
         $this->settingsModel->saveSettings($userId, $clean);

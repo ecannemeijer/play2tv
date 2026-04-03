@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Filters;
 
+use App\Libraries\AuthContext;
+use App\Libraries\AuthTokenService;
+use App\Libraries\SecurityEventService;
+use App\Libraries\SecurityException;
 use CodeIgniter\Filters\FilterInterface;
+use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
-use Firebase\JWT\ExpiredException;
-use Firebase\JWT\SignatureInvalidException;
 use App\Models\UserModel;
 
 /**
@@ -37,45 +38,55 @@ class JwtFilter implements FilterInterface
      */
     public function before(RequestInterface $request, $arguments = null)
     {
+        AuthContext::clear();
+        $tokens      = new AuthTokenService();
+        $events      = new SecurityEventService();
         $authHeader = $request->getHeaderLine('Authorization');
 
         if (empty($authHeader) || ! str_starts_with($authHeader, 'Bearer ')) {
             return $this->unauthorized('Missing or invalid Authorization header.');
         }
 
-        $token  = substr($authHeader, 7);
-        $secret = getenv('jwt.secret') ?: env('jwt.secret', '');
-
-        if (empty($secret)) {
-            log_message('critical', 'JWT secret is not configured in .env');
-            return $this->unauthorized('Server configuration error.');
-        }
+        $token    = substr($authHeader, 7);
+        $deviceId = trim($request->getHeaderLine('X-Device-Id')) ?: null;
 
         try {
-            $decoded = JWT::decode($token, new Key($secret, 'HS256'));
-            // Attach decoded payload to request so controllers can use it
-            $request->jwtPayload = $decoded;
+            $decoded = $tokens->validateAccessToken(
+                $token,
+                $request->getIPAddress(),
+                $request instanceof IncomingRequest ? $request->getUserAgent()->getAgentString() : '',
+                $deviceId
+            );
+            AuthContext::set($decoded);
 
-            // Verify user is still active
             $userModel = new UserModel();
-            $user      = $userModel->find($decoded->user_id);
+            $user      = $userModel->find((int) ($decoded->sub ?? $decoded->user_id ?? 0));
 
             if (! $user || ! $user['is_active']) {
                 return $this->unauthorized('Account is deactivated.');
             }
-
-        } catch (ExpiredException $e) {
-            return $this->unauthorized('Token has expired. Please login again.');
-        } catch (SignatureInvalidException $e) {
-            return $this->unauthorized('Invalid token signature.');
-        } catch (\Exception $e) {
-            return $this->unauthorized('Invalid token: ' . $e->getMessage());
+        } catch (SecurityException $e) {
+            $events->log('access_token_denied', 'warning', $request instanceof IncomingRequest ? $request : null, null, [
+                'ip' => $request->getIPAddress(),
+                'user_agent' => $request instanceof IncomingRequest ? $request->getUserAgent()->getAgentString() : '',
+                'reason' => $e->getMessage(),
+            ]);
+            return $this->unauthorized($e->getMessage());
+        } catch (\Throwable $e) {
+            $events->log('access_token_invalid', 'warning', $request instanceof IncomingRequest ? $request : null, null, [
+                'ip' => $request->getIPAddress(),
+                'user_agent' => $request instanceof IncomingRequest ? $request->getUserAgent()->getAgentString() : '',
+                'reason' => $e->getMessage(),
+            ]);
+            return $this->unauthorized('Invalid token.');
         }
     }
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
     {
-        // Not used
+        AuthContext::clear();
+
+        return $response;
     }
 
     /**

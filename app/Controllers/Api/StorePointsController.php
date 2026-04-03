@@ -54,10 +54,17 @@ class StorePointsController extends BaseApiController
     public function add()
     {
         $userId = $this->getAuthUserId();
-        $body   = $this->request->getJSON(true) ?? [];
+        $body   = $this->getJsonBody(['points']);
 
-        if (! isset($body['points']) || ! is_numeric($body['points'])) {
-            return $this->error("Veld 'points' is verplicht en moet numeriek zijn.", 422);
+        if ($body === false) {
+            return $this->error('Ongeldige puntenpayload.', 422, $this->getValidationErrors());
+        }
+
+        if (! $this->validatePayload($body, [
+            'points' => 'required|integer|greater_than_equal_to[-10000]|less_than_equal_to[10000]',
+            'reason' => 'permit_empty|max_length[120]',
+        ])) {
+            return $this->error('Puntenvalidatie mislukt.', 422, $this->getValidationErrors());
         }
 
         $points = (int) $body['points'];
@@ -66,7 +73,7 @@ class StorePointsController extends BaseApiController
             return $this->error("Punten mogen niet 0 zijn.", 422);
         }
 
-        $reason = htmlspecialchars(strip_tags($body['reason'] ?? ''));
+        $reason = $this->sanitizeText((string) ($body['reason'] ?? ''), 120);
 
         // Check if user has enough points to spend
         if ($points < 0) {

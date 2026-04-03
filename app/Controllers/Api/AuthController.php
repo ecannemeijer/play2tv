@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
-use App\Models\AdminModel;
 use App\Models\UserModel;
 use App\Models\UserDeviceModel;
 use App\Models\UserIpsLogModel;
-use App\Libraries\UserBootstrapBuilder;
+use App\Libraries\AuthTokenService;
 use App\Libraries\JwtLibrary;
+use App\Libraries\SecurityEventService;
+use App\Libraries\SecurityException;
+use App\Libraries\SecurityThrottleService;
 
 /**
  * AuthController
@@ -32,11 +34,15 @@ use App\Libraries\JwtLibrary;
  */
 class AuthController extends BaseApiController
 {
+    private const DUMMY_PASSWORD_HASH = '$2y$12$kyUUdk/Hc5LpFmAyTACTc.MC/3Xpgwhhepmxyg3DXKsTROPOMOvE.';
+
     private UserModel       $userModel;
     private UserDeviceModel $deviceModel;
     private UserIpsLogModel $ipsLogModel;
     private JwtLibrary      $jwt;
-    private UserBootstrapBuilder $bootstrapBuilder;
+    private AuthTokenService $tokens;
+    private SecurityThrottleService $throttle;
+    private SecurityEventService $events;
 
     public function __construct()
     {
@@ -44,7 +50,9 @@ class AuthController extends BaseApiController
         $this->deviceModel = new UserDeviceModel();
         $this->ipsLogModel = new UserIpsLogModel();
         $this->jwt         = new JwtLibrary();
-        $this->bootstrapBuilder = new UserBootstrapBuilder();
+        $this->tokens      = new AuthTokenService();
+        $this->throttle    = new SecurityThrottleService();
+        $this->events      = new SecurityEventService();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -58,39 +66,33 @@ class AuthController extends BaseApiController
     // ─────────────────────────────────────────────────────────────────────────
     public function register()
     {
-        $body = $this->request->getJSON(true) ?? [];
-
-        // Validate required fields
-        $required = ['email', 'password'];
-        foreach ($required as $field) {
-            if (empty($body[$field])) {
-                return $this->error("Veld '{$field}' is verplicht.", 422);
-            }
+        $body = $this->getJsonBody(['email', 'password']);
+        if ($body === false) {
+            return $this->error('Ongeldige registratiepayload.', 422, $this->getValidationErrors());
         }
 
-        $email    = strtolower(trim($body['email']));
-        $password = $body['password'];
-        $deviceId = $body['device_id'] ?? null;
-
-        // Validate email format
-        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return $this->error('Ongeldig e-mailadres.', 422);
+        if (! $this->validatePayload($body, [
+            'email'     => 'required|valid_email|max_length[255]',
+            'password'  => 'required|min_length[12]|max_length[255]',
+            'device_id' => 'permit_empty|max_length[255]',
+        ])) {
+            return $this->error('Registratievalidatie mislukt.', 422, $this->getValidationErrors());
         }
 
-        // Check minimum password length
-        if (strlen($password) < 8) {
-            return $this->error('Wachtwoord moet minimaal 8 tekens bevatten.', 422);
-        }
+        $email    = strtolower($this->sanitizeText((string) $body['email'], 255));
+        $password = (string) $body['password'];
+        $deviceId = $this->sanitizeText((string) ($body['device_id'] ?? ''), 255) ?: null;
+        $ip       = $this->request->getIPAddress();
+        $userAgent = $this->request->getUserAgent()->getAgentString();
 
-        // Check if email is already registered
         if ($this->userModel->findByEmail($email)) {
             return $this->error('Dit e-mailadres is al in gebruik.', 409);
         }
 
-        // Create user — password gets hashed via model callback
         $userId = $this->userModel->insert([
             'email'    => $email,
             'password' => $password,
+            'role'     => 'user',
             'premium'  => 0,
         ]);
 
@@ -99,27 +101,31 @@ class AuthController extends BaseApiController
         }
 
         $user = $this->userModel->find($userId);
-        $ip   = $this->request->getIPAddress();
+        if ($user === null) {
+            return $this->error('Registratie mislukt. Probeer opnieuw.', 500);
+        }
 
-        // Log IP
+        if ($deviceId) {
+            $this->deviceModel->registerDevice((int) $userId, $deviceId, 'Primary Device', $ip);
+        }
+
         $this->ipsLogModel->log(
             (int) $userId,
             $ip,
-            $this->request->getUserAgent()->getAgentString()
+            $userAgent
         );
 
-        // Generate JWT token
-        $token = $this->jwt->generate((int) $userId, false);
+        $tokenPair = $this->tokens->issueTokenPair($user, false, $deviceId, $ip, $userAgent);
 
         return $this->respond([
             'success' => true,
             'message' => 'Registratie geslaagd.',
             'data'    => [
-                'token'         => $token,
                 'user_id'       => $userId,
                 'email'         => $email,
                 'premium'       => false,
                 'premium_until' => null,
+                ...$tokenPair,
             ],
         ], 201);
     }
@@ -144,52 +150,116 @@ class AuthController extends BaseApiController
     // ─────────────────────────────────────────────────────────────────────────
     public function login()
     {
-        $body = $this->request->getJSON(true) ?? [];
-
-        $email    = strtolower(trim($body['email'] ?? ''));
-        $password = $body['password'] ?? '';
-        $deviceId = $body['device_id'] ?? null;
-
-        if (empty($email) || empty($password)) {
-            return $this->error('E-mail en wachtwoord zijn verplicht.', 422);
+        $body = $this->getJsonBody(['email', 'password']);
+        if ($body === false) {
+            return $this->error('Ongeldige loginpayload.', 422, $this->getValidationErrors());
         }
 
-        // Find user
+        if (! $this->validatePayload($body, [
+            'email'     => 'required|valid_email|max_length[255]',
+            'password'  => 'required|max_length[255]',
+            'device_id' => 'permit_empty|max_length[255]',
+        ])) {
+            return $this->error('Loginvalidatie mislukt.', 422, $this->getValidationErrors());
+        }
+
+        $email     = strtolower($this->sanitizeText((string) $body['email'], 255));
+        $password  = (string) $body['password'];
+        $deviceId  = $this->sanitizeText((string) ($body['device_id'] ?? ''), 255) ?: null;
+        $ip        = $this->request->getIPAddress();
+        $userAgent = $this->request->getUserAgent()->getAgentString();
+        $retryAfter = $this->throttle->getLoginRetryAfter($email, $ip);
+
+        if ($retryAfter > 0) {
+            return $this->rateLimitError('Te veel inlogpogingen. Wacht voordat je opnieuw probeert.', $retryAfter);
+        }
+
         $user = $this->userModel->findByEmail($email);
 
-        // Always run password_verify to prevent timing attacks
-        if (! $user || ! $this->userModel->verifyPassword($password, $user['password'])) {
+        $isValidPassword = $user !== null
+            ? $this->userModel->verifyPassword($password, $user['password'])
+            : password_verify($password, self::DUMMY_PASSWORD_HASH);
+
+        if (! $user || ! $isValidPassword) {
+            $backoff = $this->throttle->recordLoginFailure($email, $ip);
+            if ($user !== null && $backoff > 0) {
+                $this->userModel->setLockUntil((int) $user['id'], $backoff);
+            }
+
+            $this->events->log('login_failed', 'warning', $this->request, $user['id'] ?? null, [
+                'ip' => $ip,
+                'user_agent' => $userAgent,
+                'email' => $email,
+            ]);
+
+            if ($backoff > 0) {
+                return $this->rateLimitError('Te veel mislukte inlogpogingen.', $backoff);
+            }
+
             return $this->error('Ongeldige inloggegevens.', 401);
         }
 
-        // Check account active
         if (! $user['is_active']) {
             return $this->error('Dit account is geblokkeerd.', 403);
         }
 
-        $ip        = $this->request->getIPAddress();
-        $userAgent = $this->request->getUserAgent()->getAgentString();
-        $isPremium = $this->userModel->isPremium($user);
+        if ($this->userModel->isLocked($user)) {
+            $seconds = max(1, strtotime((string) $user['locked_until']) - time());
+            return $this->rateLimitError('Account tijdelijk vergrendeld na mislukte inlogpogingen.', $seconds);
+        }
 
-        // Update login metadata
+        $isPremium = $this->userModel->isPremium($user);
+        $this->throttle->clearLoginFailures($email, $ip);
+        $this->userModel->clearLock((int) $user['id']);
+
         $this->userModel->recordLogin((int) $user['id'], $ip);
 
-        // Log IP + user agent
-        $this->ipsLogModel->log((int) $user['id'], $ip, $userAgent);
+        if ($deviceId) {
+            $this->deviceModel->registerDevice((int) $user['id'], $deviceId, 'Primary Device', $ip);
+        }
 
-        // Generate JWT
-        $token = $this->jwt->generate((int) $user['id'], $isPremium);
-        $bootstrap = $this->bootstrapBuilder->buildForUser($user, $deviceId, $ip);
+        $this->ipsLogModel->log((int) $user['id'], $ip, $userAgent);
+        $tokenPair = $this->tokens->issueTokenPair($user, $isPremium, $deviceId, $ip, $userAgent);
 
         return $this->ok([
-            'token'         => $token,
             'user_id'       => (int) $user['id'],
             'email'         => $user['email'],
+            'role'          => $user['role'] ?? 'user',
             'premium'       => $isPremium,
             'premium_until' => $user['premium_until'],
-            'profile'       => $bootstrap['profile'],
-            'bootstrap'     => $bootstrap,
+            ...$tokenPair,
         ], 'Inloggen geslaagd.');
+    }
+
+    public function refresh()
+    {
+        $body = $this->getJsonBody(['refresh_token']);
+        if ($body === false) {
+            return $this->error('Ongeldige refresh-payload.', 422, $this->getValidationErrors());
+        }
+
+        if (! $this->validatePayload($body, [
+            'refresh_token' => 'required|max_length[255]',
+            'device_id'     => 'permit_empty|max_length[255]',
+        ])) {
+            return $this->error('Refresh-validatie mislukt.', 422, $this->getValidationErrors());
+        }
+
+        $refreshToken = (string) $body['refresh_token'];
+        $deviceId     = $this->sanitizeText((string) ($body['device_id'] ?? ''), 255) ?: null;
+
+        try {
+            $tokenPair = $this->tokens->refreshToken(
+                $refreshToken,
+                $this->request->getIPAddress(),
+                $this->request->getUserAgent()->getAgentString(),
+                $deviceId
+            );
+        } catch (SecurityException $exception) {
+            return $this->error($exception->getMessage(), $exception->getStatusCode());
+        }
+
+        return $this->ok($tokenPair, 'Token vernieuwd.');
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -203,8 +273,22 @@ class AuthController extends BaseApiController
     // ─────────────────────────────────────────────────────────────────────────
     public function logout()
     {
-        // For full token invalidation you would implement a token blacklist table.
-        // Current implementation is stateless — client discards the token.
+        $body = $this->getJsonBody();
+        $refreshToken = is_array($body) ? (string) ($body['refresh_token'] ?? '') : '';
+
+        if ($refreshToken !== '') {
+            $this->tokens->revokeRefreshToken($refreshToken, 'logout');
+        }
+
+        $authHeader = $this->request->getHeaderLine('Authorization');
+        if (str_starts_with($authHeader, 'Bearer ')) {
+            try {
+                $payload = $this->jwt->decode(substr($authHeader, 7));
+                $this->tokens->revokeFamilyFromPayload($payload, 'logout');
+            } catch (\Throwable) {
+            }
+        }
+
         return $this->ok([], 'Uitgelogd. Verwijder het token uit de app.');
     }
 
@@ -238,13 +322,14 @@ class AuthController extends BaseApiController
         return $this->ok([
             'id'             => (int) $user['id'],
             'email'          => $user['email'],
+            'role'           => $user['role'] ?? 'user',
             'premium'        => $isPremium,
             'premium_until'  => $user['premium_until'],
             'created_at'     => $user['created_at'],
             'last_login_at'  => $user['last_login_at'],
             'xtream_server'  => $user['xtream_server'],
             'xtream_username'=> $user['xtream_username'],
-            'xtream_password'=> $user['xtream_password'],
+            'has_xtream_password' => ! empty($user['xtream_password']),
         ]);
     }
 }

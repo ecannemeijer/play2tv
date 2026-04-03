@@ -62,21 +62,26 @@ class HistoryController extends BaseApiController
     public function save()
     {
         $userId = $this->getAuthUserId();
-        $body   = $this->request->getJSON(true) ?? [];
+        $body   = $this->getJsonBody(['content_type', 'content_id']);
 
-        // Validate required fields
-        if (empty($body['content_type']) || empty($body['content_id'])) {
-            return $this->error("Velden 'content_type' en 'content_id' zijn verplicht.", 422);
+        if ($body === false) {
+            return $this->error('Ongeldige geschiedenispayload.', 422, $this->getValidationErrors());
         }
 
-        $contentType = $body['content_type'];
-        if (! in_array($contentType, ['movie', 'series'], true)) {
-            return $this->error("'content_type' moet 'movie' of 'series' zijn.", 422);
+        if (! $this->validatePayload($body, [
+            'content_type'     => 'required|in_list[movie,series]',
+            'content_id'       => 'required|max_length[100]',
+            'season'           => 'permit_empty|integer|greater_than_equal_to[1]',
+            'episode'          => 'permit_empty|integer|greater_than_equal_to[1]',
+            'progress_seconds' => 'permit_empty|integer|greater_than_equal_to[0]|less_than_equal_to[86400]',
+        ])) {
+            return $this->error('Geschiedenisvalidatie mislukt.', 422, $this->getValidationErrors());
         }
 
+        $contentType = (string) $body['content_type'];
         $data = [
             'content_type'     => $contentType,
-            'content_id'       => (string) $body['content_id'],
+            'content_id'       => $this->sanitizeText((string) $body['content_id'], 100),
             'season'           => isset($body['season']) ? (int) $body['season'] : null,
             'episode'          => isset($body['episode']) ? (int) $body['episode'] : null,
             'progress_seconds' => isset($body['progress_seconds']) ? (int) $body['progress_seconds'] : 0,
@@ -112,7 +117,7 @@ class HistoryController extends BaseApiController
     {
         $userId = $this->getAuthUserId();
         $limit  = (int) ($this->request->getGet('limit') ?? 50);
-        $limit  = min(max($limit, 1), 200); // clamp between 1 and 200
+        $limit  = min(max($limit, 1), 200);
 
         $history = $this->historyModel->getHistory($userId, $limit);
 

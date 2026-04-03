@@ -28,39 +28,75 @@ class SecureHeadersFilter implements FilterInterface
 {
     public function before(RequestInterface $request, $arguments = null)
     {
-        // Handle preflight OPTIONS requests for CORS
         if ($request->getMethod() === 'options') {
+            $origin = $this->resolveAllowedOrigin($request->getHeaderLine('Origin'));
+
+            if ($origin === null) {
+                return response()->setStatusCode(403);
+            }
+
             return response()
                 ->setStatusCode(204)
-                ->setHeader('Access-Control-Allow-Origin', env('cors.allowedOrigins', '*'))
-                ->setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-                ->setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
+                ->setHeader('Access-Control-Allow-Origin', $origin)
+                ->setHeader('Vary', 'Origin')
+                ->setHeader('Access-Control-Allow-Credentials', 'true')
+                ->setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+                ->setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Api-Key, X-Timestamp, X-Signature, X-Device-Id')
                 ->setHeader('Access-Control-Max-Age', '86400');
         }
     }
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
     {
-        $allowedOrigin = env('cors.allowedOrigins', '*');
+        $allowedOrigin = $this->resolveAllowedOrigin($request->getHeaderLine('Origin'));
+        $connectSrc    = implode(' ', $this->getAllowedOrigins());
 
         $response
-            // HTTPS enforcement (1 year)
             ->setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
-            // Prevent MIME sniffing
             ->setHeader('X-Content-Type-Options', 'nosniff')
-            // Prevent clickjacking
-            ->setHeader('X-Frame-Options', 'SAMEORIGIN')
-            // Legacy XSS protection
-            ->setHeader('X-XSS-Protection', '1; mode=block')
-            // Referrer policy
-            ->setHeader('Referrer-Policy', 'no-referrer-when-downgrade')
-            // Minimal permissions policy
-            ->setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
-            // CORS
-            ->setHeader('Access-Control-Allow-Origin', $allowedOrigin)
-            ->setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-            ->setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+            ->setHeader('X-Frame-Options', 'DENY')
+            ->setHeader('Referrer-Policy', 'no-referrer')
+            ->setHeader('Permissions-Policy', 'camera=(), geolocation=(), microphone=(), fullscreen=(self)')
+            ->setHeader('Content-Security-Policy', "default-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; connect-src 'self' {$connectSrc}; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'")
+            ->setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+            ->setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Api-Key, X-Timestamp, X-Signature, X-Device-Id');
+
+        if ($allowedOrigin !== null) {
+            $response
+                ->setHeader('Access-Control-Allow-Origin', $allowedOrigin)
+                ->setHeader('Access-Control-Allow-Credentials', 'true')
+                ->appendHeader('Vary', 'Origin');
+        }
+
+        if (in_array(trim($request->getUri()->getPath(), '/'), ['api/login', 'api/logout', 'api/refresh'], true)) {
+            $response->setHeader('Cache-Control', 'no-store, private');
+        }
 
         return $response;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function getAllowedOrigins(): array
+    {
+        $configured = trim((string) env('cors.allowedOrigins', 'https://app.play2tv.nl,https://dashboard.play2tv.nl'));
+
+        return array_values(array_filter(array_map('trim', explode(',', $configured))));
+    }
+
+    private function resolveAllowedOrigin(string $origin): ?string
+    {
+        if ($origin === '') {
+            return null;
+        }
+
+        foreach ($this->getAllowedOrigins() as $allowedOrigin) {
+            if (hash_equals($allowedOrigin, $origin)) {
+                return $origin;
+            }
+        }
+
+        return null;
     }
 }

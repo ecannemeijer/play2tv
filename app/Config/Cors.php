@@ -34,7 +34,10 @@ class Cors extends BaseConfig
          *   - ['http://localhost:8080']
          *   - ['https://www.example.com']
          */
-        'allowedOrigins' => [],
+        'allowedOrigins' => [
+            'https://app.play2tv.nl',
+            'https://dashboard.play2tv.nl',
+        ],
 
         /**
          * Origin regex patterns for the `Access-Control-Allow-Origin` header.
@@ -57,7 +60,7 @@ class Cors extends BaseConfig
          *
          * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials
          */
-        'supportsCredentials' => false,
+        'supportsCredentials' => true,
 
         /**
          * Set headers to allow.
@@ -68,7 +71,7 @@ class Cors extends BaseConfig
          *
          * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers
          */
-        'allowedHeaders' => [],
+        'allowedHeaders' => ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Api-Key', 'X-Timestamp', 'X-Signature', 'X-Device-Id'],
 
         /**
          * Set headers to expose.
@@ -79,7 +82,7 @@ class Cors extends BaseConfig
          *
          * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
          */
-        'exposedHeaders' => [],
+        'exposedHeaders' => ['Retry-After'],
 
         /**
          * Set methods to allow.
@@ -93,7 +96,7 @@ class Cors extends BaseConfig
          *
          * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Methods
          */
-        'allowedMethods' => [],
+        'allowedMethods' => ['GET', 'POST', 'OPTIONS'],
 
         /**
          * Set how many seconds the results of a preflight request can be cached.
@@ -102,4 +105,14 @@ class Cors extends BaseConfig
          */
         'maxAge' => 7200,
     ];
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $configuredOrigins = trim((string) env('cors.allowedOrigins', ''));
+        if ($configuredOrigins !== '') {
+            $this->default['allowedOrigins'] = array_values(array_filter(array_map('trim', explode(',', $configuredOrigins))));
+        }
+    }
 }
