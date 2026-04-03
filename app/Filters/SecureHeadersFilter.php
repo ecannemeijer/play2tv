@@ -104,8 +104,8 @@ class SecureHeadersFilter implements FilterInterface
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
             "style-src-elem 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
             "style-src-attr 'self' 'unsafe-inline'",
-            "script-src 'self' https://cdn.jsdelivr.net",
-            "script-src-elem 'self' https://cdn.jsdelivr.net",
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+            "script-src-elem 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
             "object-src 'none'",
         ]);
     }
