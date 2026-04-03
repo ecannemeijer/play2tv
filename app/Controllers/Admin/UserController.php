@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Models\UserModel;
-use App\Models\UserDeviceModel;
 use App\Models\UserSettingsModel;
+use App\Models\UserDeviceModel;
 use App\Models\UserIpsLogModel;
 use App\Models\WatchHistoryModel;
 use App\Models\StorePointsModel;
@@ -29,8 +29,8 @@ use CodeIgniter\Controller;
 class UserController extends Controller
 {
     private UserModel         $userModel;
-    private UserDeviceModel   $deviceModel;
     private UserSettingsModel $settingsModel;
+    private UserDeviceModel   $deviceModel;
     private UserIpsLogModel   $ipsModel;
     private WatchHistoryModel $historyModel;
     private StorePointsModel  $pointsModel;
@@ -38,8 +38,8 @@ class UserController extends Controller
     public function __construct()
     {
         $this->userModel   = new UserModel();
-        $this->deviceModel = new UserDeviceModel();
         $this->settingsModel = new UserSettingsModel();
+        $this->deviceModel = new UserDeviceModel();
         $this->ipsModel    = new UserIpsLogModel();
         $this->historyModel = new WatchHistoryModel();
         $this->pointsModel  = new StorePointsModel();
@@ -141,13 +141,10 @@ class UserController extends Controller
             return redirect()->back()->withInput()->with('error', 'Gebruiker aanmaken mislukt.');
         }
 
-        $settings = $this->settingsModel->getSettings((int) $userId);
-        $settings['api_sync_opensubtitles_settings'] = $this->request->getPost('api_sync_opensubtitles_settings') === '1';
-        $settings['opensubtitles_api_key'] = trim((string) ($this->request->getPost('opensubtitles_api_key') ?? ''));
-        $settings['subdl_api_key'] = trim((string) ($this->request->getPost('subdl_api_key') ?? ''));
-        $settings['opensubtitles_username'] = trim((string) ($this->request->getPost('opensubtitles_username') ?? ''));
-        $settings['opensubtitles_password'] = (string) ($this->request->getPost('opensubtitles_password') ?? '');
-        $this->settingsModel->saveSettings((int) $userId, $settings);
+        $subtitleSettings = $this->collectSubtitleSettings();
+        if ($this->hasSubtitleSettings($subtitleSettings)) {
+            $this->settingsModel->saveSettings((int) $userId, $subtitleSettings);
+        }
 
         return redirect()->to(base_url('admin/users/' . $userId))->with('success', 'Gebruiker aangemaakt.');
     }
@@ -191,18 +188,16 @@ class UserController extends Controller
             return redirect()->to(base_url('admin/users'))->with('error', 'Gebruiker niet gevonden.');
         }
 
-        $settings = $this->settingsModel->getSettings((int) $id);
-
         return view('admin/users/edit', [
             'title'    => 'Gebruiker bewerken — Play2TV Admin',
             'user'     => $user,
-            'settings' => $settings,
+            'settings' => $this->settingsModel->getSettings((int) $id),
         ]);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // POST /admin/users/{id}/edit
-    // Body: email, password (optional), premium, premium_until, is_active
+    // Body: email, password (optional), premium, premium_until, is_active, xtream_*
     // ─────────────────────────────────────────────────────────────────────────
     public function update($id)
     {
@@ -212,36 +207,40 @@ class UserController extends Controller
             return redirect()->to(base_url('admin/users'))->with('error', 'Gebruiker niet gevonden.');
         }
 
+        $xtreamServer = trim((string) ($this->request->getPost('xtream_server') ?? ''));
+        $xtreamUsername = trim((string) ($this->request->getPost('xtream_username') ?? ''));
+        $xtreamPassword = trim((string) ($this->request->getPost('xtream_password') ?? ''));
+
         $data = [
             'email'         => trim($this->request->getPost('email') ?? $user['email']),
             'premium'       => (int) $this->request->getPost('premium'),
             'premium_until' => $this->request->getPost('premium_until') ?: null,
             'is_active'     => (int) $this->request->getPost('is_active'),
+            'xtream_server'   => $xtreamServer !== '' ? $xtreamServer : null,
+            'xtream_username' => $xtreamUsername !== '' ? $xtreamUsername : null,
+            'xtream_password' => $xtreamPassword !== '' ? $xtreamPassword : null,
         ];
 
         // Only update password if a new one was submitted
         $newPassword = $this->request->getPost('password');
         if (! empty($newPassword)) {
             if (strlen($newPassword) < 8) {
-                return redirect()->back()->with('error', 'Wachtwoord moet minimaal 8 tekens bevatten.');
+                return redirect()->back()->withInput()->with('error', 'Wachtwoord moet minimaal 8 tekens bevatten.');
             }
             $data['password'] = $newPassword; // Model callback will hash it
         }
 
         // Validate email
         if (! filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            return redirect()->back()->with('error', 'Ongeldig e-mailadres.');
+            return redirect()->back()->withInput()->with('error', 'Ongeldig e-mailadres.');
+        }
+
+        if ($xtreamServer !== '' && ! filter_var($xtreamServer, FILTER_VALIDATE_URL)) {
+            return redirect()->back()->withInput()->with('error', 'Ongeldige Xtream server URL.');
         }
 
         $this->userModel->update($id, $data);
-
-        $settings = $this->settingsModel->getSettings((int) $id);
-        $settings['api_sync_opensubtitles_settings'] = $this->request->getPost('api_sync_opensubtitles_settings') === '1';
-        $settings['opensubtitles_api_key'] = trim((string) ($this->request->getPost('opensubtitles_api_key') ?? ''));
-        $settings['subdl_api_key'] = trim((string) ($this->request->getPost('subdl_api_key') ?? ''));
-        $settings['opensubtitles_username'] = trim((string) ($this->request->getPost('opensubtitles_username') ?? ''));
-        $settings['opensubtitles_password'] = (string) ($this->request->getPost('opensubtitles_password') ?? '');
-        $this->settingsModel->saveSettings((int) $id, $settings);
+        $this->settingsModel->saveSettings((int) $id, $this->collectSubtitleSettings($this->settingsModel->getSettings((int) $id)));
 
         return redirect()->to(base_url('admin/users/' . $id))->with('success', 'Gebruiker bijgewerkt.');
     }
@@ -286,37 +285,38 @@ class UserController extends Controller
         return redirect()->to(base_url('admin/users/' . $id))->with('success', 'Punten bijgewerkt.');
     }
 
-    public function renameDevice($userId, $deviceRowId)
+    /**
+     * @param array<string, mixed> $existing
+     * @return array<string, mixed>
+     */
+    private function collectSubtitleSettings(array $existing = []): array
     {
-        $user = $this->userModel->find($userId);
-        $device = $this->deviceModel->find($deviceRowId);
+        $settings = $existing;
+        $settings['api_sync_opensubtitles_settings'] = $this->request->getPost('api_sync_opensubtitles_settings') === '1';
 
-        if (! $user || ! $device || (int) $device['user_id'] !== (int) $userId) {
-            return redirect()->to(base_url('admin/users'))->with('error', 'Apparaat niet gevonden.');
+        foreach (['opensubtitles_api_key', 'subdl_api_key', 'opensubtitles_username', 'opensubtitles_password'] as $field) {
+            $value = trim((string) ($this->request->getPost($field) ?? ''));
+
+            if ($value === '') {
+                unset($settings[$field]);
+                continue;
+            }
+
+            $settings[$field] = $value;
         }
 
-        $deviceName = trim((string) ($this->request->getPost('device_name') ?? ''));
-
-        if ($deviceName === '') {
-            return redirect()->back()->with('error', 'Apparaatnaam is verplicht.');
-        }
-
-        $this->deviceModel->update((int) $deviceRowId, ['device_name' => $deviceName]);
-
-        return redirect()->to(base_url('admin/users/' . $userId))->with('success', 'Apparaatnaam bijgewerkt.');
+        return $settings;
     }
 
-    public function deleteDevice($userId, $deviceRowId)
+    /**
+     * @param array<string, mixed> $settings
+     */
+    private function hasSubtitleSettings(array $settings): bool
     {
-        $user = $this->userModel->find($userId);
-        $device = $this->deviceModel->find($deviceRowId);
-
-        if (! $user || ! $device || (int) $device['user_id'] !== (int) $userId) {
-            return redirect()->to(base_url('admin/users'))->with('error', 'Apparaat niet gevonden.');
-        }
-
-        $this->deviceModel->delete((int) $deviceRowId);
-
-        return redirect()->to(base_url('admin/users/' . $userId))->with('success', 'Apparaat verwijderd.');
+        return ! empty($settings['api_sync_opensubtitles_settings'])
+            || ! empty($settings['opensubtitles_api_key'])
+            || ! empty($settings['subdl_api_key'])
+            || ! empty($settings['opensubtitles_username'])
+            || ! empty($settings['opensubtitles_password']);
     }
 }

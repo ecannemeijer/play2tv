@@ -26,7 +26,7 @@
                                 type="email"
                                 name="email"
                                 class="form-control"
-                                value="<?= esc($user['email']) ?>"
+                                value="<?= esc(old('email', (string) $user['email'])) ?>"
                                 required
                             >
                         </div>
@@ -60,7 +60,7 @@
                                 type="datetime-local"
                                 name="premium_until"
                                 class="form-control"
-                                value="<?= $user['premium_until'] ? date('Y-m-d\TH:i', strtotime($user['premium_until'])) : '' ?>"
+                                value="<?= esc(old('premium_until', $user['premium_until'] ? date('Y-m-d\TH:i', strtotime($user['premium_until'])) : '')) ?>"
                             >
                             <div class="form-text text-muted">Leeg = onbeperkt (als premium aan)</div>
                         </div>
@@ -72,6 +72,49 @@
                                 <option value="1" <?= $user['is_active'] ? 'selected' : '' ?>>Actief</option>
                                 <option value="0" <?= ! $user['is_active'] ? 'selected' : '' ?>>Geblokkeerd</option>
                             </select>
+                        </div>
+
+                        <div class="col-12 pt-3">
+                            <hr>
+                            <h6 class="mb-3"><i class="bi bi-tv me-2"></i>Xtream Codes</h6>
+                            <p class="text-muted small mb-0">
+                                Deze playlistgegevens worden door de Android app gebruikt om automatisch een Xtream playlist toe te voegen.
+                            </p>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label">Server URL</label>
+                            <input
+                                type="url"
+                                name="xtream_server"
+                                class="form-control"
+                                placeholder="http://jouwserver.com:8080"
+                                value="<?= esc(old('xtream_server', (string) ($user['xtream_server'] ?? ''))) ?>"
+                            >
+                            <div class="form-text text-muted">Inclusief protocol en poort. Bijv. <code>http://stream.example.com:8080</code></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Xtream gebruikersnaam</label>
+                            <input
+                                type="text"
+                                name="xtream_username"
+                                class="form-control"
+                                value="<?= esc(old('xtream_username', (string) ($user['xtream_username'] ?? ''))) ?>"
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Xtream wachtwoord</label>
+                            <input
+                                type="text"
+                                name="xtream_password"
+                                class="form-control"
+                                value="<?= esc(old('xtream_password', (string) ($user['xtream_password'] ?? ''))) ?>"
+                                autocomplete="off"
+                            >
+                            <div class="form-text text-muted">Let op: wordt leesbaar opgeslagen (Xtream vereist plain-text).</div>
                         </div>
 
                         <div class="col-12 pt-3">
@@ -88,7 +131,7 @@
                                     id="api_sync_opensubtitles_settings"
                                     name="api_sync_opensubtitles_settings"
                                     value="1"
-                                    <?= ! empty($settings['api_sync_opensubtitles_settings']) ? 'checked' : '' ?>
+                                    <?= old('api_sync_opensubtitles_settings', ! empty($settings['api_sync_opensubtitles_settings']) ? '1' : '') ? 'checked' : '' ?>
                                 >
                                 <label class="form-check-label" for="api_sync_opensubtitles_settings">
                                     API Synchronize subtitle provider settings
@@ -103,7 +146,7 @@
                                 type="text"
                                 name="opensubtitles_api_key"
                                 class="form-control"
-                                value="<?= esc((string) ($settings['opensubtitles_api_key'] ?? '')) ?>"
+                                value="<?= esc(old('opensubtitles_api_key', (string) ($settings['opensubtitles_api_key'] ?? ''))) ?>"
                                 autocomplete="off"
                             >
                         </div>
@@ -114,7 +157,7 @@
                                 type="text"
                                 name="subdl_api_key"
                                 class="form-control"
-                                value="<?= esc((string) ($settings['subdl_api_key'] ?? '')) ?>"
+                                value="<?= esc(old('subdl_api_key', (string) ($settings['subdl_api_key'] ?? ''))) ?>"
                                 autocomplete="off"
                             >
                         </div>
@@ -125,7 +168,7 @@
                                 type="text"
                                 name="opensubtitles_username"
                                 class="form-control"
-                                value="<?= esc((string) ($settings['opensubtitles_username'] ?? '')) ?>"
+                                value="<?= esc(old('opensubtitles_username', (string) ($settings['opensubtitles_username'] ?? ''))) ?>"
                                 autocomplete="off"
                             >
                         </div>
@@ -136,7 +179,7 @@
                                 type="text"
                                 name="opensubtitles_password"
                                 class="form-control"
-                                value="<?= esc((string) ($settings['opensubtitles_password'] ?? '')) ?>"
+                                value="<?= esc(old('opensubtitles_password', (string) ($settings['opensubtitles_password'] ?? ''))) ?>"
                                 autocomplete="new-password"
                             >
                         </div>
