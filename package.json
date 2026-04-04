@@ -2,8 +2,8 @@
   "name": "play2tv-tools",
   "private": true,
   "scripts": {
-    "start": "npm --prefix build/redis-admin-ws start",
-    "redis:ws": "npm --prefix build/redis-admin-ws start",
-    "redis:ws:install": "npm --prefix build/redis-admin-ws install"
+    "start": "npm --prefix tools/redis-admin-ws start",
+    "redis:ws": "npm --prefix tools/redis-admin-ws start",
+    "redis:ws:install": "npm --prefix tools/redis-admin-ws install"
   }
 }
