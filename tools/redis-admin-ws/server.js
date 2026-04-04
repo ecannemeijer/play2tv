@@ -11,6 +11,9 @@ const { createClient } = require('redis');
 dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
 const websocketUrl = new URL(process.env.REDIS_WEBSOCKET_URL || process.env['redis.websocket.url'] || 'ws://127.0.0.1:8081');
+const bindHost = String(process.env.REDIS_WEBSOCKET_BIND_HOST || process.env['redis.websocket.bindHost'] || '127.0.0.1').trim();
+const bindPort = Math.max(1, Number(process.env.REDIS_WEBSOCKET_BIND_PORT || process.env['redis.websocket.bindPort'] || 8082));
+const bindPath = String(process.env.REDIS_WEBSOCKET_PATH || process.env['redis.websocket.path'] || websocketUrl.pathname || '/').trim() || '/';
 const intervalMs = Math.max(2000, Number(process.env.REDIS_WEBSOCKET_INTERVAL_MS || process.env['redis.websocket.intervalMs'] || 2000));
 const slowlogLimit = Math.max(1, Number(process.env.REDIS_SLOWLOG_LIMIT || process.env['redis.slowlogLimit'] || 25));
 const scanCount = Math.max(50, Number(process.env.REDIS_SCAN_COUNT || process.env['redis.scanCount'] || 200));
@@ -342,7 +345,17 @@ const server = http.createServer((request, response) => {
     response.end('Not found');
 });
 
-const wss = new WebSocketServer({ server, path: websocketUrl.pathname === '' ? '/' : websocketUrl.pathname });
+const wss = new WebSocketServer({ server, path: bindPath });
+
+server.on('error', (error) => {
+    if (error && error.code === 'EADDRINUSE') {
+        console.error(`[redis-admin-ws] ${bindHost}:${bindPort} is already in use. Stop the existing listener or change redis.websocket.bindHost/bindPort.`);
+        process.exit(1);
+    }
+
+    console.error('[redis-admin-ws] HTTP server error:', error.message);
+    process.exit(1);
+});
 
 wss.on('connection', async (socket, request) => {
     const requestUrl = new URL(request.url, `http://${request.headers.host}`);
@@ -386,8 +399,38 @@ setInterval(async () => {
 }, intervalMs);
 
 (async () => {
-    await redisClient.connect();
-    server.listen(Number(websocketUrl.port || 8081), websocketUrl.hostname, () => {
-        console.log(`[redis-admin-ws] listening on ${websocketUrl.href}`);
-    });
+    try {
+        await redisClient.connect();
+        server.listen(bindPort, bindHost, () => {
+            console.log(`[redis-admin-ws] listening on ws://${bindHost}:${bindPort}${bindPath}`);
+            console.log(`[redis-admin-ws] public endpoint ${websocketUrl.href}`);
+        });
+    } catch (error) {
+        console.error('[redis-admin-ws] Startup failed:', error.message);
+        process.exit(1);
+    }
 })();
+
+async function shutdown(signal) {
+    console.log(`[redis-admin-ws] Received ${signal}, shutting down.`);
+
+    try {
+        wss.close();
+        server.close();
+        if (redisClient.isOpen) {
+            await redisClient.quit();
+        }
+    } catch (error) {
+        console.error('[redis-admin-ws] Shutdown error:', error.message);
+    }
+
+    process.exit(0);
+}
+
+process.on('SIGINT', () => {
+    shutdown('SIGINT');
+});
+
+process.on('SIGTERM', () => {
+    shutdown('SIGTERM');
+});
