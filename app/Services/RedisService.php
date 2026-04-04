@@ -213,7 +213,7 @@ class RedisService
         $tokens = preg_split('/\s+/', $trimmed) ?: [];
         $normalized = strtolower(implode(' ', array_slice($tokens, 0, min(2, count($tokens)))));
         $baseCommand = strtolower((string) ($tokens[0] ?? ''));
-        $allowed = array_map('trim', $this->envList('redis.admin.allowedCommands', ['ping', 'info', 'ttl', 'pttl', 'type', 'exists', 'get', 'hgetall', 'hget', 'llen', 'scard', 'zcard', 'memory usage']));
+        $allowed = array_map([$this, 'normalizeAllowedCommand'], $this->envList('redis.admin.allowedCommands', ['ping', 'info', 'ttl', 'pttl', 'type', 'exists', 'get', 'hgetall', 'hget', 'llen', 'scard', 'zcard', 'memory_usage']));
         $blocked = ['flushall', 'flushdb', 'eval', 'evalsha', 'script', 'config', 'keys', 'shutdown', 'debug', 'migrate', 'restore', 'replicaof', 'slaveof', 'monitor'];
 
         if (in_array($baseCommand, $blocked, true)) {
@@ -262,7 +262,7 @@ class RedisService
      */
     public function getAllowedCommands(): array
     {
-        return $this->envList('redis.admin.allowedCommands', ['ping', 'info', 'ttl', 'pttl', 'type', 'exists', 'get', 'hgetall', 'hget', 'llen', 'scard', 'zcard', 'memory usage']);
+        return array_map([$this, 'normalizeAllowedCommand'], $this->envList('redis.admin.allowedCommands', ['ping', 'info', 'ttl', 'pttl', 'type', 'exists', 'get', 'hgetall', 'hget', 'llen', 'scard', 'zcard', 'memory_usage']));
     }
 
     public function connection()
@@ -546,6 +546,11 @@ class RedisService
         }
 
         return $trimmed;
+    }
+
+    private function normalizeAllowedCommand(string $command): string
+    {
+        return str_replace('_', ' ', strtolower(trim($command)));
     }
 
     /**
