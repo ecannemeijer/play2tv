@@ -79,6 +79,14 @@ $routes->group('admin', ['filter' => 'adminauth'], function ($routes) {
     // Dashboard
     $routes->get('dashboard', 'Admin\DashboardController::index');
 
+    // Redis
+    $routes->get('redis', 'Admin\RedisController::index');
+    $routes->get('redis/initial', 'Admin\RedisController::getInitialData');
+    $routes->get('redis/keys', 'Admin\RedisController::searchKeys');
+    $routes->post('redis/keys/delete', 'Admin\RedisController::deleteKey');
+    $routes->post('redis/admin/flush-prefix', 'Admin\RedisController::flushPrefix');
+    $routes->post('redis/admin/execute', 'Admin\RedisController::execute');
+
     // Security
     $routes->get('security/events', 'Admin\SecurityController::events');
     $routes->get('security/suspicious', 'Admin\SecurityController::suspicious');

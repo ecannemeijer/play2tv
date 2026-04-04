@@ -205,6 +205,10 @@
            class="nav-link <?= str_starts_with(uri_string(), 'admin/security') ? 'active' : '' ?>">
             <i class="bi bi-shield-lock"></i> Security
         </a>
+        <a href="<?= base_url('admin/redis') ?>"
+           class="nav-link <?= str_starts_with(uri_string(), 'admin/redis') ? 'active' : '' ?>">
+            <i class="bi bi-database"></i> REDIS
+        </a>
     </div>
     <div class="sidebar-footer">
         Ingelogd als <strong><?= esc(session()->get('admin_username') ?? '') ?></strong><br>
