@@ -12,10 +12,10 @@ class Performance extends BaseConfig
      * @var array<string, int>
      */
     public array $apiCacheTtl = [
-        'playlist'             => 120,
-        'xtream_categories'    => 300,
-        'xtream_channels'      => 120,
-        'bootstrap_categories' => 300,
+        'playlist'             => 300,
+        'xtream_categories'    => 600,
+        'xtream_channels'      => 300,
+        'bootstrap_categories' => 600,
     ];
 
     /**
