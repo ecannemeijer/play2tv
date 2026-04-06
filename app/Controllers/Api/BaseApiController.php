@@ -52,11 +52,11 @@ class BaseApiController extends ResourceController
      */
     protected function ok(array $data = [], string $message = 'OK'): \CodeIgniter\HTTP\ResponseInterface
     {
-        return $this->respond([
+        return $this->withCorsHeaders($this->respond([
             'success' => true,
             'message' => $message,
             'data'    => $data,
-        ], 200);
+        ], 200));
     }
 
     /**
@@ -66,11 +66,11 @@ class BaseApiController extends ResourceController
      */
     protected function created(array $data = [], string $message = 'Created'): \CodeIgniter\HTTP\ResponseInterface
     {
-        return $this->respond([
+        return $this->withCorsHeaders($this->respond([
             'success' => true,
             'message' => $message,
             'data'    => $data,
-        ], 201);
+        ], 201));
     }
 
     /**
@@ -87,7 +87,7 @@ class BaseApiController extends ResourceController
             $payload['errors'] = $errors;
         }
 
-        return $this->respond($payload, $status);
+        return $this->withCorsHeaders($this->respond($payload, $status));
     }
 
     /**
@@ -193,13 +193,53 @@ class BaseApiController extends ResourceController
 
     protected function rateLimitError(string $message, int $retryAfter): \CodeIgniter\HTTP\ResponseInterface
     {
-        return $this->response
+        return $this->withCorsHeaders($this->response
             ->setStatusCode(429)
             ->setHeader('Retry-After', (string) $retryAfter)
             ->setJSON([
                 'success'     => false,
                 'message'     => $message,
                 'retry_after' => $retryAfter,
-            ]);
+            ]));
+    }
+
+    protected function withCorsHeaders(\CodeIgniter\HTTP\ResponseInterface $response): \CodeIgniter\HTTP\ResponseInterface
+    {
+        $origin = $this->resolveAllowedOrigin($this->request->getHeaderLine('Origin'));
+
+        $response
+            ->setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+            ->setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Api-Key, X-Timestamp, X-Signature, X-Device-Id');
+
+        if ($origin !== null) {
+            $response
+                ->setHeader('Access-Control-Allow-Origin', $origin)
+                ->setHeader('Access-Control-Allow-Credentials', 'true')
+                ->appendHeader('Vary', 'Origin');
+        }
+
+        return $response;
+    }
+
+    private function resolveAllowedOrigin(string $origin): ?string
+    {
+        if ($origin === '') {
+            return null;
+        }
+
+        foreach ($this->getAllowedOrigins() as $allowedOrigin) {
+            if (hash_equals($allowedOrigin, $origin)) {
+                return $origin;
+            }
+        }
+
+        return null;
+    }
+
+    private function getAllowedOrigins(): array
+    {
+        $configured = trim((string) env('cors.allowedOrigins', 'https://app.play2tv.nl,https://dashboard.play2tv.nl,https://user.velixatv.com'));
+
+        return array_values(array_filter(array_map('trim', explode(',', $configured))));
     }
 }
