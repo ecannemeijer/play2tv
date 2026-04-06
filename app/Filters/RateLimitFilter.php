@@ -34,7 +34,7 @@ class RateLimitFilter implements FilterInterface
         if ($limits !== null) {
             $retryAfter = max(1, (int) ($limits['retry_after'] ?? 60));
 
-            return response()
+            return $this->withCorsHeaders(response())
                 ->setStatusCode(429)
                 ->setHeader('Retry-After', (string) $retryAfter)
                 ->setContentType('application/json')
@@ -49,5 +49,45 @@ class RateLimitFilter implements FilterInterface
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
     {
         return $response;
+    }
+
+    private function withCorsHeaders(ResponseInterface $response): ResponseInterface
+    {
+        $origin = $this->resolveAllowedOrigin(request()->getHeaderLine('Origin'));
+
+        $response
+            ->setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+            ->setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Api-Key, X-Timestamp, X-Signature, X-Device-Id');
+
+        if ($origin !== null) {
+            $response
+                ->setHeader('Access-Control-Allow-Origin', $origin)
+                ->setHeader('Access-Control-Allow-Credentials', 'true')
+                ->appendHeader('Vary', 'Origin');
+        }
+
+        return $response;
+    }
+
+    private function resolveAllowedOrigin(string $origin): ?string
+    {
+        if ($origin === '') {
+            return null;
+        }
+
+        foreach ($this->getAllowedOrigins() as $allowedOrigin) {
+            if (hash_equals($allowedOrigin, $origin)) {
+                return $origin;
+            }
+        }
+
+        return null;
+    }
+
+    private function getAllowedOrigins(): array
+    {
+        $configured = trim((string) env('cors.allowedOrigins', 'https://app.play2tv.nl,https://dashboard.play2tv.nl,https://user.velixatv.com'));
+
+        return array_values(array_filter(array_map('trim', explode(',', $configured))));
     }
 }
