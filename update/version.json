@@ -1,6 +1,6 @@
 {
-  "versionCode": 86,
+  "versionCode": 88,
   "versionName": "1.0",
   "apkUrl": "app-release.apk",
-  "releaseNotes": "Beta 1.0 Gradle 9.1 version"
+  "releaseNotes": "Beta 1.0 API cloudflare connection"
 }
