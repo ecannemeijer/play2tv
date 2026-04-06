@@ -1,0 +1,11 @@
+Hoe het werkt:
+
+De app doet een GET naar https://update.homearchive.nl/version.json
+Dat bestand moet er zo uitzien:
+Edited
+AndroidManifest.xml+0-0
+Als versionCode groter is dan de huidige app-versie → update beschikbaar
+Druk op "Nu bijwerken" → APK wordt gedownload (met voortgangsbalk) → systeem-installer start automatisch
+Huidige versie: versionCode = 1, versionName = "1.0" (in build.gradle.kts). Bij elke release verhoog je versionCode met 1 en zet je het bijgewerkte JSON-bestand op de server.
+
+Update knop in Instellingen (SettingsScreen.kt) — toont huidige versie, status (up-to-date / update beschikbaar / fout) en een download+installeer knop.

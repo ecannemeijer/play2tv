@@ -1,0 +1,801 @@
+#EXTM3U x-tvg-url="https://update.homearchive.nl/update/test_epg.xml"
+#EXTINF:-1 tvg-id="cat1ch1" tvg-name="Channel 1" group-title="Category 1",Channel 1
+http://example.com/stream/1_1.m3u8
+#EXTINF:-1 tvg-id="cat1ch2" tvg-name="Channel 2" group-title="Category 1",Channel 2
+http://example.com/stream/1_2.m3u8
+#EXTINF:-1 tvg-id="cat1ch3" tvg-name="Channel 3" group-title="Category 1",Channel 3
+http://example.com/stream/1_3.m3u8
+#EXTINF:-1 tvg-id="cat1ch4" tvg-name="Channel 4" group-title="Category 1",Channel 4
+http://example.com/stream/1_4.m3u8
+#EXTINF:-1 tvg-id="cat1ch5" tvg-name="Channel 5" group-title="Category 1",Channel 5
+http://example.com/stream/1_5.m3u8
+#EXTINF:-1 tvg-id="cat1ch6" tvg-name="Channel 6" group-title="Category 1",Channel 6
+http://example.com/stream/1_6.m3u8
+#EXTINF:-1 tvg-id="cat1ch7" tvg-name="Channel 7" group-title="Category 1",Channel 7
+http://example.com/stream/1_7.m3u8
+#EXTINF:-1 tvg-id="cat1ch8" tvg-name="Channel 8" group-title="Category 1",Channel 8
+http://example.com/stream/1_8.m3u8
+#EXTINF:-1 tvg-id="cat1ch9" tvg-name="Channel 9" group-title="Category 1",Channel 9
+http://example.com/stream/1_9.m3u8
+#EXTINF:-1 tvg-id="cat1ch10" tvg-name="Channel 10" group-title="Category 1",Channel 10
+http://example.com/stream/1_10.m3u8
+#EXTINF:-1 tvg-id="cat1ch11" tvg-name="Channel 11" group-title="Category 1",Channel 11
+http://example.com/stream/1_11.m3u8
+#EXTINF:-1 tvg-id="cat1ch12" tvg-name="Channel 12" group-title="Category 1",Channel 12
+http://example.com/stream/1_12.m3u8
+#EXTINF:-1 tvg-id="cat1ch13" tvg-name="Channel 13" group-title="Category 1",Channel 13
+http://example.com/stream/1_13.m3u8
+#EXTINF:-1 tvg-id="cat1ch14" tvg-name="Channel 14" group-title="Category 1",Channel 14
+http://example.com/stream/1_14.m3u8
+#EXTINF:-1 tvg-id="cat1ch15" tvg-name="Channel 15" group-title="Category 1",Channel 15
+http://example.com/stream/1_15.m3u8
+#EXTINF:-1 tvg-id="cat1ch16" tvg-name="Channel 16" group-title="Category 1",Channel 16
+http://example.com/stream/1_16.m3u8
+#EXTINF:-1 tvg-id="cat1ch17" tvg-name="Channel 17" group-title="Category 1",Channel 17
+http://example.com/stream/1_17.m3u8
+#EXTINF:-1 tvg-id="cat1ch18" tvg-name="Channel 18" group-title="Category 1",Channel 18
+http://example.com/stream/1_18.m3u8
+#EXTINF:-1 tvg-id="cat1ch19" tvg-name="Channel 19" group-title="Category 1",Channel 19
+http://example.com/stream/1_19.m3u8
+#EXTINF:-1 tvg-id="cat1ch20" tvg-name="Channel 20" group-title="Category 1",Channel 20
+http://example.com/stream/1_20.m3u8
+#EXTINF:-1 tvg-id="cat2ch1" tvg-name="Channel 1" group-title="Category 2",Channel 1
+http://example.com/stream/2_1.m3u8
+#EXTINF:-1 tvg-id="cat2ch2" tvg-name="Channel 2" group-title="Category 2",Channel 2
+http://example.com/stream/2_2.m3u8
+#EXTINF:-1 tvg-id="cat2ch3" tvg-name="Channel 3" group-title="Category 2",Channel 3
+http://example.com/stream/2_3.m3u8
+#EXTINF:-1 tvg-id="cat2ch4" tvg-name="Channel 4" group-title="Category 2",Channel 4
+http://example.com/stream/2_4.m3u8
+#EXTINF:-1 tvg-id="cat2ch5" tvg-name="Channel 5" group-title="Category 2",Channel 5
+http://example.com/stream/2_5.m3u8
+#EXTINF:-1 tvg-id="cat2ch6" tvg-name="Channel 6" group-title="Category 2",Channel 6
+http://example.com/stream/2_6.m3u8
+#EXTINF:-1 tvg-id="cat2ch7" tvg-name="Channel 7" group-title="Category 2",Channel 7
+http://example.com/stream/2_7.m3u8
+#EXTINF:-1 tvg-id="cat2ch8" tvg-name="Channel 8" group-title="Category 2",Channel 8
+http://example.com/stream/2_8.m3u8
+#EXTINF:-1 tvg-id="cat2ch9" tvg-name="Channel 9" group-title="Category 2",Channel 9
+http://example.com/stream/2_9.m3u8
+#EXTINF:-1 tvg-id="cat2ch10" tvg-name="Channel 10" group-title="Category 2",Channel 10
+http://example.com/stream/2_10.m3u8
+#EXTINF:-1 tvg-id="cat2ch11" tvg-name="Channel 11" group-title="Category 2",Channel 11
+http://example.com/stream/2_11.m3u8
+#EXTINF:-1 tvg-id="cat2ch12" tvg-name="Channel 12" group-title="Category 2",Channel 12
+http://example.com/stream/2_12.m3u8
+#EXTINF:-1 tvg-id="cat2ch13" tvg-name="Channel 13" group-title="Category 2",Channel 13
+http://example.com/stream/2_13.m3u8
+#EXTINF:-1 tvg-id="cat2ch14" tvg-name="Channel 14" group-title="Category 2",Channel 14
+http://example.com/stream/2_14.m3u8
+#EXTINF:-1 tvg-id="cat2ch15" tvg-name="Channel 15" group-title="Category 2",Channel 15
+http://example.com/stream/2_15.m3u8
+#EXTINF:-1 tvg-id="cat2ch16" tvg-name="Channel 16" group-title="Category 2",Channel 16
+http://example.com/stream/2_16.m3u8
+#EXTINF:-1 tvg-id="cat2ch17" tvg-name="Channel 17" group-title="Category 2",Channel 17
+http://example.com/stream/2_17.m3u8
+#EXTINF:-1 tvg-id="cat2ch18" tvg-name="Channel 18" group-title="Category 2",Channel 18
+http://example.com/stream/2_18.m3u8
+#EXTINF:-1 tvg-id="cat2ch19" tvg-name="Channel 19" group-title="Category 2",Channel 19
+http://example.com/stream/2_19.m3u8
+#EXTINF:-1 tvg-id="cat2ch20" tvg-name="Channel 20" group-title="Category 2",Channel 20
+http://example.com/stream/2_20.m3u8
+#EXTINF:-1 tvg-id="cat3ch1" tvg-name="Channel 1" group-title="Category 3",Channel 1
+http://example.com/stream/3_1.m3u8
+#EXTINF:-1 tvg-id="cat3ch2" tvg-name="Channel 2" group-title="Category 3",Channel 2
+http://example.com/stream/3_2.m3u8
+#EXTINF:-1 tvg-id="cat3ch3" tvg-name="Channel 3" group-title="Category 3",Channel 3
+http://example.com/stream/3_3.m3u8
+#EXTINF:-1 tvg-id="cat3ch4" tvg-name="Channel 4" group-title="Category 3",Channel 4
+http://example.com/stream/3_4.m3u8
+#EXTINF:-1 tvg-id="cat3ch5" tvg-name="Channel 5" group-title="Category 3",Channel 5
+http://example.com/stream/3_5.m3u8
+#EXTINF:-1 tvg-id="cat3ch6" tvg-name="Channel 6" group-title="Category 3",Channel 6
+http://example.com/stream/3_6.m3u8
+#EXTINF:-1 tvg-id="cat3ch7" tvg-name="Channel 7" group-title="Category 3",Channel 7
+http://example.com/stream/3_7.m3u8
+#EXTINF:-1 tvg-id="cat3ch8" tvg-name="Channel 8" group-title="Category 3",Channel 8
+http://example.com/stream/3_8.m3u8
+#EXTINF:-1 tvg-id="cat3ch9" tvg-name="Channel 9" group-title="Category 3",Channel 9
+http://example.com/stream/3_9.m3u8
+#EXTINF:-1 tvg-id="cat3ch10" tvg-name="Channel 10" group-title="Category 3",Channel 10
+http://example.com/stream/3_10.m3u8
+#EXTINF:-1 tvg-id="cat3ch11" tvg-name="Channel 11" group-title="Category 3",Channel 11
+http://example.com/stream/3_11.m3u8
+#EXTINF:-1 tvg-id="cat3ch12" tvg-name="Channel 12" group-title="Category 3",Channel 12
+http://example.com/stream/3_12.m3u8
+#EXTINF:-1 tvg-id="cat3ch13" tvg-name="Channel 13" group-title="Category 3",Channel 13
+http://example.com/stream/3_13.m3u8
+#EXTINF:-1 tvg-id="cat3ch14" tvg-name="Channel 14" group-title="Category 3",Channel 14
+http://example.com/stream/3_14.m3u8
+#EXTINF:-1 tvg-id="cat3ch15" tvg-name="Channel 15" group-title="Category 3",Channel 15
+http://example.com/stream/3_15.m3u8
+#EXTINF:-1 tvg-id="cat3ch16" tvg-name="Channel 16" group-title="Category 3",Channel 16
+http://example.com/stream/3_16.m3u8
+#EXTINF:-1 tvg-id="cat3ch17" tvg-name="Channel 17" group-title="Category 3",Channel 17
+http://example.com/stream/3_17.m3u8
+#EXTINF:-1 tvg-id="cat3ch18" tvg-name="Channel 18" group-title="Category 3",Channel 18
+http://example.com/stream/3_18.m3u8
+#EXTINF:-1 tvg-id="cat3ch19" tvg-name="Channel 19" group-title="Category 3",Channel 19
+http://example.com/stream/3_19.m3u8
+#EXTINF:-1 tvg-id="cat3ch20" tvg-name="Channel 20" group-title="Category 3",Channel 20
+http://example.com/stream/3_20.m3u8
+#EXTINF:-1 tvg-id="cat4ch1" tvg-name="Channel 1" group-title="Category 4",Channel 1
+http://example.com/stream/4_1.m3u8
+#EXTINF:-1 tvg-id="cat4ch2" tvg-name="Channel 2" group-title="Category 4",Channel 2
+http://example.com/stream/4_2.m3u8
+#EXTINF:-1 tvg-id="cat4ch3" tvg-name="Channel 3" group-title="Category 4",Channel 3
+http://example.com/stream/4_3.m3u8
+#EXTINF:-1 tvg-id="cat4ch4" tvg-name="Channel 4" group-title="Category 4",Channel 4
+http://example.com/stream/4_4.m3u8
+#EXTINF:-1 tvg-id="cat4ch5" tvg-name="Channel 5" group-title="Category 4",Channel 5
+http://example.com/stream/4_5.m3u8
+#EXTINF:-1 tvg-id="cat4ch6" tvg-name="Channel 6" group-title="Category 4",Channel 6
+http://example.com/stream/4_6.m3u8
+#EXTINF:-1 tvg-id="cat4ch7" tvg-name="Channel 7" group-title="Category 4",Channel 7
+http://example.com/stream/4_7.m3u8
+#EXTINF:-1 tvg-id="cat4ch8" tvg-name="Channel 8" group-title="Category 4",Channel 8
+http://example.com/stream/4_8.m3u8
+#EXTINF:-1 tvg-id="cat4ch9" tvg-name="Channel 9" group-title="Category 4",Channel 9
+http://example.com/stream/4_9.m3u8
+#EXTINF:-1 tvg-id="cat4ch10" tvg-name="Channel 10" group-title="Category 4",Channel 10
+http://example.com/stream/4_10.m3u8
+#EXTINF:-1 tvg-id="cat4ch11" tvg-name="Channel 11" group-title="Category 4",Channel 11
+http://example.com/stream/4_11.m3u8
+#EXTINF:-1 tvg-id="cat4ch12" tvg-name="Channel 12" group-title="Category 4",Channel 12
+http://example.com/stream/4_12.m3u8
+#EXTINF:-1 tvg-id="cat4ch13" tvg-name="Channel 13" group-title="Category 4",Channel 13
+http://example.com/stream/4_13.m3u8
+#EXTINF:-1 tvg-id="cat4ch14" tvg-name="Channel 14" group-title="Category 4",Channel 14
+http://example.com/stream/4_14.m3u8
+#EXTINF:-1 tvg-id="cat4ch15" tvg-name="Channel 15" group-title="Category 4",Channel 15
+http://example.com/stream/4_15.m3u8
+#EXTINF:-1 tvg-id="cat4ch16" tvg-name="Channel 16" group-title="Category 4",Channel 16
+http://example.com/stream/4_16.m3u8
+#EXTINF:-1 tvg-id="cat4ch17" tvg-name="Channel 17" group-title="Category 4",Channel 17
+http://example.com/stream/4_17.m3u8
+#EXTINF:-1 tvg-id="cat4ch18" tvg-name="Channel 18" group-title="Category 4",Channel 18
+http://example.com/stream/4_18.m3u8
+#EXTINF:-1 tvg-id="cat4ch19" tvg-name="Channel 19" group-title="Category 4",Channel 19
+http://example.com/stream/4_19.m3u8
+#EXTINF:-1 tvg-id="cat4ch20" tvg-name="Channel 20" group-title="Category 4",Channel 20
+http://example.com/stream/4_20.m3u8
+#EXTINF:-1 tvg-id="cat5ch1" tvg-name="Channel 1" group-title="Category 5",Channel 1
+http://example.com/stream/5_1.m3u8
+#EXTINF:-1 tvg-id="cat5ch2" tvg-name="Channel 2" group-title="Category 5",Channel 2
+http://example.com/stream/5_2.m3u8
+#EXTINF:-1 tvg-id="cat5ch3" tvg-name="Channel 3" group-title="Category 5",Channel 3
+http://example.com/stream/5_3.m3u8
+#EXTINF:-1 tvg-id="cat5ch4" tvg-name="Channel 4" group-title="Category 5",Channel 4
+http://example.com/stream/5_4.m3u8
+#EXTINF:-1 tvg-id="cat5ch5" tvg-name="Channel 5" group-title="Category 5",Channel 5
+http://example.com/stream/5_5.m3u8
+#EXTINF:-1 tvg-id="cat5ch6" tvg-name="Channel 6" group-title="Category 5",Channel 6
+http://example.com/stream/5_6.m3u8
+#EXTINF:-1 tvg-id="cat5ch7" tvg-name="Channel 7" group-title="Category 5",Channel 7
+http://example.com/stream/5_7.m3u8
+#EXTINF:-1 tvg-id="cat5ch8" tvg-name="Channel 8" group-title="Category 5",Channel 8
+http://example.com/stream/5_8.m3u8
+#EXTINF:-1 tvg-id="cat5ch9" tvg-name="Channel 9" group-title="Category 5",Channel 9
+http://example.com/stream/5_9.m3u8
+#EXTINF:-1 tvg-id="cat5ch10" tvg-name="Channel 10" group-title="Category 5",Channel 10
+http://example.com/stream/5_10.m3u8
+#EXTINF:-1 tvg-id="cat5ch11" tvg-name="Channel 11" group-title="Category 5",Channel 11
+http://example.com/stream/5_11.m3u8
+#EXTINF:-1 tvg-id="cat5ch12" tvg-name="Channel 12" group-title="Category 5",Channel 12
+http://example.com/stream/5_12.m3u8
+#EXTINF:-1 tvg-id="cat5ch13" tvg-name="Channel 13" group-title="Category 5",Channel 13
+http://example.com/stream/5_13.m3u8
+#EXTINF:-1 tvg-id="cat5ch14" tvg-name="Channel 14" group-title="Category 5",Channel 14
+http://example.com/stream/5_14.m3u8
+#EXTINF:-1 tvg-id="cat5ch15" tvg-name="Channel 15" group-title="Category 5",Channel 15
+http://example.com/stream/5_15.m3u8
+#EXTINF:-1 tvg-id="cat5ch16" tvg-name="Channel 16" group-title="Category 5",Channel 16
+http://example.com/stream/5_16.m3u8
+#EXTINF:-1 tvg-id="cat5ch17" tvg-name="Channel 17" group-title="Category 5",Channel 17
+http://example.com/stream/5_17.m3u8
+#EXTINF:-1 tvg-id="cat5ch18" tvg-name="Channel 18" group-title="Category 5",Channel 18
+http://example.com/stream/5_18.m3u8
+#EXTINF:-1 tvg-id="cat5ch19" tvg-name="Channel 19" group-title="Category 5",Channel 19
+http://example.com/stream/5_19.m3u8
+#EXTINF:-1 tvg-id="cat5ch20" tvg-name="Channel 20" group-title="Category 5",Channel 20
+http://example.com/stream/5_20.m3u8
+#EXTINF:-1 tvg-id="cat6ch1" tvg-name="Channel 1" group-title="Category 6",Channel 1
+http://example.com/stream/6_1.m3u8
+#EXTINF:-1 tvg-id="cat6ch2" tvg-name="Channel 2" group-title="Category 6",Channel 2
+http://example.com/stream/6_2.m3u8
+#EXTINF:-1 tvg-id="cat6ch3" tvg-name="Channel 3" group-title="Category 6",Channel 3
+http://example.com/stream/6_3.m3u8
+#EXTINF:-1 tvg-id="cat6ch4" tvg-name="Channel 4" group-title="Category 6",Channel 4
+http://example.com/stream/6_4.m3u8
+#EXTINF:-1 tvg-id="cat6ch5" tvg-name="Channel 5" group-title="Category 6",Channel 5
+http://example.com/stream/6_5.m3u8
+#EXTINF:-1 tvg-id="cat6ch6" tvg-name="Channel 6" group-title="Category 6",Channel 6
+http://example.com/stream/6_6.m3u8
+#EXTINF:-1 tvg-id="cat6ch7" tvg-name="Channel 7" group-title="Category 6",Channel 7
+http://example.com/stream/6_7.m3u8
+#EXTINF:-1 tvg-id="cat6ch8" tvg-name="Channel 8" group-title="Category 6",Channel 8
+http://example.com/stream/6_8.m3u8
+#EXTINF:-1 tvg-id="cat6ch9" tvg-name="Channel 9" group-title="Category 6",Channel 9
+http://example.com/stream/6_9.m3u8
+#EXTINF:-1 tvg-id="cat6ch10" tvg-name="Channel 10" group-title="Category 6",Channel 10
+http://example.com/stream/6_10.m3u8
+#EXTINF:-1 tvg-id="cat6ch11" tvg-name="Channel 11" group-title="Category 6",Channel 11
+http://example.com/stream/6_11.m3u8
+#EXTINF:-1 tvg-id="cat6ch12" tvg-name="Channel 12" group-title="Category 6",Channel 12
+http://example.com/stream/6_12.m3u8
+#EXTINF:-1 tvg-id="cat6ch13" tvg-name="Channel 13" group-title="Category 6",Channel 13
+http://example.com/stream/6_13.m3u8
+#EXTINF:-1 tvg-id="cat6ch14" tvg-name="Channel 14" group-title="Category 6",Channel 14
+http://example.com/stream/6_14.m3u8
+#EXTINF:-1 tvg-id="cat6ch15" tvg-name="Channel 15" group-title="Category 6",Channel 15
+http://example.com/stream/6_15.m3u8
+#EXTINF:-1 tvg-id="cat6ch16" tvg-name="Channel 16" group-title="Category 6",Channel 16
+http://example.com/stream/6_16.m3u8
+#EXTINF:-1 tvg-id="cat6ch17" tvg-name="Channel 17" group-title="Category 6",Channel 17
+http://example.com/stream/6_17.m3u8
+#EXTINF:-1 tvg-id="cat6ch18" tvg-name="Channel 18" group-title="Category 6",Channel 18
+http://example.com/stream/6_18.m3u8
+#EXTINF:-1 tvg-id="cat6ch19" tvg-name="Channel 19" group-title="Category 6",Channel 19
+http://example.com/stream/6_19.m3u8
+#EXTINF:-1 tvg-id="cat6ch20" tvg-name="Channel 20" group-title="Category 6",Channel 20
+http://example.com/stream/6_20.m3u8
+#EXTINF:-1 tvg-id="cat7ch1" tvg-name="Channel 1" group-title="Category 7",Channel 1
+http://example.com/stream/7_1.m3u8
+#EXTINF:-1 tvg-id="cat7ch2" tvg-name="Channel 2" group-title="Category 7",Channel 2
+http://example.com/stream/7_2.m3u8
+#EXTINF:-1 tvg-id="cat7ch3" tvg-name="Channel 3" group-title="Category 7",Channel 3
+http://example.com/stream/7_3.m3u8
+#EXTINF:-1 tvg-id="cat7ch4" tvg-name="Channel 4" group-title="Category 7",Channel 4
+http://example.com/stream/7_4.m3u8
+#EXTINF:-1 tvg-id="cat7ch5" tvg-name="Channel 5" group-title="Category 7",Channel 5
+http://example.com/stream/7_5.m3u8
+#EXTINF:-1 tvg-id="cat7ch6" tvg-name="Channel 6" group-title="Category 7",Channel 6
+http://example.com/stream/7_6.m3u8
+#EXTINF:-1 tvg-id="cat7ch7" tvg-name="Channel 7" group-title="Category 7",Channel 7
+http://example.com/stream/7_7.m3u8
+#EXTINF:-1 tvg-id="cat7ch8" tvg-name="Channel 8" group-title="Category 7",Channel 8
+http://example.com/stream/7_8.m3u8
+#EXTINF:-1 tvg-id="cat7ch9" tvg-name="Channel 9" group-title="Category 7",Channel 9
+http://example.com/stream/7_9.m3u8
+#EXTINF:-1 tvg-id="cat7ch10" tvg-name="Channel 10" group-title="Category 7",Channel 10
+http://example.com/stream/7_10.m3u8
+#EXTINF:-1 tvg-id="cat7ch11" tvg-name="Channel 11" group-title="Category 7",Channel 11
+http://example.com/stream/7_11.m3u8
+#EXTINF:-1 tvg-id="cat7ch12" tvg-name="Channel 12" group-title="Category 7",Channel 12
+http://example.com/stream/7_12.m3u8
+#EXTINF:-1 tvg-id="cat7ch13" tvg-name="Channel 13" group-title="Category 7",Channel 13
+http://example.com/stream/7_13.m3u8
+#EXTINF:-1 tvg-id="cat7ch14" tvg-name="Channel 14" group-title="Category 7",Channel 14
+http://example.com/stream/7_14.m3u8
+#EXTINF:-1 tvg-id="cat7ch15" tvg-name="Channel 15" group-title="Category 7",Channel 15
+http://example.com/stream/7_15.m3u8
+#EXTINF:-1 tvg-id="cat7ch16" tvg-name="Channel 16" group-title="Category 7",Channel 16
+http://example.com/stream/7_16.m3u8
+#EXTINF:-1 tvg-id="cat7ch17" tvg-name="Channel 17" group-title="Category 7",Channel 17
+http://example.com/stream/7_17.m3u8
+#EXTINF:-1 tvg-id="cat7ch18" tvg-name="Channel 18" group-title="Category 7",Channel 18
+http://example.com/stream/7_18.m3u8
+#EXTINF:-1 tvg-id="cat7ch19" tvg-name="Channel 19" group-title="Category 7",Channel 19
+http://example.com/stream/7_19.m3u8
+#EXTINF:-1 tvg-id="cat7ch20" tvg-name="Channel 20" group-title="Category 7",Channel 20
+http://example.com/stream/7_20.m3u8
+#EXTINF:-1 tvg-id="cat8ch1" tvg-name="Channel 1" group-title="Category 8",Channel 1
+http://example.com/stream/8_1.m3u8
+#EXTINF:-1 tvg-id="cat8ch2" tvg-name="Channel 2" group-title="Category 8",Channel 2
+http://example.com/stream/8_2.m3u8
+#EXTINF:-1 tvg-id="cat8ch3" tvg-name="Channel 3" group-title="Category 8",Channel 3
+http://example.com/stream/8_3.m3u8
+#EXTINF:-1 tvg-id="cat8ch4" tvg-name="Channel 4" group-title="Category 8",Channel 4
+http://example.com/stream/8_4.m3u8
+#EXTINF:-1 tvg-id="cat8ch5" tvg-name="Channel 5" group-title="Category 8",Channel 5
+http://example.com/stream/8_5.m3u8
+#EXTINF:-1 tvg-id="cat8ch6" tvg-name="Channel 6" group-title="Category 8",Channel 6
+http://example.com/stream/8_6.m3u8
+#EXTINF:-1 tvg-id="cat8ch7" tvg-name="Channel 7" group-title="Category 8",Channel 7
+http://example.com/stream/8_7.m3u8
+#EXTINF:-1 tvg-id="cat8ch8" tvg-name="Channel 8" group-title="Category 8",Channel 8
+http://example.com/stream/8_8.m3u8
+#EXTINF:-1 tvg-id="cat8ch9" tvg-name="Channel 9" group-title="Category 8",Channel 9
+http://example.com/stream/8_9.m3u8
+#EXTINF:-1 tvg-id="cat8ch10" tvg-name="Channel 10" group-title="Category 8",Channel 10
+http://example.com/stream/8_10.m3u8
+#EXTINF:-1 tvg-id="cat8ch11" tvg-name="Channel 11" group-title="Category 8",Channel 11
+http://example.com/stream/8_11.m3u8
+#EXTINF:-1 tvg-id="cat8ch12" tvg-name="Channel 12" group-title="Category 8",Channel 12
+http://example.com/stream/8_12.m3u8
+#EXTINF:-1 tvg-id="cat8ch13" tvg-name="Channel 13" group-title="Category 8",Channel 13
+http://example.com/stream/8_13.m3u8
+#EXTINF:-1 tvg-id="cat8ch14" tvg-name="Channel 14" group-title="Category 8",Channel 14
+http://example.com/stream/8_14.m3u8
+#EXTINF:-1 tvg-id="cat8ch15" tvg-name="Channel 15" group-title="Category 8",Channel 15
+http://example.com/stream/8_15.m3u8
+#EXTINF:-1 tvg-id="cat8ch16" tvg-name="Channel 16" group-title="Category 8",Channel 16
+http://example.com/stream/8_16.m3u8
+#EXTINF:-1 tvg-id="cat8ch17" tvg-name="Channel 17" group-title="Category 8",Channel 17
+http://example.com/stream/8_17.m3u8
+#EXTINF:-1 tvg-id="cat8ch18" tvg-name="Channel 18" group-title="Category 8",Channel 18
+http://example.com/stream/8_18.m3u8
+#EXTINF:-1 tvg-id="cat8ch19" tvg-name="Channel 19" group-title="Category 8",Channel 19
+http://example.com/stream/8_19.m3u8
+#EXTINF:-1 tvg-id="cat8ch20" tvg-name="Channel 20" group-title="Category 8",Channel 20
+http://example.com/stream/8_20.m3u8
+#EXTINF:-1 tvg-id="cat9ch1" tvg-name="Channel 1" group-title="Category 9",Channel 1
+http://example.com/stream/9_1.m3u8
+#EXTINF:-1 tvg-id="cat9ch2" tvg-name="Channel 2" group-title="Category 9",Channel 2
+http://example.com/stream/9_2.m3u8
+#EXTINF:-1 tvg-id="cat9ch3" tvg-name="Channel 3" group-title="Category 9",Channel 3
+http://example.com/stream/9_3.m3u8
+#EXTINF:-1 tvg-id="cat9ch4" tvg-name="Channel 4" group-title="Category 9",Channel 4
+http://example.com/stream/9_4.m3u8
+#EXTINF:-1 tvg-id="cat9ch5" tvg-name="Channel 5" group-title="Category 9",Channel 5
+http://example.com/stream/9_5.m3u8
+#EXTINF:-1 tvg-id="cat9ch6" tvg-name="Channel 6" group-title="Category 9",Channel 6
+http://example.com/stream/9_6.m3u8
+#EXTINF:-1 tvg-id="cat9ch7" tvg-name="Channel 7" group-title="Category 9",Channel 7
+http://example.com/stream/9_7.m3u8
+#EXTINF:-1 tvg-id="cat9ch8" tvg-name="Channel 8" group-title="Category 9",Channel 8
+http://example.com/stream/9_8.m3u8
+#EXTINF:-1 tvg-id="cat9ch9" tvg-name="Channel 9" group-title="Category 9",Channel 9
+http://example.com/stream/9_9.m3u8
+#EXTINF:-1 tvg-id="cat9ch10" tvg-name="Channel 10" group-title="Category 9",Channel 10
+http://example.com/stream/9_10.m3u8
+#EXTINF:-1 tvg-id="cat9ch11" tvg-name="Channel 11" group-title="Category 9",Channel 11
+http://example.com/stream/9_11.m3u8
+#EXTINF:-1 tvg-id="cat9ch12" tvg-name="Channel 12" group-title="Category 9",Channel 12
+http://example.com/stream/9_12.m3u8
+#EXTINF:-1 tvg-id="cat9ch13" tvg-name="Channel 13" group-title="Category 9",Channel 13
+http://example.com/stream/9_13.m3u8
+#EXTINF:-1 tvg-id="cat9ch14" tvg-name="Channel 14" group-title="Category 9",Channel 14
+http://example.com/stream/9_14.m3u8
+#EXTINF:-1 tvg-id="cat9ch15" tvg-name="Channel 15" group-title="Category 9",Channel 15
+http://example.com/stream/9_15.m3u8
+#EXTINF:-1 tvg-id="cat9ch16" tvg-name="Channel 16" group-title="Category 9",Channel 16
+http://example.com/stream/9_16.m3u8
+#EXTINF:-1 tvg-id="cat9ch17" tvg-name="Channel 17" group-title="Category 9",Channel 17
+http://example.com/stream/9_17.m3u8
+#EXTINF:-1 tvg-id="cat9ch18" tvg-name="Channel 18" group-title="Category 9",Channel 18
+http://example.com/stream/9_18.m3u8
+#EXTINF:-1 tvg-id="cat9ch19" tvg-name="Channel 19" group-title="Category 9",Channel 19
+http://example.com/stream/9_19.m3u8
+#EXTINF:-1 tvg-id="cat9ch20" tvg-name="Channel 20" group-title="Category 9",Channel 20
+http://example.com/stream/9_20.m3u8
+#EXTINF:-1 tvg-id="cat10ch1" tvg-name="Channel 1" group-title="Category 10",Channel 1
+http://example.com/stream/10_1.m3u8
+#EXTINF:-1 tvg-id="cat10ch2" tvg-name="Channel 2" group-title="Category 10",Channel 2
+http://example.com/stream/10_2.m3u8
+#EXTINF:-1 tvg-id="cat10ch3" tvg-name="Channel 3" group-title="Category 10",Channel 3
+http://example.com/stream/10_3.m3u8
+#EXTINF:-1 tvg-id="cat10ch4" tvg-name="Channel 4" group-title="Category 10",Channel 4
+http://example.com/stream/10_4.m3u8
+#EXTINF:-1 tvg-id="cat10ch5" tvg-name="Channel 5" group-title="Category 10",Channel 5
+http://example.com/stream/10_5.m3u8
+#EXTINF:-1 tvg-id="cat10ch6" tvg-name="Channel 6" group-title="Category 10",Channel 6
+http://example.com/stream/10_6.m3u8
+#EXTINF:-1 tvg-id="cat10ch7" tvg-name="Channel 7" group-title="Category 10",Channel 7
+http://example.com/stream/10_7.m3u8
+#EXTINF:-1 tvg-id="cat10ch8" tvg-name="Channel 8" group-title="Category 10",Channel 8
+http://example.com/stream/10_8.m3u8
+#EXTINF:-1 tvg-id="cat10ch9" tvg-name="Channel 9" group-title="Category 10",Channel 9
+http://example.com/stream/10_9.m3u8
+#EXTINF:-1 tvg-id="cat10ch10" tvg-name="Channel 10" group-title="Category 10",Channel 10
+http://example.com/stream/10_10.m3u8
+#EXTINF:-1 tvg-id="cat10ch11" tvg-name="Channel 11" group-title="Category 10",Channel 11
+http://example.com/stream/10_11.m3u8
+#EXTINF:-1 tvg-id="cat10ch12" tvg-name="Channel 12" group-title="Category 10",Channel 12
+http://example.com/stream/10_12.m3u8
+#EXTINF:-1 tvg-id="cat10ch13" tvg-name="Channel 13" group-title="Category 10",Channel 13
+http://example.com/stream/10_13.m3u8
+#EXTINF:-1 tvg-id="cat10ch14" tvg-name="Channel 14" group-title="Category 10",Channel 14
+http://example.com/stream/10_14.m3u8
+#EXTINF:-1 tvg-id="cat10ch15" tvg-name="Channel 15" group-title="Category 10",Channel 15
+http://example.com/stream/10_15.m3u8
+#EXTINF:-1 tvg-id="cat10ch16" tvg-name="Channel 16" group-title="Category 10",Channel 16
+http://example.com/stream/10_16.m3u8
+#EXTINF:-1 tvg-id="cat10ch17" tvg-name="Channel 17" group-title="Category 10",Channel 17
+http://example.com/stream/10_17.m3u8
+#EXTINF:-1 tvg-id="cat10ch18" tvg-name="Channel 18" group-title="Category 10",Channel 18
+http://example.com/stream/10_18.m3u8
+#EXTINF:-1 tvg-id="cat10ch19" tvg-name="Channel 19" group-title="Category 10",Channel 19
+http://example.com/stream/10_19.m3u8
+#EXTINF:-1 tvg-id="cat10ch20" tvg-name="Channel 20" group-title="Category 10",Channel 20
+http://example.com/stream/10_20.m3u8
+#EXTINF:-1 tvg-id="cat11ch1" tvg-name="Channel 1" group-title="Category 11",Channel 1
+http://example.com/stream/11_1.m3u8
+#EXTINF:-1 tvg-id="cat11ch2" tvg-name="Channel 2" group-title="Category 11",Channel 2
+http://example.com/stream/11_2.m3u8
+#EXTINF:-1 tvg-id="cat11ch3" tvg-name="Channel 3" group-title="Category 11",Channel 3
+http://example.com/stream/11_3.m3u8
+#EXTINF:-1 tvg-id="cat11ch4" tvg-name="Channel 4" group-title="Category 11",Channel 4
+http://example.com/stream/11_4.m3u8
+#EXTINF:-1 tvg-id="cat11ch5" tvg-name="Channel 5" group-title="Category 11",Channel 5
+http://example.com/stream/11_5.m3u8
+#EXTINF:-1 tvg-id="cat11ch6" tvg-name="Channel 6" group-title="Category 11",Channel 6
+http://example.com/stream/11_6.m3u8
+#EXTINF:-1 tvg-id="cat11ch7" tvg-name="Channel 7" group-title="Category 11",Channel 7
+http://example.com/stream/11_7.m3u8
+#EXTINF:-1 tvg-id="cat11ch8" tvg-name="Channel 8" group-title="Category 11",Channel 8
+http://example.com/stream/11_8.m3u8
+#EXTINF:-1 tvg-id="cat11ch9" tvg-name="Channel 9" group-title="Category 11",Channel 9
+http://example.com/stream/11_9.m3u8
+#EXTINF:-1 tvg-id="cat11ch10" tvg-name="Channel 10" group-title="Category 11",Channel 10
+http://example.com/stream/11_10.m3u8
+#EXTINF:-1 tvg-id="cat11ch11" tvg-name="Channel 11" group-title="Category 11",Channel 11
+http://example.com/stream/11_11.m3u8
+#EXTINF:-1 tvg-id="cat11ch12" tvg-name="Channel 12" group-title="Category 11",Channel 12
+http://example.com/stream/11_12.m3u8
+#EXTINF:-1 tvg-id="cat11ch13" tvg-name="Channel 13" group-title="Category 11",Channel 13
+http://example.com/stream/11_13.m3u8
+#EXTINF:-1 tvg-id="cat11ch14" tvg-name="Channel 14" group-title="Category 11",Channel 14
+http://example.com/stream/11_14.m3u8
+#EXTINF:-1 tvg-id="cat11ch15" tvg-name="Channel 15" group-title="Category 11",Channel 15
+http://example.com/stream/11_15.m3u8
+#EXTINF:-1 tvg-id="cat11ch16" tvg-name="Channel 16" group-title="Category 11",Channel 16
+http://example.com/stream/11_16.m3u8
+#EXTINF:-1 tvg-id="cat11ch17" tvg-name="Channel 17" group-title="Category 11",Channel 17
+http://example.com/stream/11_17.m3u8
+#EXTINF:-1 tvg-id="cat11ch18" tvg-name="Channel 18" group-title="Category 11",Channel 18
+http://example.com/stream/11_18.m3u8
+#EXTINF:-1 tvg-id="cat11ch19" tvg-name="Channel 19" group-title="Category 11",Channel 19
+http://example.com/stream/11_19.m3u8
+#EXTINF:-1 tvg-id="cat11ch20" tvg-name="Channel 20" group-title="Category 11",Channel 20
+http://example.com/stream/11_20.m3u8
+#EXTINF:-1 tvg-id="cat12ch1" tvg-name="Channel 1" group-title="Category 12",Channel 1
+http://example.com/stream/12_1.m3u8
+#EXTINF:-1 tvg-id="cat12ch2" tvg-name="Channel 2" group-title="Category 12",Channel 2
+http://example.com/stream/12_2.m3u8
+#EXTINF:-1 tvg-id="cat12ch3" tvg-name="Channel 3" group-title="Category 12",Channel 3
+http://example.com/stream/12_3.m3u8
+#EXTINF:-1 tvg-id="cat12ch4" tvg-name="Channel 4" group-title="Category 12",Channel 4
+http://example.com/stream/12_4.m3u8
+#EXTINF:-1 tvg-id="cat12ch5" tvg-name="Channel 5" group-title="Category 12",Channel 5
+http://example.com/stream/12_5.m3u8
+#EXTINF:-1 tvg-id="cat12ch6" tvg-name="Channel 6" group-title="Category 12",Channel 6
+http://example.com/stream/12_6.m3u8
+#EXTINF:-1 tvg-id="cat12ch7" tvg-name="Channel 7" group-title="Category 12",Channel 7
+http://example.com/stream/12_7.m3u8
+#EXTINF:-1 tvg-id="cat12ch8" tvg-name="Channel 8" group-title="Category 12",Channel 8
+http://example.com/stream/12_8.m3u8
+#EXTINF:-1 tvg-id="cat12ch9" tvg-name="Channel 9" group-title="Category 12",Channel 9
+http://example.com/stream/12_9.m3u8
+#EXTINF:-1 tvg-id="cat12ch10" tvg-name="Channel 10" group-title="Category 12",Channel 10
+http://example.com/stream/12_10.m3u8
+#EXTINF:-1 tvg-id="cat12ch11" tvg-name="Channel 11" group-title="Category 12",Channel 11
+http://example.com/stream/12_11.m3u8
+#EXTINF:-1 tvg-id="cat12ch12" tvg-name="Channel 12" group-title="Category 12",Channel 12
+http://example.com/stream/12_12.m3u8
+#EXTINF:-1 tvg-id="cat12ch13" tvg-name="Channel 13" group-title="Category 12",Channel 13
+http://example.com/stream/12_13.m3u8
+#EXTINF:-1 tvg-id="cat12ch14" tvg-name="Channel 14" group-title="Category 12",Channel 14
+http://example.com/stream/12_14.m3u8
+#EXTINF:-1 tvg-id="cat12ch15" tvg-name="Channel 15" group-title="Category 12",Channel 15
+http://example.com/stream/12_15.m3u8
+#EXTINF:-1 tvg-id="cat12ch16" tvg-name="Channel 16" group-title="Category 12",Channel 16
+http://example.com/stream/12_16.m3u8
+#EXTINF:-1 tvg-id="cat12ch17" tvg-name="Channel 17" group-title="Category 12",Channel 17
+http://example.com/stream/12_17.m3u8
+#EXTINF:-1 tvg-id="cat12ch18" tvg-name="Channel 18" group-title="Category 12",Channel 18
+http://example.com/stream/12_18.m3u8
+#EXTINF:-1 tvg-id="cat12ch19" tvg-name="Channel 19" group-title="Category 12",Channel 19
+http://example.com/stream/12_19.m3u8
+#EXTINF:-1 tvg-id="cat12ch20" tvg-name="Channel 20" group-title="Category 12",Channel 20
+http://example.com/stream/12_20.m3u8
+#EXTINF:-1 tvg-id="cat13ch1" tvg-name="Channel 1" group-title="Category 13",Channel 1
+http://example.com/stream/13_1.m3u8
+#EXTINF:-1 tvg-id="cat13ch2" tvg-name="Channel 2" group-title="Category 13",Channel 2
+http://example.com/stream/13_2.m3u8
+#EXTINF:-1 tvg-id="cat13ch3" tvg-name="Channel 3" group-title="Category 13",Channel 3
+http://example.com/stream/13_3.m3u8
+#EXTINF:-1 tvg-id="cat13ch4" tvg-name="Channel 4" group-title="Category 13",Channel 4
+http://example.com/stream/13_4.m3u8
+#EXTINF:-1 tvg-id="cat13ch5" tvg-name="Channel 5" group-title="Category 13",Channel 5
+http://example.com/stream/13_5.m3u8
+#EXTINF:-1 tvg-id="cat13ch6" tvg-name="Channel 6" group-title="Category 13",Channel 6
+http://example.com/stream/13_6.m3u8
+#EXTINF:-1 tvg-id="cat13ch7" tvg-name="Channel 7" group-title="Category 13",Channel 7
+http://example.com/stream/13_7.m3u8
+#EXTINF:-1 tvg-id="cat13ch8" tvg-name="Channel 8" group-title="Category 13",Channel 8
+http://example.com/stream/13_8.m3u8
+#EXTINF:-1 tvg-id="cat13ch9" tvg-name="Channel 9" group-title="Category 13",Channel 9
+http://example.com/stream/13_9.m3u8
+#EXTINF:-1 tvg-id="cat13ch10" tvg-name="Channel 10" group-title="Category 13",Channel 10
+http://example.com/stream/13_10.m3u8
+#EXTINF:-1 tvg-id="cat13ch11" tvg-name="Channel 11" group-title="Category 13",Channel 11
+http://example.com/stream/13_11.m3u8
+#EXTINF:-1 tvg-id="cat13ch12" tvg-name="Channel 12" group-title="Category 13",Channel 12
+http://example.com/stream/13_12.m3u8
+#EXTINF:-1 tvg-id="cat13ch13" tvg-name="Channel 13" group-title="Category 13",Channel 13
+http://example.com/stream/13_13.m3u8
+#EXTINF:-1 tvg-id="cat13ch14" tvg-name="Channel 14" group-title="Category 13",Channel 14
+http://example.com/stream/13_14.m3u8
+#EXTINF:-1 tvg-id="cat13ch15" tvg-name="Channel 15" group-title="Category 13",Channel 15
+http://example.com/stream/13_15.m3u8
+#EXTINF:-1 tvg-id="cat13ch16" tvg-name="Channel 16" group-title="Category 13",Channel 16
+http://example.com/stream/13_16.m3u8
+#EXTINF:-1 tvg-id="cat13ch17" tvg-name="Channel 17" group-title="Category 13",Channel 17
+http://example.com/stream/13_17.m3u8
+#EXTINF:-1 tvg-id="cat13ch18" tvg-name="Channel 18" group-title="Category 13",Channel 18
+http://example.com/stream/13_18.m3u8
+#EXTINF:-1 tvg-id="cat13ch19" tvg-name="Channel 19" group-title="Category 13",Channel 19
+http://example.com/stream/13_19.m3u8
+#EXTINF:-1 tvg-id="cat13ch20" tvg-name="Channel 20" group-title="Category 13",Channel 20
+http://example.com/stream/13_20.m3u8
+#EXTINF:-1 tvg-id="cat14ch1" tvg-name="Channel 1" group-title="Category 14",Channel 1
+http://example.com/stream/14_1.m3u8
+#EXTINF:-1 tvg-id="cat14ch2" tvg-name="Channel 2" group-title="Category 14",Channel 2
+http://example.com/stream/14_2.m3u8
+#EXTINF:-1 tvg-id="cat14ch3" tvg-name="Channel 3" group-title="Category 14",Channel 3
+http://example.com/stream/14_3.m3u8
+#EXTINF:-1 tvg-id="cat14ch4" tvg-name="Channel 4" group-title="Category 14",Channel 4
+http://example.com/stream/14_4.m3u8
+#EXTINF:-1 tvg-id="cat14ch5" tvg-name="Channel 5" group-title="Category 14",Channel 5
+http://example.com/stream/14_5.m3u8
+#EXTINF:-1 tvg-id="cat14ch6" tvg-name="Channel 6" group-title="Category 14",Channel 6
+http://example.com/stream/14_6.m3u8
+#EXTINF:-1 tvg-id="cat14ch7" tvg-name="Channel 7" group-title="Category 14",Channel 7
+http://example.com/stream/14_7.m3u8
+#EXTINF:-1 tvg-id="cat14ch8" tvg-name="Channel 8" group-title="Category 14",Channel 8
+http://example.com/stream/14_8.m3u8
+#EXTINF:-1 tvg-id="cat14ch9" tvg-name="Channel 9" group-title="Category 14",Channel 9
+http://example.com/stream/14_9.m3u8
+#EXTINF:-1 tvg-id="cat14ch10" tvg-name="Channel 10" group-title="Category 14",Channel 10
+http://example.com/stream/14_10.m3u8
+#EXTINF:-1 tvg-id="cat14ch11" tvg-name="Channel 11" group-title="Category 14",Channel 11
+http://example.com/stream/14_11.m3u8
+#EXTINF:-1 tvg-id="cat14ch12" tvg-name="Channel 12" group-title="Category 14",Channel 12
+http://example.com/stream/14_12.m3u8
+#EXTINF:-1 tvg-id="cat14ch13" tvg-name="Channel 13" group-title="Category 14",Channel 13
+http://example.com/stream/14_13.m3u8
+#EXTINF:-1 tvg-id="cat14ch14" tvg-name="Channel 14" group-title="Category 14",Channel 14
+http://example.com/stream/14_14.m3u8
+#EXTINF:-1 tvg-id="cat14ch15" tvg-name="Channel 15" group-title="Category 14",Channel 15
+http://example.com/stream/14_15.m3u8
+#EXTINF:-1 tvg-id="cat14ch16" tvg-name="Channel 16" group-title="Category 14",Channel 16
+http://example.com/stream/14_16.m3u8
+#EXTINF:-1 tvg-id="cat14ch17" tvg-name="Channel 17" group-title="Category 14",Channel 17
+http://example.com/stream/14_17.m3u8
+#EXTINF:-1 tvg-id="cat14ch18" tvg-name="Channel 18" group-title="Category 14",Channel 18
+http://example.com/stream/14_18.m3u8
+#EXTINF:-1 tvg-id="cat14ch19" tvg-name="Channel 19" group-title="Category 14",Channel 19
+http://example.com/stream/14_19.m3u8
+#EXTINF:-1 tvg-id="cat14ch20" tvg-name="Channel 20" group-title="Category 14",Channel 20
+http://example.com/stream/14_20.m3u8
+#EXTINF:-1 tvg-id="cat15ch1" tvg-name="Channel 1" group-title="Category 15",Channel 1
+http://example.com/stream/15_1.m3u8
+#EXTINF:-1 tvg-id="cat15ch2" tvg-name="Channel 2" group-title="Category 15",Channel 2
+http://example.com/stream/15_2.m3u8
+#EXTINF:-1 tvg-id="cat15ch3" tvg-name="Channel 3" group-title="Category 15",Channel 3
+http://example.com/stream/15_3.m3u8
+#EXTINF:-1 tvg-id="cat15ch4" tvg-name="Channel 4" group-title="Category 15",Channel 4
+http://example.com/stream/15_4.m3u8
+#EXTINF:-1 tvg-id="cat15ch5" tvg-name="Channel 5" group-title="Category 15",Channel 5
+http://example.com/stream/15_5.m3u8
+#EXTINF:-1 tvg-id="cat15ch6" tvg-name="Channel 6" group-title="Category 15",Channel 6
+http://example.com/stream/15_6.m3u8
+#EXTINF:-1 tvg-id="cat15ch7" tvg-name="Channel 7" group-title="Category 15",Channel 7
+http://example.com/stream/15_7.m3u8
+#EXTINF:-1 tvg-id="cat15ch8" tvg-name="Channel 8" group-title="Category 15",Channel 8
+http://example.com/stream/15_8.m3u8
+#EXTINF:-1 tvg-id="cat15ch9" tvg-name="Channel 9" group-title="Category 15",Channel 9
+http://example.com/stream/15_9.m3u8
+#EXTINF:-1 tvg-id="cat15ch10" tvg-name="Channel 10" group-title="Category 15",Channel 10
+http://example.com/stream/15_10.m3u8
+#EXTINF:-1 tvg-id="cat15ch11" tvg-name="Channel 11" group-title="Category 15",Channel 11
+http://example.com/stream/15_11.m3u8
+#EXTINF:-1 tvg-id="cat15ch12" tvg-name="Channel 12" group-title="Category 15",Channel 12
+http://example.com/stream/15_12.m3u8
+#EXTINF:-1 tvg-id="cat15ch13" tvg-name="Channel 13" group-title="Category 15",Channel 13
+http://example.com/stream/15_13.m3u8
+#EXTINF:-1 tvg-id="cat15ch14" tvg-name="Channel 14" group-title="Category 15",Channel 14
+http://example.com/stream/15_14.m3u8
+#EXTINF:-1 tvg-id="cat15ch15" tvg-name="Channel 15" group-title="Category 15",Channel 15
+http://example.com/stream/15_15.m3u8
+#EXTINF:-1 tvg-id="cat15ch16" tvg-name="Channel 16" group-title="Category 15",Channel 16
+http://example.com/stream/15_16.m3u8
+#EXTINF:-1 tvg-id="cat15ch17" tvg-name="Channel 17" group-title="Category 15",Channel 17
+http://example.com/stream/15_17.m3u8
+#EXTINF:-1 tvg-id="cat15ch18" tvg-name="Channel 18" group-title="Category 15",Channel 18
+http://example.com/stream/15_18.m3u8
+#EXTINF:-1 tvg-id="cat15ch19" tvg-name="Channel 19" group-title="Category 15",Channel 19
+http://example.com/stream/15_19.m3u8
+#EXTINF:-1 tvg-id="cat15ch20" tvg-name="Channel 20" group-title="Category 15",Channel 20
+http://example.com/stream/15_20.m3u8
+#EXTINF:-1 tvg-id="cat16ch1" tvg-name="Channel 1" group-title="Category 16",Channel 1
+http://example.com/stream/16_1.m3u8
+#EXTINF:-1 tvg-id="cat16ch2" tvg-name="Channel 2" group-title="Category 16",Channel 2
+http://example.com/stream/16_2.m3u8
+#EXTINF:-1 tvg-id="cat16ch3" tvg-name="Channel 3" group-title="Category 16",Channel 3
+http://example.com/stream/16_3.m3u8
+#EXTINF:-1 tvg-id="cat16ch4" tvg-name="Channel 4" group-title="Category 16",Channel 4
+http://example.com/stream/16_4.m3u8
+#EXTINF:-1 tvg-id="cat16ch5" tvg-name="Channel 5" group-title="Category 16",Channel 5
+http://example.com/stream/16_5.m3u8
+#EXTINF:-1 tvg-id="cat16ch6" tvg-name="Channel 6" group-title="Category 16",Channel 6
+http://example.com/stream/16_6.m3u8
+#EXTINF:-1 tvg-id="cat16ch7" tvg-name="Channel 7" group-title="Category 16",Channel 7
+http://example.com/stream/16_7.m3u8
+#EXTINF:-1 tvg-id="cat16ch8" tvg-name="Channel 8" group-title="Category 16",Channel 8
+http://example.com/stream/16_8.m3u8
+#EXTINF:-1 tvg-id="cat16ch9" tvg-name="Channel 9" group-title="Category 16",Channel 9
+http://example.com/stream/16_9.m3u8
+#EXTINF:-1 tvg-id="cat16ch10" tvg-name="Channel 10" group-title="Category 16",Channel 10
+http://example.com/stream/16_10.m3u8
+#EXTINF:-1 tvg-id="cat16ch11" tvg-name="Channel 11" group-title="Category 16",Channel 11
+http://example.com/stream/16_11.m3u8
+#EXTINF:-1 tvg-id="cat16ch12" tvg-name="Channel 12" group-title="Category 16",Channel 12
+http://example.com/stream/16_12.m3u8
+#EXTINF:-1 tvg-id="cat16ch13" tvg-name="Channel 13" group-title="Category 16",Channel 13
+http://example.com/stream/16_13.m3u8
+#EXTINF:-1 tvg-id="cat16ch14" tvg-name="Channel 14" group-title="Category 16",Channel 14
+http://example.com/stream/16_14.m3u8
+#EXTINF:-1 tvg-id="cat16ch15" tvg-name="Channel 15" group-title="Category 16",Channel 15
+http://example.com/stream/16_15.m3u8
+#EXTINF:-1 tvg-id="cat16ch16" tvg-name="Channel 16" group-title="Category 16",Channel 16
+http://example.com/stream/16_16.m3u8
+#EXTINF:-1 tvg-id="cat16ch17" tvg-name="Channel 17" group-title="Category 16",Channel 17
+http://example.com/stream/16_17.m3u8
+#EXTINF:-1 tvg-id="cat16ch18" tvg-name="Channel 18" group-title="Category 16",Channel 18
+http://example.com/stream/16_18.m3u8
+#EXTINF:-1 tvg-id="cat16ch19" tvg-name="Channel 19" group-title="Category 16",Channel 19
+http://example.com/stream/16_19.m3u8
+#EXTINF:-1 tvg-id="cat16ch20" tvg-name="Channel 20" group-title="Category 16",Channel 20
+http://example.com/stream/16_20.m3u8
+#EXTINF:-1 tvg-id="cat17ch1" tvg-name="Channel 1" group-title="Category 17",Channel 1
+http://example.com/stream/17_1.m3u8
+#EXTINF:-1 tvg-id="cat17ch2" tvg-name="Channel 2" group-title="Category 17",Channel 2
+http://example.com/stream/17_2.m3u8
+#EXTINF:-1 tvg-id="cat17ch3" tvg-name="Channel 3" group-title="Category 17",Channel 3
+http://example.com/stream/17_3.m3u8
+#EXTINF:-1 tvg-id="cat17ch4" tvg-name="Channel 4" group-title="Category 17",Channel 4
+http://example.com/stream/17_4.m3u8
+#EXTINF:-1 tvg-id="cat17ch5" tvg-name="Channel 5" group-title="Category 17",Channel 5
+http://example.com/stream/17_5.m3u8
+#EXTINF:-1 tvg-id="cat17ch6" tvg-name="Channel 6" group-title="Category 17",Channel 6
+http://example.com/stream/17_6.m3u8
+#EXTINF:-1 tvg-id="cat17ch7" tvg-name="Channel 7" group-title="Category 17",Channel 7
+http://example.com/stream/17_7.m3u8
+#EXTINF:-1 tvg-id="cat17ch8" tvg-name="Channel 8" group-title="Category 17",Channel 8
+http://example.com/stream/17_8.m3u8
+#EXTINF:-1 tvg-id="cat17ch9" tvg-name="Channel 9" group-title="Category 17",Channel 9
+http://example.com/stream/17_9.m3u8
+#EXTINF:-1 tvg-id="cat17ch10" tvg-name="Channel 10" group-title="Category 17",Channel 10
+http://example.com/stream/17_10.m3u8
+#EXTINF:-1 tvg-id="cat17ch11" tvg-name="Channel 11" group-title="Category 17",Channel 11
+http://example.com/stream/17_11.m3u8
+#EXTINF:-1 tvg-id="cat17ch12" tvg-name="Channel 12" group-title="Category 17",Channel 12
+http://example.com/stream/17_12.m3u8
+#EXTINF:-1 tvg-id="cat17ch13" tvg-name="Channel 13" group-title="Category 17",Channel 13
+http://example.com/stream/17_13.m3u8
+#EXTINF:-1 tvg-id="cat17ch14" tvg-name="Channel 14" group-title="Category 17",Channel 14
+http://example.com/stream/17_14.m3u8
+#EXTINF:-1 tvg-id="cat17ch15" tvg-name="Channel 15" group-title="Category 17",Channel 15
+http://example.com/stream/17_15.m3u8
+#EXTINF:-1 tvg-id="cat17ch16" tvg-name="Channel 16" group-title="Category 17",Channel 16
+http://example.com/stream/17_16.m3u8
+#EXTINF:-1 tvg-id="cat17ch17" tvg-name="Channel 17" group-title="Category 17",Channel 17
+http://example.com/stream/17_17.m3u8
+#EXTINF:-1 tvg-id="cat17ch18" tvg-name="Channel 18" group-title="Category 17",Channel 18
+http://example.com/stream/17_18.m3u8
+#EXTINF:-1 tvg-id="cat17ch19" tvg-name="Channel 19" group-title="Category 17",Channel 19
+http://example.com/stream/17_19.m3u8
+#EXTINF:-1 tvg-id="cat17ch20" tvg-name="Channel 20" group-title="Category 17",Channel 20
+http://example.com/stream/17_20.m3u8
+#EXTINF:-1 tvg-id="cat18ch1" tvg-name="Channel 1" group-title="Category 18",Channel 1
+http://example.com/stream/18_1.m3u8
+#EXTINF:-1 tvg-id="cat18ch2" tvg-name="Channel 2" group-title="Category 18",Channel 2
+http://example.com/stream/18_2.m3u8
+#EXTINF:-1 tvg-id="cat18ch3" tvg-name="Channel 3" group-title="Category 18",Channel 3
+http://example.com/stream/18_3.m3u8
+#EXTINF:-1 tvg-id="cat18ch4" tvg-name="Channel 4" group-title="Category 18",Channel 4
+http://example.com/stream/18_4.m3u8
+#EXTINF:-1 tvg-id="cat18ch5" tvg-name="Channel 5" group-title="Category 18",Channel 5
+http://example.com/stream/18_5.m3u8
+#EXTINF:-1 tvg-id="cat18ch6" tvg-name="Channel 6" group-title="Category 18",Channel 6
+http://example.com/stream/18_6.m3u8
+#EXTINF:-1 tvg-id="cat18ch7" tvg-name="Channel 7" group-title="Category 18",Channel 7
+http://example.com/stream/18_7.m3u8
+#EXTINF:-1 tvg-id="cat18ch8" tvg-name="Channel 8" group-title="Category 18",Channel 8
+http://example.com/stream/18_8.m3u8
+#EXTINF:-1 tvg-id="cat18ch9" tvg-name="Channel 9" group-title="Category 18",Channel 9
+http://example.com/stream/18_9.m3u8
+#EXTINF:-1 tvg-id="cat18ch10" tvg-name="Channel 10" group-title="Category 18",Channel 10
+http://example.com/stream/18_10.m3u8
+#EXTINF:-1 tvg-id="cat18ch11" tvg-name="Channel 11" group-title="Category 18",Channel 11
+http://example.com/stream/18_11.m3u8
+#EXTINF:-1 tvg-id="cat18ch12" tvg-name="Channel 12" group-title="Category 18",Channel 12
+http://example.com/stream/18_12.m3u8
+#EXTINF:-1 tvg-id="cat18ch13" tvg-name="Channel 13" group-title="Category 18",Channel 13
+http://example.com/stream/18_13.m3u8
+#EXTINF:-1 tvg-id="cat18ch14" tvg-name="Channel 14" group-title="Category 18",Channel 14
+http://example.com/stream/18_14.m3u8
+#EXTINF:-1 tvg-id="cat18ch15" tvg-name="Channel 15" group-title="Category 18",Channel 15
+http://example.com/stream/18_15.m3u8
+#EXTINF:-1 tvg-id="cat18ch16" tvg-name="Channel 16" group-title="Category 18",Channel 16
+http://example.com/stream/18_16.m3u8
+#EXTINF:-1 tvg-id="cat18ch17" tvg-name="Channel 17" group-title="Category 18",Channel 17
+http://example.com/stream/18_17.m3u8
+#EXTINF:-1 tvg-id="cat18ch18" tvg-name="Channel 18" group-title="Category 18",Channel 18
+http://example.com/stream/18_18.m3u8
+#EXTINF:-1 tvg-id="cat18ch19" tvg-name="Channel 19" group-title="Category 18",Channel 19
+http://example.com/stream/18_19.m3u8
+#EXTINF:-1 tvg-id="cat18ch20" tvg-name="Channel 20" group-title="Category 18",Channel 20
+http://example.com/stream/18_20.m3u8
+#EXTINF:-1 tvg-id="cat19ch1" tvg-name="Channel 1" group-title="Category 19",Channel 1
+http://example.com/stream/19_1.m3u8
+#EXTINF:-1 tvg-id="cat19ch2" tvg-name="Channel 2" group-title="Category 19",Channel 2
+http://example.com/stream/19_2.m3u8
+#EXTINF:-1 tvg-id="cat19ch3" tvg-name="Channel 3" group-title="Category 19",Channel 3
+http://example.com/stream/19_3.m3u8
+#EXTINF:-1 tvg-id="cat19ch4" tvg-name="Channel 4" group-title="Category 19",Channel 4
+http://example.com/stream/19_4.m3u8
+#EXTINF:-1 tvg-id="cat19ch5" tvg-name="Channel 5" group-title="Category 19",Channel 5
+http://example.com/stream/19_5.m3u8
+#EXTINF:-1 tvg-id="cat19ch6" tvg-name="Channel 6" group-title="Category 19",Channel 6
+http://example.com/stream/19_6.m3u8
+#EXTINF:-1 tvg-id="cat19ch7" tvg-name="Channel 7" group-title="Category 19",Channel 7
+http://example.com/stream/19_7.m3u8
+#EXTINF:-1 tvg-id="cat19ch8" tvg-name="Channel 8" group-title="Category 19",Channel 8
+http://example.com/stream/19_8.m3u8
+#EXTINF:-1 tvg-id="cat19ch9" tvg-name="Channel 9" group-title="Category 19",Channel 9
+http://example.com/stream/19_9.m3u8
+#EXTINF:-1 tvg-id="cat19ch10" tvg-name="Channel 10" group-title="Category 19",Channel 10
+http://example.com/stream/19_10.m3u8
+#EXTINF:-1 tvg-id="cat19ch11" tvg-name="Channel 11" group-title="Category 19",Channel 11
+http://example.com/stream/19_11.m3u8
+#EXTINF:-1 tvg-id="cat19ch12" tvg-name="Channel 12" group-title="Category 19",Channel 12
+http://example.com/stream/19_12.m3u8
+#EXTINF:-1 tvg-id="cat19ch13" tvg-name="Channel 13" group-title="Category 19",Channel 13
+http://example.com/stream/19_13.m3u8
+#EXTINF:-1 tvg-id="cat19ch14" tvg-name="Channel 14" group-title="Category 19",Channel 14
+http://example.com/stream/19_14.m3u8
+#EXTINF:-1 tvg-id="cat19ch15" tvg-name="Channel 15" group-title="Category 19",Channel 15
+http://example.com/stream/19_15.m3u8
+#EXTINF:-1 tvg-id="cat19ch16" tvg-name="Channel 16" group-title="Category 19",Channel 16
+http://example.com/stream/19_16.m3u8
+#EXTINF:-1 tvg-id="cat19ch17" tvg-name="Channel 17" group-title="Category 19",Channel 17
+http://example.com/stream/19_17.m3u8
+#EXTINF:-1 tvg-id="cat19ch18" tvg-name="Channel 18" group-title="Category 19",Channel 18
+http://example.com/stream/19_18.m3u8
+#EXTINF:-1 tvg-id="cat19ch19" tvg-name="Channel 19" group-title="Category 19",Channel 19
+http://example.com/stream/19_19.m3u8
+#EXTINF:-1 tvg-id="cat19ch20" tvg-name="Channel 20" group-title="Category 19",Channel 20
+http://example.com/stream/19_20.m3u8
+#EXTINF:-1 tvg-id="cat20ch1" tvg-name="Channel 1" group-title="Category 20",Channel 1
+http://example.com/stream/20_1.m3u8
+#EXTINF:-1 tvg-id="cat20ch2" tvg-name="Channel 2" group-title="Category 20",Channel 2
+http://example.com/stream/20_2.m3u8
+#EXTINF:-1 tvg-id="cat20ch3" tvg-name="Channel 3" group-title="Category 20",Channel 3
+http://example.com/stream/20_3.m3u8
+#EXTINF:-1 tvg-id="cat20ch4" tvg-name="Channel 4" group-title="Category 20",Channel 4
+http://example.com/stream/20_4.m3u8
+#EXTINF:-1 tvg-id="cat20ch5" tvg-name="Channel 5" group-title="Category 20",Channel 5
+http://example.com/stream/20_5.m3u8
+#EXTINF:-1 tvg-id="cat20ch6" tvg-name="Channel 6" group-title="Category 20",Channel 6
+http://example.com/stream/20_6.m3u8
+#EXTINF:-1 tvg-id="cat20ch7" tvg-name="Channel 7" group-title="Category 20",Channel 7
+http://example.com/stream/20_7.m3u8
+#EXTINF:-1 tvg-id="cat20ch8" tvg-name="Channel 8" group-title="Category 20",Channel 8
+http://example.com/stream/20_8.m3u8
+#EXTINF:-1 tvg-id="cat20ch9" tvg-name="Channel 9" group-title="Category 20",Channel 9
+http://example.com/stream/20_9.m3u8
+#EXTINF:-1 tvg-id="cat20ch10" tvg-name="Channel 10" group-title="Category 20",Channel 10
+http://example.com/stream/20_10.m3u8
+#EXTINF:-1 tvg-id="cat20ch11" tvg-name="Channel 11" group-title="Category 20",Channel 11
+http://example.com/stream/20_11.m3u8
+#EXTINF:-1 tvg-id="cat20ch12" tvg-name="Channel 12" group-title="Category 20",Channel 12
+http://example.com/stream/20_12.m3u8
+#EXTINF:-1 tvg-id="cat20ch13" tvg-name="Channel 13" group-title="Category 20",Channel 13
+http://example.com/stream/20_13.m3u8
+#EXTINF:-1 tvg-id="cat20ch14" tvg-name="Channel 14" group-title="Category 20",Channel 14
+http://example.com/stream/20_14.m3u8
+#EXTINF:-1 tvg-id="cat20ch15" tvg-name="Channel 15" group-title="Category 20",Channel 15
+http://example.com/stream/20_15.m3u8
+#EXTINF:-1 tvg-id="cat20ch16" tvg-name="Channel 16" group-title="Category 20",Channel 16
+http://example.com/stream/20_16.m3u8
+#EXTINF:-1 tvg-id="cat20ch17" tvg-name="Channel 17" group-title="Category 20",Channel 17
+http://example.com/stream/20_17.m3u8
+#EXTINF:-1 tvg-id="cat20ch18" tvg-name="Channel 18" group-title="Category 20",Channel 18
+http://example.com/stream/20_18.m3u8
+#EXTINF:-1 tvg-id="cat20ch19" tvg-name="Channel 19" group-title="Category 20",Channel 19
+http://example.com/stream/20_19.m3u8
+#EXTINF:-1 tvg-id="cat20ch20" tvg-name="Channel 20" group-title="Category 20",Channel 20
+http://example.com/stream/20_20.m3u8
