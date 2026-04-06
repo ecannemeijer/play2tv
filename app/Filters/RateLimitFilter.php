@@ -25,6 +25,10 @@ class RateLimitFilter implements FilterInterface
 {
     public function before(RequestInterface $request, $arguments = null)
     {
+        if (strtoupper($request->getMethod()) === 'OPTIONS') {
+            return null;
+        }
+
         $limits = (new SecurityThrottleService())->enforce($request);
 
         if ($limits !== null) {
