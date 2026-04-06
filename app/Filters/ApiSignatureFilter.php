@@ -21,6 +21,10 @@ class ApiSignatureFilter implements FilterInterface
 
     public function before(RequestInterface $request, $arguments = null)
     {
+        if (strtoupper($request->getMethod()) === 'OPTIONS') {
+            return null;
+        }
+
         $apiKey           = trim((string) env('api.clientKey', ''));
         $signatureSecret  = trim((string) env('api.signatureSecret', ''));
         $providedApiKey   = trim($request->getHeaderLine('X-Api-Key'));

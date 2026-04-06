@@ -37,6 +37,7 @@ class Cors extends BaseConfig
         'allowedOrigins' => [
             'https://app.play2tv.nl',
             'https://dashboard.play2tv.nl',
+            'https://user.velixatv.com',
         ],
 
         /**
