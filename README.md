@@ -41,8 +41,11 @@ play2tv/
 │   │   └── Admin/
 │   │       ├── AdminAuthController.php    ← admin login/logout
 │   │       ├── DashboardController.php    ← statistieken dashboard
+│   │       ├── RedisController.php        ← Redis admin dashboard + acties
 │   │       ├── UserController.php         ← gebruikersbeheer
 │   │       └── PlaylistController.php     ← playlist beheer
+│   ├── Services/
+│   │   └── RedisService.php               ← Redis metrics, scans en veilige admin acties
 │   ├── Database/
 │   │   ├── Migrations/          ← 7 database migraties
 │   │   └── Seeds/
@@ -68,6 +71,7 @@ play2tv/
 │           ├── layout.php       ← Gedeelde sidebar layout
 │           ├── login.php        ← Admin login pagina
 │           ├── dashboard.php    ← Statistieken + Chart.js
+│           ├── redis_dashboard.php ← Redis dashboard met tabs + realtime updates
 │           ├── users/
 │           │   ├── index.php   ← Gebruikerslijst + zoek/filter
 │           │   ├── view.php    ← Gebruikersdetail + IP/devices
@@ -76,12 +80,17 @@ play2tv/
 │               ├── index.php   ← Playlist overzicht
 │               ├── add.php     ← Playlist uploaden
 │               └── edit.php    ← Playlist bewerken
+├── tools/
+│   └── redis-admin-ws/
+│       ├── package.json         ← Node WebSocket broadcaster
+│       └── server.js            ← Realtime Redis snapshot service
 ├── public/                      ← DocumentRoot (Apache)
 │   └── .htaccess
 ├── play2tv-apache.conf          ← Apache VirtualHost voorbeeld
 ├── .env                         ← Jouw configuratie (NIET committen!)
 ├── .env.example                 ← Template voor .env
-└── composer.json
+├── composer.json
+└── package.json                 ← Root npm scripts voor Redis WebSocket service
 ```
 
 ---
@@ -230,7 +239,249 @@ session.redisSavePath = "tcp://127.0.0.1:6379?database=1&prefix=play2tv_session:
 
 Als Redis niet beschikbaar is of de PHP Redis extensie ontbreekt, valt de applicatie terug op een veiligere fallback-configuratie.
 
-### 9. Controleren of Redis werkt
+### 9a. Redis Admin Dashboard configureren
+
+Naast cache en sessies ondersteunt Play2TV een aparte adminpagina op `/admin/redis`.
+
+Deze implementatie bestaat uit twee delen:
+- een CI4 controller + service voor initial load, key search, admin acties en fallback data
+- een Node.js WebSocket broadcaster voor realtime updates zonder polling
+
+#### Vereiste `.env` variabelen
+
+Gebruik in productie minimaal deze Redis-sectie:
+
+```ini
+#--------------------------------------------------------------------
+# REDIS DASHBOARD
+#--------------------------------------------------------------------
+redis.host = 127.0.0.1
+redis.port = 6379
+redis.password = JOUW_STERKE_REDIS_WACHTWOORD
+redis.database = 0
+redis.connectTimeout = 1.5
+redis.readTimeout = 1.5
+redis.prefix = play2tv:
+redis.scanCount = 200
+redis.scanSampleLimit = 500
+redis.keySearchLimit = 100
+redis.slowlogLimit = 25
+redis.keyDeleteEnabled = true
+redis.admin.allowedCommands = ping,info,ttl,pttl,type,exists,get,hgetall,hget,llen,scard,zcard,memory_usage
+redis.admin.flushablePrefixes = play2tv:,cache:,epg:,vod:
+redis.iptv.userPrefixes = play2tv:session:,play2tv:user:session:,iptv:user:
+redis.iptv.streamPrefixes = play2tv:stream:active:,iptv:stream:,stream:active:
+redis.iptv.epgHitKeys = play2tv:metrics:epg:hits,metrics:epg:hits,cache:epg:hits
+redis.iptv.vodHitKeys = play2tv:metrics:vod:hits,metrics:vod:hits,cache:vod:hits
+redis.websocket.url = wss://api.velixatv.com/redis-ws
+redis.websocket.secret = VERVANG_MET_LANG_RANDOM_SECRET
+redis.websocket.intervalMs = 2000
+redis.websocket.bindHost = 127.0.0.1
+redis.websocket.bindPort = 8082
+redis.websocket.path = /redis-ws
+```
+
+Belangrijk:
+- `redis.websocket.url` is het publieke browser-endpoint
+- `redis.websocket.bindHost` en `redis.websocket.bindPort` zijn alleen voor de interne Node listener
+- gebruik `wss://` op HTTPS-productieomgevingen
+- gebruik `memory_usage` in `.env`, niet `memory usage`, om DotEnv parsing fouten te voorkomen
+
+#### Dashboard functionaliteit
+
+De Redis adminpagina bevat tabs voor:
+- Overview
+- Performance
+- Memory
+- Keys
+- Slowlog
+- IPTV
+- Admin
+
+De pagina ondersteunt:
+- realtime statistieken via WebSocket
+- automatische reconnect bij verbrekingen
+- initial snapshot via CI4 als fallback
+- Chart.js grafieken voor memory, commands/sec, clients en hit/miss ratio
+- SCAN-gebaseerde key search met TTL en memory usage
+- prefix-based cache flush
+- veilige Redis admin commands via allowlist
+- alerting voor hoge memory usage, evictions en latency
+
+#### Beveiliging
+
+De Redis dashboard implementatie is alleen bedoeld voor admins.
+
+Beveiligingsmaatregelen:
+- routebeveiliging via `AdminAuthFilter`
+- signed WebSocket token vanuit de admin sessie
+- admin acties worden gelogd via `SecurityEventService`
+- gevaarlijke Redis commands zijn geblokkeerd
+- `KEYS *` wordt nergens gebruikt; alleen `SCAN`
+- flush is alleen toegestaan op expliciet toegestane prefixes
+
+#### Beschikbare admin routes
+
+| Methode | Endpoint | Beschrijving |
+|---|---|---|
+| GET | `/admin/redis` | Dashboard pagina |
+| GET | `/admin/redis/initial` | Initial JSON snapshot fallback |
+| GET | `/admin/redis/keys?pattern=...` | Zoekt keys via `SCAN` |
+| POST | `/admin/redis/keys/delete` | Verwijdert 1 key |
+| POST | `/admin/redis/admin/flush-prefix` | Flusht toegestane prefix |
+| POST | `/admin/redis/admin/execute` | Voert veilig allowlisted command uit |
+
+#### Veilige Redis commands
+
+Standaard allowlist:
+- `ping`
+- `info`
+- `ttl`
+- `pttl`
+- `type`
+- `exists`
+- `get`
+- `hgetall`
+- `hget`
+- `llen`
+- `scard`
+- `zcard`
+- `memory usage` via env alias `memory_usage`
+
+Expliciet geblokkeerd:
+- `flushall`
+- `flushdb`
+- `eval`
+- `evalsha`
+- `script`
+- `config`
+- `keys`
+- `shutdown`
+- `debug`
+- `migrate`
+- `restore`
+- `replicaof`
+- `slaveof`
+- `monitor`
+
+#### Prefix flush gedrag
+
+Prefix-flush gebruikt altijd `SCAN` en verwijdert alleen keys onder deze toegestane prefixes:
+- `play2tv:`
+- `cache:`
+- `epg:`
+- `vod:`
+
+Pas deze lijst alleen aan als je Redis key naming in productie anders is.
+
+### 9b. WebSocket service installeren
+
+De realtime feed draait als aparte Node.js service onder `tools/redis-admin-ws`.
+
+Installeren vanaf de project root:
+
+```bash
+npm run redis:ws:install
+```
+
+Of direct in de map:
+
+```bash
+cd /var/www/html/play2tv/tools/redis-admin-ws
+npm install
+```
+
+Starten vanaf project root:
+
+```bash
+npm start
+```
+
+Of direct:
+
+```bash
+cd /var/www/html/play2tv/tools/redis-admin-ws
+npm start
+```
+
+Bij succesvolle startup zie je ongeveer:
+
+```text
+[redis-admin-ws] listening on ws://127.0.0.1:8082/redis-ws
+[redis-admin-ws] public endpoint wss://api.velixatv.com/redis-ws
+```
+
+### 9c. nginx / Nginx Proxy Manager WebSocket proxy
+
+De Node service hoort niet publiek op dezelfde poort te luisteren als nginx.
+
+Correct productiepad:
+- browser gebruikt `wss://api.velixatv.com/redis-ws`
+- nginx proxyt dit intern naar `127.0.0.1:8082`
+- Node luistert alleen lokaal op `127.0.0.1:8082`
+
+Voor een standaard nginx vhost:
+
+```nginx
+location /redis-ws {
+  proxy_pass http://127.0.0.1:8082/redis-ws;
+  proxy_http_version 1.1;
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection "upgrade";
+  proxy_set_header Host $host;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $scheme;
+  proxy_read_timeout 60s;
+  proxy_send_timeout 60s;
+}
+```
+
+Gebruik je Nginx Proxy Manager, voeg dan equivalent WebSocket proxy gedrag toe aan dezelfde host die `api.velixatv.com` afhandelt.
+
+### 9d. Realtime status “Disconnected” debuggen
+
+Als de Redis pagina laadt maar rechtsboven `Disconnected` blijft staan, controleer dan in deze volgorde:
+
+1. Klopt `redis.websocket.url` en gebruikt deze `wss://` op HTTPS?
+2. Is `redis.websocket.path` gelijk aan het nginx proxy pad, bijvoorbeeld `/redis-ws`?
+3. Draait de Node service werkelijk op `127.0.0.1:8082`?
+4. Proxyt nginx of NPM WebSocket upgrades correct door?
+5. Klopt `app.baseURL` met het publieke domein zodat origin validatie slaagt?
+6. Is `redis.websocket.secret` exact gelijk voor CI4 en de Node service?
+
+Veelvoorkomende fouten:
+- `ws://127.0.0.1:8081` in productie gebruiken
+- browser probeert naar localhost te verbinden in plaats van naar het publieke domein
+- poortconflict omdat nginx al op `8081` luistert
+- `memory usage` met spatie in `.env`, wat CI4 DotEnv laat crashen
+- WebSocket proxy wel op nginx backend zetten, maar niet op de publieke Proxy Manager host
+
+Handige productiechecks:
+
+```bash
+ss -ltnp | grep 8082
+curl -I https://api.velixatv.com/
+```
+
+Voor Node logs:
+
+```bash
+cd /var/www/html/play2tv/tools/redis-admin-ws
+npm start
+```
+
+### 9e. Redis dashboard uitrollen na wijzigingen
+
+Na wijzigingen aan `.env`, nginx proxying of de WebSocket service:
+
+```bash
+systemctl reload nginx
+systemctl restart php8.2-fpm
+```
+
+En herstart daarna de Node service opnieuw.
+
+### 10. Controleren of Redis werkt
 
 Test eerst Redis zelf:
 
@@ -263,14 +514,14 @@ SELECT 1
 KEYS play2tv_session:*
 ```
 
-### 10. Rechten instellen
+### 11. Rechten instellen
 
 ```bash
 chown -R www-data:www-data /var/www/play2tv/writable
 chmod -R 775 /var/www/play2tv/writable
 ```
 
-### 11. PHP / webserver herstarten na `.env` wijzigingen
+### 12. PHP / webserver herstarten na `.env` wijzigingen
 
 Bij Apache mod_php:
 
@@ -289,7 +540,7 @@ systemctl restart apache2
 
 ## API Endpoints
 
-Base URL: `https://api.play2tv.nl`
+Base URL: `https://api.velixatv.com`
 
 ### Authenticatie (geen access token vereist)
 

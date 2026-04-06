@@ -9,7 +9,7 @@ use CodeIgniter\Router\RouteCollection;
  *   /api/*       → JWT protected (except register/login/logout)
  *   /admin/*     → Session protected (except login)
  *
- * Android Retrofit base URL: https://api.play2tv.nl/
+ * Android Retrofit base URL: https://api.velixatv.com/
  *
  * @var RouteCollection $routes
  */
