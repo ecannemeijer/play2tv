@@ -88,6 +88,7 @@ class Filters extends BaseFilters
      */
     public array $globals = [
         'before' => [
+            'secureheadersapi',
             // 'honeypot',
             'csrf' => ['except' => ['api/*']], // CSRF for admin pages only, not API
             // 'invalidchars',
