@@ -111,9 +111,11 @@ class Cors extends BaseConfig
     {
         parent::__construct();
 
+        $defaultOrigins = $this->default['allowedOrigins'];
         $configuredOrigins = trim((string) env('cors.allowedOrigins', ''));
         if ($configuredOrigins !== '') {
-            $this->default['allowedOrigins'] = array_values(array_filter(array_map('trim', explode(',', $configuredOrigins))));
+            $configured = array_values(array_filter(array_map('trim', explode(',', $configuredOrigins))));
+            $this->default['allowedOrigins'] = array_values(array_unique([...$defaultOrigins, ...$configured]));
         }
     }
 }
