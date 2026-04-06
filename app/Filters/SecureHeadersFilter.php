@@ -115,9 +115,20 @@ class SecureHeadersFilter implements FilterInterface
      */
     private function getAllowedOrigins(): array
     {
-        $configured = trim((string) env('cors.allowedOrigins', 'https://app.play2tv.nl,https://dashboard.play2tv.nl,https://user.velixatv.com'));
+        $defaultOrigins = [
+            'https://app.play2tv.nl',
+            'https://dashboard.play2tv.nl',
+            'https://user.velixatv.com',
+        ];
+        $configured = trim((string) env('cors.allowedOrigins', ''));
 
-        return array_values(array_filter(array_map('trim', explode(',', $configured))));
+        if ($configured === '') {
+            return $defaultOrigins;
+        }
+
+        $configuredOrigins = array_values(array_filter(array_map('trim', explode(',', $configured))));
+
+        return array_values(array_unique([...$defaultOrigins, ...$configuredOrigins]));
     }
 
     private function resolveAllowedOrigin(string $origin): ?string
