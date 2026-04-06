@@ -273,7 +273,7 @@ redis.iptv.userPrefixes = play2tv:session:,play2tv:user:session:,iptv:user:
 redis.iptv.streamPrefixes = play2tv:stream:active:,iptv:stream:,stream:active:
 redis.iptv.epgHitKeys = play2tv:metrics:epg:hits,metrics:epg:hits,cache:epg:hits
 redis.iptv.vodHitKeys = play2tv:metrics:vod:hits,metrics:vod:hits,cache:vod:hits
-redis.websocket.url = wss://api.play2tv.homearchive.nl/redis-ws
+redis.websocket.url = wss://api.velixatv.com/redis-ws
 redis.websocket.secret = VERVANG_MET_LANG_RANDOM_SECRET
 redis.websocket.intervalMs = 2000
 redis.websocket.bindHost = 127.0.0.1
@@ -408,7 +408,7 @@ Bij succesvolle startup zie je ongeveer:
 
 ```text
 [redis-admin-ws] listening on ws://127.0.0.1:8082/redis-ws
-[redis-admin-ws] public endpoint wss://api.play2tv.homearchive.nl/redis-ws
+[redis-admin-ws] public endpoint wss://api.velixatv.com/redis-ws
 ```
 
 ### 9c. nginx / Nginx Proxy Manager WebSocket proxy
@@ -416,7 +416,7 @@ Bij succesvolle startup zie je ongeveer:
 De Node service hoort niet publiek op dezelfde poort te luisteren als nginx.
 
 Correct productiepad:
-- browser gebruikt `wss://api.play2tv.homearchive.nl/redis-ws`
+- browser gebruikt `wss://api.velixatv.com/redis-ws`
 - nginx proxyt dit intern naar `127.0.0.1:8082`
 - Node luistert alleen lokaal op `127.0.0.1:8082`
 
@@ -436,7 +436,7 @@ location /redis-ws {
 }
 ```
 
-Gebruik je Nginx Proxy Manager, voeg dan equivalent WebSocket proxy gedrag toe aan dezelfde host die `api.play2tv.homearchive.nl` afhandelt.
+Gebruik je Nginx Proxy Manager, voeg dan equivalent WebSocket proxy gedrag toe aan dezelfde host die `api.velixatv.com` afhandelt.
 
 ### 9d. Realtime status “Disconnected” debuggen
 
@@ -460,7 +460,7 @@ Handige productiechecks:
 
 ```bash
 ss -ltnp | grep 8082
-curl -I https://api.play2tv.homearchive.nl/
+curl -I https://api.velixatv.com/
 ```
 
 Voor Node logs:
@@ -540,7 +540,7 @@ systemctl restart apache2
 
 ## API Endpoints
 
-Base URL: `https://api.play2tv.nl`
+Base URL: `https://api.velixatv.com`
 
 ### Authenticatie (geen access token vereist)
 
