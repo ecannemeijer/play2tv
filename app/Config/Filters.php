@@ -71,7 +71,6 @@ class Filters extends BaseFilters
     public array $required = [
         'before' => [
             'forcehttps', // Force Global Secure Requests
-            'cors',
         ],
         'after' => ENVIRONMENT === 'production'
             ? ['performance']
