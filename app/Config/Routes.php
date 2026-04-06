@@ -19,6 +19,28 @@ use CodeIgniter\Router\RouteCollection;
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Public (no JWT required)
+$routes->options('api/login', static function () {
+    return service('response')->setStatusCode(204);
+});
+$routes->options('api/register', static function () {
+    return service('response')->setStatusCode(204);
+});
+$routes->options('api/refresh', static function () {
+    return service('response')->setStatusCode(204);
+});
+$routes->options('api/logout', static function () {
+    return service('response')->setStatusCode(204);
+});
+$routes->options('api/(:segment)', static function () {
+    return service('response')->setStatusCode(204);
+});
+$routes->options('api/(:segment)/(:segment)', static function () {
+    return service('response')->setStatusCode(204);
+});
+$routes->options('api/(:segment)/(:segment)/(:segment)', static function () {
+    return service('response')->setStatusCode(204);
+});
+
 $routes->post('api/register', 'Api\AuthController::register');
 $routes->post('api/login',    'Api\AuthController::login');
 $routes->post('api/refresh',  'Api\AuthController::refresh');
