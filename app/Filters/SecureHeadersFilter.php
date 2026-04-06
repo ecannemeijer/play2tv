@@ -28,7 +28,7 @@ class SecureHeadersFilter implements FilterInterface
 {
     public function before(RequestInterface $request, $arguments = null)
     {
-        if ($request->getMethod() === 'options' && $this->isApiRequest($request)) {
+        if (strtoupper($request->getMethod()) === 'OPTIONS' && $this->isApiRequest($request)) {
             $origin = $this->resolveAllowedOrigin($request->getHeaderLine('Origin'));
 
             if ($origin === null) {
@@ -115,7 +115,7 @@ class SecureHeadersFilter implements FilterInterface
      */
     private function getAllowedOrigins(): array
     {
-        $configured = trim((string) env('cors.allowedOrigins', 'https://app.play2tv.nl,https://dashboard.play2tv.nl'));
+        $configured = trim((string) env('cors.allowedOrigins', 'https://app.play2tv.nl,https://dashboard.play2tv.nl,https://user.velixatv.com'));
 
         return array_values(array_filter(array_map('trim', explode(',', $configured))));
     }
