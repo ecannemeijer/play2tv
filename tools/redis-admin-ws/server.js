@@ -19,7 +19,7 @@ const slowlogLimit = Math.max(1, Number(process.env.REDIS_SLOWLOG_LIMIT || proce
 const scanCount = Math.max(50, Number(process.env.REDIS_SCAN_COUNT || process.env['redis.scanCount'] || 200));
 const sampleLimit = Math.max(100, Number(process.env.REDIS_SCAN_SAMPLE_LIMIT || process.env['redis.scanSampleLimit'] || 500));
 const adminSecret = String(process.env.REDIS_WEBSOCKET_SECRET || process.env['redis.websocket.secret'] || '').trim();
-const allowedOrigin = String(process.env.APP_BASE_URL || process.env['app.baseURL'] || '').trim();
+const allowedOrigins = buildAllowedOrigins();
 
 if (! adminSecret) {
     throw new Error('redis.websocket.secret must be configured before starting the Redis WebSocket server.');
@@ -42,6 +42,33 @@ redisClient.on('error', (error) => {
 function envList(primary, fallback) {
     const raw = String(process.env[primary] || process.env[fallback] || '').trim();
     return raw.split(',').map((item) => item.trim()).filter(Boolean);
+}
+
+function normalizeOrigin(origin) {
+    const value = String(origin || '').trim();
+    if (! value) {
+        return null;
+    }
+
+    if (value === '*') {
+        return '*';
+    }
+
+    try {
+        return new URL(value).origin;
+    } catch {
+        return null;
+    }
+}
+
+function buildAllowedOrigins() {
+    const configured = [
+        ...envList('REDIS_WEBSOCKET_ALLOWED_ORIGINS', 'redis.websocket.allowedOrigins'),
+        ...envList('CORS_ALLOWED_ORIGINS', 'cors.allowedOrigins'),
+        String(process.env.APP_BASE_URL || process.env['app.baseURL'] || '').trim(),
+    ];
+
+    return Array.from(new Set(configured.map((origin) => normalizeOrigin(origin)).filter(Boolean)));
 }
 
 function parseInfo(raw) {
@@ -99,15 +126,13 @@ function decodeToken(token) {
 }
 
 function isOriginAllowed(origin) {
-    if (! origin || ! allowedOrigin) {
+    if (! origin || allowedOrigins.length === 0 || allowedOrigins.includes('*')) {
         return true;
     }
 
-    try {
-        return new URL(origin).origin === new URL(allowedOrigin).origin;
-    } catch {
-        return false;
-    }
+    const normalizedOrigin = normalizeOrigin(origin);
+
+    return normalizedOrigin !== null && allowedOrigins.includes(normalizedOrigin);
 }
 
 async function safeNumberCommand(command) {

@@ -36,6 +36,21 @@
         border: 1px solid rgba(148, 163, 184, 0.18);
         background: rgba(15, 23, 42, 0.45);
     }
+    .status-pill.status-live {
+        background: rgba(20, 83, 45, 0.42);
+        border-color: rgba(34, 197, 94, 0.45);
+        color: #dcfce7;
+    }
+    .status-pill.status-snapshot {
+        background: rgba(120, 53, 15, 0.42);
+        border-color: rgba(245, 158, 11, 0.45);
+        color: #fef3c7;
+    }
+    .status-pill.status-disconnected {
+        background: rgba(127, 29, 29, 0.42);
+        border-color: rgba(239, 68, 68, 0.45);
+        color: #fee2e2;
+    }
     .status-dot {
         width: .65rem;
         height: .65rem;
@@ -44,7 +59,34 @@
         box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.03);
     }
     .status-live .status-dot { background: #22c55e; }
+    .status-snapshot .status-dot { background: #f59e0b; }
     .status-disconnected .status-dot { background: #ef4444; }
+    .status-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+        justify-content: flex-end;
+        font-size: .72rem;
+        color: #cbd5e1;
+    }
+    .status-legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .25rem .55rem;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.32);
+        border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+    .status-legend-dot {
+        width: .5rem;
+        height: .5rem;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .status-legend-dot.live { background: #22c55e; }
+    .status-legend-dot.snapshot { background: #f59e0b; }
+    .status-legend-dot.disconnected { background: #ef4444; }
     .redis-tabs .nav-link {
         color: #94a3b8;
         border: 1px solid transparent;
@@ -131,11 +173,16 @@
             <p class="mb-0 text-muted">Live WebSocket updates for cache health, IPTV activity, slow queries, and guarded admin actions.</p>
         </div>
         <div class="d-flex flex-column align-items-lg-end gap-2">
-            <span id="connection-status" class="status-pill status-disconnected">
+            <span id="connection-status" class="status-pill status-snapshot">
                 <span class="status-dot"></span>
-                <span id="connection-status-text">Disconnected</span>
+                <span id="connection-status-text">Checking Services...</span>
             </span>
-            <div class="small text-muted">Last update: <span id="last-update">Never</span></div>
+            <div class="status-legend">
+                <span class="status-legend-item"><span class="status-legend-dot live"></span>Redis + Live Feed</span>
+                <span class="status-legend-item"><span class="status-legend-dot snapshot"></span>Redis Only</span>
+                <span class="status-legend-item"><span class="status-legend-dot disconnected"></span>Redis Down</span>
+            </div>
+            <div class="small text-muted">Last Redis snapshot: <span id="last-update">Never</span></div>
         </div>
     </div>
 </section>
@@ -441,12 +488,32 @@ function formatDate(value) {
     return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
 }
 
-function setConnectionStatus(isLive, label) {
+function setConnectionStatus(statusName, label) {
     const status = document.getElementById('connection-status');
     const text = document.getElementById('connection-status-text');
-    status.classList.toggle('status-live', isLive);
-    status.classList.toggle('status-disconnected', ! isLive);
+    status.classList.remove('status-live', 'status-snapshot', 'status-disconnected');
+    status.classList.add(`status-${statusName}`);
     text.textContent = label;
+}
+
+function hasLiveSocket() {
+    return state.socket && state.socket.readyState === WebSocket.OPEN;
+}
+
+function syncConnectionStatus() {
+    const snapshotStatus = state.snapshot?.overview?.status;
+
+    if (hasLiveSocket()) {
+        setConnectionStatus('live', 'Live Feed Active');
+        return;
+    }
+
+    if (snapshotStatus === 'LIVE') {
+        setConnectionStatus('snapshot', 'Redis OK, Live Feed Offline');
+        return;
+    }
+
+    setConnectionStatus('disconnected', 'Redis Unreachable');
 }
 
 function updateCsrf(payload) {
@@ -618,6 +685,7 @@ function applySnapshot(snapshot) {
     renderPrefixSummary(snapshot.keys?.sampled_prefixes || {});
     renderSlowlog(snapshot.slowlog || []);
     renderAlerts(snapshot.alerts || []);
+    syncConnectionStatus();
 }
 
 function escapeHtml(value) {
@@ -663,7 +731,7 @@ async function refreshInitialSnapshot() {
 
 function connectWebSocket() {
     if (! redisDashboardConfig.websocketUrl || ! redisDashboardConfig.websocketToken) {
-        setConnectionStatus(false, 'Disconnected');
+        syncConnectionStatus();
         return;
     }
 
@@ -673,7 +741,7 @@ function connectWebSocket() {
     state.socket = socket;
 
     socket.addEventListener('open', () => {
-        setConnectionStatus(true, 'Live');
+        setConnectionStatus('live', 'Live Feed Active');
         state.reconnectDelay = 1500;
     });
 
@@ -692,12 +760,12 @@ function connectWebSocket() {
     });
 
     socket.addEventListener('close', () => {
-        setConnectionStatus(false, 'Disconnected');
+        syncConnectionStatus();
         scheduleReconnect();
     });
 
     socket.addEventListener('error', () => {
-        setConnectionStatus(false, 'Disconnected');
+        syncConnectionStatus();
         socket.close();
     });
 }

@@ -275,6 +275,7 @@ redis.iptv.epgHitKeys = play2tv:metrics:epg:hits,metrics:epg:hits,cache:epg:hits
 redis.iptv.vodHitKeys = play2tv:metrics:vod:hits,metrics:vod:hits,cache:vod:hits
 redis.websocket.url = wss://api.velixatv.com/redis-ws
 redis.websocket.secret = VERVANG_MET_LANG_RANDOM_SECRET
+redis.websocket.allowedOrigins = https://api.velixatv.com,https://dashboard.play2tv.nl,https://user.velixatv.com
 redis.websocket.intervalMs = 2000
 redis.websocket.bindHost = 127.0.0.1
 redis.websocket.bindPort = 8082
@@ -284,8 +285,23 @@ redis.websocket.path = /redis-ws
 Belangrijk:
 - `redis.websocket.url` is het publieke browser-endpoint
 - `redis.websocket.bindHost` en `redis.websocket.bindPort` zijn alleen voor de interne Node listener
+- `redis.websocket.allowedOrigins` bepaalt welke admin frontends de live feed mogen openen
+- als `redis.websocket.allowedOrigins` leeg is, valt de service terug op `cors.allowedOrigins` en `app.baseURL`
 - gebruik `wss://` op HTTPS-productieomgevingen
 - gebruik `memory_usage` in `.env`, niet `memory usage`, om DotEnv parsing fouten te voorkomen
+
+#### Live status uitleg
+
+De badge rechtsboven op `/admin/redis` heeft nu drie duidelijke statussen:
+- `Live Feed Active` betekent: Redis is bereikbaar en de realtime WebSocket feed werkt.
+- `Redis OK, Live Feed Offline` betekent: Redis snapshot werkt, maar de browser krijgt geen live updates via WebSocket.
+- `Redis Unreachable` betekent: de backend kan geen Redis snapshot ophalen.
+
+Als je op de Redis pagina wel data ziet maar de badge niet groen wordt, controleer dan eerst:
+- of de Node service onder `tools/redis-admin-ws` draait
+- of `redis.websocket.url` publiek bereikbaar is
+- of het admin domein voorkomt in `redis.websocket.allowedOrigins`
+- of reverse proxy of Cloudflare de WebSocket upgrade doorlaat
 
 #### Dashboard functionaliteit
 
