@@ -18,7 +18,6 @@ class DeviceFingerprintService
         return hash('sha256', implode('|', [
             $this->salt,
             $this->normalizeUserAgent($userAgent),
-            $this->normalizeIpSegment($ipAddress),
             $this->normalizeDeviceId($deviceId),
         ]));
     }

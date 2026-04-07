@@ -759,7 +759,7 @@ data class StorePointsRequest(val points: Int, val reason: String = "watch_rewar
 - ✅ Korte access tokens met refresh-token rotatie
 - ✅ Refresh-token hashing in database
 - ✅ Replay-detectie en revoke van complete token families
-- ✅ Device/IP/user-agent fingerprinting voor token-validatie
+- ✅ Device/user-agent fingerprinting voor token-validatie
 - ✅ API rate limiting en login backoff met tijdelijke account lock
 - ✅ Strikte JSON payload-validatie voor API requests
 - ✅ Session-based admin authenticatie met CSRF bescherming
