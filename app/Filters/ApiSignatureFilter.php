@@ -25,6 +25,10 @@ class ApiSignatureFilter implements FilterInterface
             return null;
         }
 
+        if ($this->isDiagnosticsUploadRoute($request)) {
+            return null;
+        }
+
         $apiKey           = trim((string) env('api.clientKey', ''));
         $signatureSecret  = trim((string) env('api.signatureSecret', ''));
         $providedApiKey   = trim($request->getHeaderLine('X-Api-Key'));
@@ -97,7 +101,7 @@ class ApiSignatureFilter implements FilterInterface
 
         $response
             ->setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-            ->setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Api-Key, X-Timestamp, X-Signature, X-Device-Id');
+            ->setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Api-Key, X-Velixa-API-Key, X-Timestamp, X-Signature, X-Device-Id');
 
         if ($origin !== null) {
             $response
@@ -140,5 +144,10 @@ class ApiSignatureFilter implements FilterInterface
         $configuredOrigins = array_values(array_filter(array_map('trim', explode(',', $configured))));
 
         return array_values(array_unique([...$defaultOrigins, ...$configuredOrigins]));
+    }
+
+    private function isDiagnosticsUploadRoute(RequestInterface $request): bool
+    {
+        return trim($request->getUri()->getPath(), '/') === 'api/diagnostics/upload';
     }
 }

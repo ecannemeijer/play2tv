@@ -45,6 +45,7 @@ $routes->post('api/register', 'Api\AuthController::register');
 $routes->post('api/login',    'Api\AuthController::login');
 $routes->post('api/refresh',  'Api\AuthController::refresh');
 $routes->post('api/logout',   'Api\AuthController::logout');
+$routes->post('api/diagnostics/upload', 'Api\DiagnosticsController::upload');
 
 // Protected (JWT required — JwtFilter applied in Filters.php)
 $routes->group('api', ['filter' => 'jwt'], function ($routes) {

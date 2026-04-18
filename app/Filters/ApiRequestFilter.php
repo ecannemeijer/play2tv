@@ -80,7 +80,7 @@ class ApiRequestFilter implements FilterInterface
 
         $response
             ->setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-            ->setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Api-Key, X-Timestamp, X-Signature, X-Device-Id');
+            ->setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Api-Key, X-Velixa-API-Key, X-Timestamp, X-Signature, X-Device-Id');
 
         if ($origin !== null) {
             $response
@@ -127,7 +127,7 @@ class ApiRequestFilter implements FilterInterface
 
     private function allowsLegacyFormBody(string $path, string $contentType): bool
     {
-        if (! in_array($path, ['api/login', 'api/register', 'api/refresh', 'api/logout'], true)) {
+        if (! in_array($path, ['api/login', 'api/register', 'api/refresh', 'api/logout', 'api/diagnostics/upload'], true)) {
             return false;
         }
 
