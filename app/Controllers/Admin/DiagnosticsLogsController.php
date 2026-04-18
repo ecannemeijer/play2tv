@@ -27,6 +27,9 @@ class DiagnosticsLogsController extends Controller
         $activeLog = null;
         $contentLines = [];
         $meta = null;
+        $parsedEntries = [];
+        $headerLines = [];
+        $footerLines = [];
         $truncated = false;
 
         if ($selectedFile !== '') {
@@ -38,6 +41,7 @@ class DiagnosticsLogsController extends Controller
 
             [$contentLines, $truncated] = $this->readLogLines($activeLog['path']);
             $meta = $this->extractLogMetadata($contentLines, $activeLog);
+            ['header' => $headerLines, 'entries' => $parsedEntries, 'footer' => $footerLines] = $this->parseLogContent($contentLines);
         }
 
         return view('admin/diagnostics/logs', [
@@ -48,6 +52,9 @@ class DiagnosticsLogsController extends Controller
             'activeLog' => $activeLog,
             'contentLines' => $contentLines,
             'meta' => $meta,
+            'headerLines' => $headerLines,
+            'parsedEntries' => $parsedEntries,
+            'footerLines' => $footerLines,
             'truncated' => $truncated,
         ]);
     }
@@ -206,5 +213,94 @@ class DiagnosticsLogsController extends Controller
         }
 
         return $bytes . ' B';
+    }
+
+    /**
+     * @param list<string> $lines
+     * @return array{
+     *     header: list<string>,
+     *     entries: list<array{
+     *         timestamp: string,
+     *         event: string,
+     *         detail: string,
+     *         source: string,
+     *         resolved: string,
+     *         network: string,
+     *         tone: string
+     *     }>,
+     *     footer: list<string>
+     * }
+     */
+    private function parseLogContent(array $lines): array
+    {
+        $header = [];
+        $entries = [];
+        $footer = [];
+        $mode = 'header';
+
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+
+            if ($trimmed === '') {
+                continue;
+            }
+
+            if (preg_match('/^\[(\d+)\]\s+([^:]+)\s+::\s+(.*)$/', $line, $matches) === 1) {
+                $entries[] = [
+                    'timestamp' => $matches[1],
+                    'event' => trim($matches[2]),
+                    'detail' => trim($matches[3]),
+                    'source' => '-',
+                    'resolved' => '-',
+                    'network' => 'unknown',
+                    'tone' => $this->resolveEntryTone(trim($matches[2]), trim($matches[3])),
+                ];
+                $mode = 'entries';
+                continue;
+            }
+
+            if ($entries !== [] && preg_match('/^\s{2}(source|resolved|network)=(.*)$/', $line, $matches) === 1) {
+                $lastIndex = array_key_last($entries);
+                if ($lastIndex !== null) {
+                    $entries[$lastIndex][$matches[1]] = trim($matches[2]) !== '' ? trim($matches[2]) : '-';
+                }
+                continue;
+            }
+
+            if ($mode === 'entries') {
+                $footer[] = $trimmed;
+            } else {
+                $header[] = $trimmed;
+            }
+        }
+
+        return [
+            'header' => $header,
+            'entries' => $entries,
+            'footer' => $footer,
+        ];
+    }
+
+    private function resolveEntryTone(string $event, string $detail): string
+    {
+        $haystack = strtolower($event . ' ' . $detail);
+
+        if (preg_match('/error|failed|exception|fatal|rejected|invalid/', $haystack) === 1) {
+            return 'error';
+        }
+
+        if (preg_match('/warning|buffer|stall|retry|skip|ignored/', $haystack) === 1) {
+            return 'warning';
+        }
+
+        if (preg_match('/ready|success|uploaded|complete|first_frame|play/', $haystack) === 1) {
+            return 'success';
+        }
+
+        if (preg_match('/debug|summary|probe/', $haystack) === 1) {
+            return 'debug';
+        }
+
+        return 'neutral';
     }
 }

@@ -65,37 +65,108 @@
     .log-lines {
         max-height: calc(100vh - 350px);
         overflow: auto;
+        padding: 1.25rem;
+        background: radial-gradient(circle at top, rgba(30, 41, 59, .6), rgba(15, 23, 42, .98));
+    }
+    .log-header-block {
+        background: rgba(15, 23, 42, .82);
+        border: 1px solid #24314a;
+        border-radius: 14px;
+        padding: 1rem 1.1rem;
+        margin-bottom: 1rem;
+    }
+    .log-header-line {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .45rem;
+        padding: .2rem 0;
         font-family: Consolas, 'Cascadia Code', monospace;
         font-size: .9rem;
+    }
+    .log-header-key { color: #f9a8d4; font-weight: 700; }
+    .log-header-value { color: #e2e8f0; }
+    .log-entry-list {
+        display: grid;
+        gap: .9rem;
+    }
+    .log-entry-card {
+        border: 1px solid #29344d;
+        border-left-width: 5px;
+        border-radius: 16px;
+        padding: 1rem 1.1rem;
+        background: rgba(15, 23, 42, .84);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.02);
+    }
+    .log-entry-neutral { border-left-color: #818cf8; }
+    .log-entry-warning { border-left-color: #f59e0b; background: rgba(120, 53, 15, .14); }
+    .log-entry-error { border-left-color: #ef4444; background: rgba(127, 29, 29, .16); }
+    .log-entry-success { border-left-color: #10b981; background: rgba(6, 78, 59, .16); }
+    .log-entry-debug { border-left-color: #fbbf24; background: rgba(120, 53, 15, .11); }
+    .log-entry-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: .75rem;
+    }
+    .log-entry-title { min-width: 0; }
+    .log-entry-event {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #f8fafc;
+        letter-spacing: .01em;
+    }
+    .log-entry-detail {
+        margin-top: .3rem;
+        color: #d5dfeb;
+        font-size: .96rem;
         line-height: 1.45;
     }
-    .log-line {
+    .log-entry-time {
+        font-family: Consolas, 'Cascadia Code', monospace;
+        color: #93c5fd;
+        background: rgba(37, 99, 235, .12);
+        border: 1px solid rgba(96, 165, 250, .18);
+        border-radius: 999px;
+        padding: .25rem .6rem;
+        white-space: nowrap;
+    }
+    .log-entry-grid {
         display: grid;
-        grid-template-columns: 64px minmax(0, 1fr);
-        gap: 1rem;
-        padding: .15rem 1.25rem;
-        border-left: 3px solid transparent;
-        white-space: pre-wrap;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: .7rem;
+    }
+    .log-chip {
+        background: rgba(30, 41, 59, .72);
+        border: 1px solid #2a3955;
+        border-radius: 12px;
+        padding: .7rem .8rem;
+        min-width: 0;
+    }
+    .log-chip-label {
+        font-size: .72rem;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: #94a3b8;
+        margin-bottom: .3rem;
+    }
+    .log-chip-value {
+        font-family: Consolas, 'Cascadia Code', monospace;
+        color: #dbeafe;
+        font-size: .88rem;
+        line-height: 1.45;
         word-break: break-word;
     }
-    .log-line:hover { background: rgba(148, 163, 184, .06); }
-    .log-line-number { color: #64748b; text-align: right; user-select: none; }
-    .log-line-content { color: #dbe4f0; }
-    .log-line-header { border-left-color: #60a5fa; background: rgba(37, 99, 235, .08); }
-    .log-line-debug { border-left-color: #f59e0b; background: rgba(245, 158, 11, .07); }
-    .log-line-empty { border-left-color: transparent; }
-    .log-line-warning { border-left-color: #f59e0b; background: rgba(245, 158, 11, .09); }
-    .log-line-error { border-left-color: #ef4444; background: rgba(239, 68, 68, .10); }
-    .log-line-success { border-left-color: #10b981; background: rgba(16, 185, 129, .08); }
-    .log-line-accent { border-left-color: #a78bfa; background: rgba(167, 139, 250, .08); }
-    .log-timestamp { color: #93c5fd; }
-    .log-event { color: #f8fafc; font-weight: 700; }
-    .log-detail { color: #cbd5e1; }
-    .log-key { color: #f9a8d4; }
-    .log-value { color: #e5e7eb; }
-    .log-source-label,
-    .log-network-label { color: #94a3b8; }
-    .log-source-value { color: #67e8f9; }
+    .log-footer-note {
+        margin-top: 1rem;
+        padding: .9rem 1rem;
+        border-radius: 12px;
+        background: rgba(71, 85, 105, .18);
+        border: 1px solid #334155;
+        color: #cbd5e1;
+        font-family: Consolas, 'Cascadia Code', monospace;
+        font-size: .88rem;
+    }
     .log-empty-state {
         padding: 3rem 2rem;
         text-align: center;
@@ -182,7 +253,7 @@
                 <div class="log-toolbar">
                     <div>
                         <div class="fw-semibold"><?= esc($activeLog['name']) ?></div>
-                        <div class="small text-muted">Kleurcodering: errors rood, waarschuwingen geel, success groen, debug amber.</div>
+                        <div class="small text-muted">Eventweergave met compacte blokken voor timestamp, detail, bron, resolved URL en netwerkstatus.</div>
                     </div>
                     <div class="d-flex gap-2">
                         <a href="<?= base_url('admin/diagnostics/logs/download?' . http_build_query(['file' => $activeLog['name']])) ?>" class="btn btn-outline-secondary btn-sm">
@@ -191,46 +262,62 @@
                     </div>
                 </div>
                 <div class="log-lines">
-                    <?php foreach ($contentLines as $index => $line): ?>
-                        <?php
-                            $trimmed = trim($line);
-                            $lineClass = 'log-line-accent';
-                            if ($trimmed === '') {
-                                $lineClass = 'log-line-empty';
-                            } elseif (preg_match('/^(VelixaTV support log bundle|Generated:|App version:|Android:|Device:|Device ID:|Current channel:|Current channel id:|Audio delay ms:|Latest summary:)/', $trimmed) === 1) {
-                                $lineClass = 'log-line-header';
-                            } elseif (preg_match('/^Debug /', $trimmed) === 1) {
-                                $lineClass = 'log-line-debug';
-                            } elseif (preg_match('/\b(error|failed|exception|fatal|invalid|rejected)\b/i', $trimmed) === 1) {
-                                $lineClass = 'log-line-error';
-                            } elseif (preg_match('/\b(warning|buffering|stalled|retry|skipped)\b/i', $trimmed) === 1) {
-                                $lineClass = 'log-line-warning';
-                            } elseif (preg_match('/\b(ready|success|uploaded|complete|first_frame|play)\b/i', $trimmed) === 1) {
-                                $lineClass = 'log-line-success';
-                            }
-                        ?>
-                        <div class="log-line <?= $lineClass ?>">
-                            <div class="log-line-number"><?= $index + 1 ?></div>
-                            <div class="log-line-content">
-                                <?php if (preg_match('/^\[(\d+)\]\s+([^:]+)\s+::\s+(.*)$/', $line, $matches) === 1): ?>
-                                    <span class="log-timestamp">[<?= esc($matches[1]) ?>]</span>
-                                    <span class="log-event ms-1"><?= esc($matches[2]) ?></span>
-                                    <span class="log-detail ms-1">:: <?= esc($matches[3]) ?></span>
-                                <?php elseif (preg_match('/^\s{2}(source|resolved|network)=(.*)$/', $line, $matches) === 1): ?>
-                                    <span class="log-source-label"><?= esc($matches[1]) ?>=</span><span class="log-source-value"><?= esc($matches[2]) ?></span>
-                                <?php elseif (preg_match('/^([^:]+):(.*)$/', $line, $matches) === 1): ?>
-                                    <span class="log-key"><?= esc(trim($matches[1])) ?>:</span>
-                                    <span class="log-value ms-1"><?= esc(trim($matches[2])) ?></span>
+                    <?php if ($headerLines !== []): ?>
+                        <div class="log-header-block">
+                            <?php foreach ($headerLines as $line): ?>
+                                <?php if (preg_match('/^([^:]+):(.*)$/', $line, $matches) === 1): ?>
+                                    <div class="log-header-line">
+                                        <span class="log-header-key"><?= esc(trim($matches[1])) ?>:</span>
+                                        <span class="log-header-value"><?= esc(trim($matches[2])) ?></span>
+                                    </div>
                                 <?php else: ?>
-                                    <?= esc($line) ?>
+                                    <div class="log-header-line"><span class="log-header-value"><?= esc($line) ?></span></div>
                                 <?php endif; ?>
-                            </div>
+                            <?php endforeach; ?>
                         </div>
+                    <?php endif; ?>
+
+                    <?php if ($parsedEntries !== []): ?>
+                        <div class="log-entry-list">
+                            <?php foreach ($parsedEntries as $entry): ?>
+                                <div class="log-entry-card log-entry-<?= esc($entry['tone']) ?>">
+                                    <div class="log-entry-top">
+                                        <div class="log-entry-title">
+                                            <div class="log-entry-event"><?= esc($entry['event']) ?></div>
+                                            <div class="log-entry-detail"><?= esc($entry['detail']) ?></div>
+                                        </div>
+                                        <div class="log-entry-time">[<?= esc($entry['timestamp']) ?>]</div>
+                                    </div>
+                                    <div class="log-entry-grid">
+                                        <div class="log-chip">
+                                            <div class="log-chip-label">Source</div>
+                                            <div class="log-chip-value"><?= esc($entry['source']) ?></div>
+                                        </div>
+                                        <div class="log-chip">
+                                            <div class="log-chip-label">Resolved</div>
+                                            <div class="log-chip-value"><?= esc($entry['resolved']) ?></div>
+                                        </div>
+                                        <div class="log-chip">
+                                            <div class="log-chip-label">Network</div>
+                                            <div class="log-chip-value"><?= esc($entry['network']) ?></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="log-empty-state">
+                            Geen gestructureerde events gevonden in dit bestand.
+                        </div>
+                    <?php endif; ?>
+
+                    <?php foreach ($footerLines as $footerLine): ?>
+                        <div class="log-footer-note"><?= esc($footerLine) ?></div>
                     <?php endforeach; ?>
+
                     <?php if ($truncated): ?>
-                        <div class="log-line log-line-warning">
-                            <div class="log-line-number">…</div>
-                            <div class="log-line-content">Weergave ingekort na <?= esc((string) count($contentLines)) ?> regels. Download het bestand voor de volledige inhoud.</div>
+                        <div class="log-footer-note">
+                            Weergave ingekort na <?= esc((string) count($contentLines)) ?> regels. Download het bestand voor de volledige inhoud.
                         </div>
                     <?php endif; ?>
                 </div>
