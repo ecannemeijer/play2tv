@@ -12,6 +12,17 @@ use JsonException;
 
 class ApiRequestFilter implements FilterInterface
 {
+    /**
+     * @var string[]
+     */
+    private array $legacyFormRoutes = [
+        'api/login',
+        'api/register',
+        'api/refresh',
+        'api/logout',
+        'api/diagnostics/upload',
+    ];
+
     public function before(RequestInterface $request, $arguments = null)
     {
         $path = trim($request->getUri()->getPath(), '/');
@@ -127,12 +138,42 @@ class ApiRequestFilter implements FilterInterface
 
     private function allowsLegacyFormBody(string $path, string $contentType): bool
     {
-        if (! in_array($path, ['api/login', 'api/register', 'api/refresh', 'api/logout', 'api/diagnostics/upload'], true)) {
+        if (! $this->isLegacyFormRoute($path)) {
             return false;
         }
 
         return str_contains($contentType, 'application/x-www-form-urlencoded')
             || str_contains($contentType, 'multipart/form-data')
             || $contentType === '';
+    }
+
+    private function isLegacyFormRoute(string $path): bool
+    {
+        $normalizedPath = $this->normalizeApiPath($path);
+
+        foreach ($this->legacyFormRoutes as $route) {
+            if ($normalizedPath === $route || str_ends_with($normalizedPath, '/' . $route)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function normalizeApiPath(string $path): string
+    {
+        $normalizedPath = trim(strtolower($path), '/');
+
+        while (str_starts_with($normalizedPath, 'index.php/')) {
+            $normalizedPath = substr($normalizedPath, strlen('index.php/'));
+        }
+
+        $apiOffset = strpos($normalizedPath, 'api/');
+
+        if ($apiOffset !== false) {
+            $normalizedPath = substr($normalizedPath, $apiOffset);
+        }
+
+        return $normalizedPath;
     }
 }

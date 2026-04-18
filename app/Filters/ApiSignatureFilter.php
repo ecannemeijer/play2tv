@@ -148,6 +148,26 @@ class ApiSignatureFilter implements FilterInterface
 
     private function isDiagnosticsUploadRoute(RequestInterface $request): bool
     {
-        return trim($request->getUri()->getPath(), '/') === 'api/diagnostics/upload';
+        $normalizedPath = $this->normalizeApiPath($request->getUri()->getPath());
+
+        return $normalizedPath === 'api/diagnostics/upload'
+            || str_ends_with($normalizedPath, '/api/diagnostics/upload');
+    }
+
+    private function normalizeApiPath(string $path): string
+    {
+        $normalizedPath = trim(strtolower($path), '/');
+
+        while (str_starts_with($normalizedPath, 'index.php/')) {
+            $normalizedPath = substr($normalizedPath, strlen('index.php/'));
+        }
+
+        $apiOffset = strpos($normalizedPath, 'api/');
+
+        if ($apiOffset !== false) {
+            $normalizedPath = substr($normalizedPath, $apiOffset);
+        }
+
+        return $normalizedPath;
     }
 }
