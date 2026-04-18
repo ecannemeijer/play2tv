@@ -115,6 +115,10 @@ $routes->group('admin', ['filter' => 'adminauth'], function ($routes) {
     $routes->get('security/suspicious', 'Admin\SecurityController::suspicious');
     $routes->post('security/events/clear', 'Admin\SecurityController::clear');
 
+    // Diagnostics logs
+    $routes->get('diagnostics/logs', 'Admin\DiagnosticsLogsController::index');
+    $routes->get('diagnostics/logs/download', 'Admin\DiagnosticsLogsController::download');
+
     // Users
     $routes->get('users',                'Admin\UserController::index');
     $routes->get('users/create',         'Admin\UserController::create');

@@ -205,6 +205,10 @@
            class="nav-link <?= str_starts_with(uri_string(), 'admin/security') ? 'active' : '' ?>">
             <i class="bi bi-shield-lock"></i> Security
         </a>
+        <a href="<?= base_url('admin/diagnostics/logs') ?>"
+           class="nav-link <?= str_starts_with(uri_string(), 'admin/diagnostics') ? 'active' : '' ?>">
+            <i class="bi bi-journal-text"></i> Diagnostics Logs
+        </a>
         <a href="<?= base_url('admin/redis') ?>"
            class="nav-link <?= str_starts_with(uri_string(), 'admin/redis') ? 'active' : '' ?>">
             <i class="bi bi-database"></i> REDIS
