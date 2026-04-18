@@ -4,16 +4,30 @@
 <style>
     .log-shell {
         display: grid;
-        grid-template-columns: 340px minmax(0, 1fr);
-        gap: 1.25rem;
+        grid-template-columns: 290px minmax(0, 1fr);
+        gap: 1rem;
     }
     .log-file-list {
-        max-height: calc(100vh - 220px);
+        max-height: calc(100vh - 170px);
         overflow: auto;
+    }
+    .log-primary-filters {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: .9rem;
+    }
+    .log-primary-form {
+        display: flex;
+        gap: .65rem;
+        align-items: flex-end;
+        flex-wrap: wrap;
     }
     .log-file-link {
         display: block;
-        padding: .85rem 1rem;
+        padding: .75rem .9rem;
         border-bottom: 1px solid #1e2035;
         color: inherit;
         text-decoration: none;
@@ -26,25 +40,31 @@
     }
     .log-meta-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: .75rem;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(132px, 1fr);
+        gap: .6rem;
+        overflow-x: auto;
+        padding-bottom: .15rem;
     }
     .log-meta-card {
         background: #121528;
         border: 1px solid #242945;
         border-radius: 12px;
-        padding: .85rem 1rem;
+        padding: .65rem .8rem;
+        min-height: 78px;
     }
     .log-meta-label {
         color: #94a3b8;
-        font-size: .72rem;
+        font-size: .66rem;
         text-transform: uppercase;
         letter-spacing: .08em;
     }
     .log-meta-value {
         color: #f8fafc;
         font-weight: 600;
-        margin-top: .3rem;
+        margin-top: .22rem;
+        font-size: .92rem;
+        line-height: 1.25;
         word-break: break-word;
     }
     .log-viewer {
@@ -58,14 +78,23 @@
         justify-content: space-between;
         align-items: center;
         gap: 1rem;
-        padding: 1rem 1.25rem;
+        padding: .9rem 1.1rem;
         border-bottom: 1px solid #27324b;
         background: rgba(15, 23, 42, .85);
     }
+    .log-secondary-filters {
+        display: flex;
+        gap: .65rem;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+    .log-filter-field {
+        min-width: 160px;
+    }
     .log-lines {
-        max-height: calc(100vh - 350px);
+        max-height: calc(100vh - 245px);
         overflow: auto;
-        padding: 1.25rem;
+        padding: 1rem;
         background: radial-gradient(circle at top, rgba(30, 41, 59, .6), rgba(15, 23, 42, .98));
     }
     .log-header-block {
@@ -87,13 +116,13 @@
     .log-header-value { color: #e2e8f0; }
     .log-entry-list {
         display: grid;
-        gap: .9rem;
+        gap: .75rem;
     }
     .log-entry-card {
         border: 1px solid #29344d;
         border-left-width: 5px;
-        border-radius: 16px;
-        padding: 1rem 1.1rem;
+        border-radius: 14px;
+        padding: .85rem .95rem;
         background: rgba(15, 23, 42, .84);
         box-shadow: inset 0 1px 0 rgba(255,255,255,.02);
     }
@@ -107,20 +136,20 @@
         justify-content: space-between;
         align-items: flex-start;
         gap: 1rem;
-        margin-bottom: .75rem;
+        margin-bottom: .6rem;
     }
     .log-entry-title { min-width: 0; }
     .log-entry-event {
-        font-size: 1rem;
+        font-size: .95rem;
         font-weight: 800;
         color: #f8fafc;
         letter-spacing: .01em;
     }
     .log-entry-detail {
-        margin-top: .3rem;
+        margin-top: .2rem;
         color: #d5dfeb;
-        font-size: .96rem;
-        line-height: 1.45;
+        font-size: .89rem;
+        line-height: 1.35;
     }
     .log-entry-time {
         font-family: Consolas, 'Cascadia Code', monospace;
@@ -133,14 +162,14 @@
     }
     .log-entry-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: .7rem;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: .55rem;
     }
     .log-chip {
         background: rgba(30, 41, 59, .72);
         border: 1px solid #2a3955;
-        border-radius: 12px;
-        padding: .7rem .8rem;
+        border-radius: 10px;
+        padding: .55rem .7rem;
         min-width: 0;
     }
     .log-chip-label {
@@ -153,9 +182,20 @@
     .log-chip-value {
         font-family: Consolas, 'Cascadia Code', monospace;
         color: #dbeafe;
-        font-size: .88rem;
-        line-height: 1.45;
+        font-size: .82rem;
+        line-height: 1.35;
         word-break: break-word;
+    }
+    .log-results-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        background: rgba(30, 41, 59, .72);
+        border: 1px solid #314056;
+        color: #dbeafe;
+        border-radius: 999px;
+        padding: .3rem .7rem;
+        font-size: .8rem;
     }
     .log-footer-note {
         margin-top: 1rem;
@@ -175,17 +215,23 @@
     @media (max-width: 1200px) {
         .log-shell { grid-template-columns: 1fr; }
         .log-file-list, .log-lines { max-height: none; }
+        .log-meta-grid { grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
     }
 </style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
 
-<div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
-    <form method="get" class="d-flex gap-2 align-items-center flex-wrap">
-        <input type="text" name="q" class="form-control" value="<?= esc($query) ?>" placeholder="Zoek op device of bestandsnaam" style="min-width:280px;">
+<div class="log-primary-filters">
+    <form method="get" class="log-primary-form">
+        <div>
+            <label class="form-label small text-muted">Bestanden</label>
+            <input type="text" name="q" class="form-control" value="<?= esc($query) ?>" placeholder="Zoek op device of bestandsnaam" style="min-width:280px;">
+        </div>
         <?php if ($selectedFile !== ''): ?>
             <input type="hidden" name="file" value="<?= esc($selectedFile) ?>">
+            <input type="hidden" name="severity" value="<?= esc($severity) ?>">
+            <input type="hidden" name="term" value="<?= esc($term) ?>">
         <?php endif; ?>
         <button type="submit" class="btn btn-primary">
             <i class="bi bi-search me-1"></i>Filter
@@ -253,9 +299,34 @@
                 <div class="log-toolbar">
                     <div>
                         <div class="fw-semibold"><?= esc($activeLog['name']) ?></div>
-                        <div class="small text-muted">Eventweergave met compacte blokken voor timestamp, detail, bron, resolved URL en netwerkstatus.</div>
+                        <div class="small text-muted">Compacte eventweergave met filtering op warning/error/debug/success en zoekwoord.</div>
                     </div>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 align-items-center flex-wrap justify-content-end">
+                        <form method="get" class="log-secondary-filters">
+                            <input type="hidden" name="file" value="<?= esc($activeLog['name']) ?>">
+                            <?php if ($query !== ''): ?>
+                                <input type="hidden" name="q" value="<?= esc($query) ?>">
+                            <?php endif; ?>
+                            <div class="log-filter-field">
+                                <label class="form-label small text-muted">Type</label>
+                                <select name="severity" class="form-select form-select-sm">
+                                    <option value="">Alles</option>
+                                    <?php foreach (['warning' => 'Warnings', 'error' => 'Errors', 'success' => 'Success', 'debug' => 'Debug', 'neutral' => 'Overig'] as $value => $label): ?>
+                                        <option value="<?= esc($value) ?>" <?= $severity === $value ? 'selected' : '' ?>><?= esc($label) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="log-filter-field" style="min-width:220px;">
+                                <label class="form-label small text-muted">Zoekwoord</label>
+                                <input type="text" name="term" class="form-control form-control-sm" value="<?= esc($term) ?>" placeholder="Bijv. buffering, ignored, line.dino.ws">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="bi bi-funnel me-1"></i>Toepassen
+                            </button>
+                        </form>
+                        <span class="log-results-badge">
+                            <i class="bi bi-filter-circle"></i><?= number_format(count($parsedEntries)) ?>/<?= number_format($totalParsedEntries) ?> events
+                        </span>
                         <a href="<?= base_url('admin/diagnostics/logs/download?' . http_build_query(['file' => $activeLog['name']])) ?>" class="btn btn-outline-secondary btn-sm">
                             <i class="bi bi-download me-1"></i>Download
                         </a>
@@ -307,7 +378,7 @@
                         </div>
                     <?php else: ?>
                         <div class="log-empty-state">
-                            Geen gestructureerde events gevonden in dit bestand.
+                            Geen events gevonden voor de huidige filters.
                         </div>
                     <?php endif; ?>
 

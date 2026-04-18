@@ -23,11 +23,14 @@ class DiagnosticsLogsController extends Controller
     {
         $selectedFile = trim((string) $this->request->getGet('file'));
         $query = trim((string) $this->request->getGet('q'));
+        $severity = trim((string) $this->request->getGet('severity'));
+        $term = trim((string) $this->request->getGet('term'));
         $logFiles = $this->getLogFiles($query);
         $activeLog = null;
         $contentLines = [];
         $meta = null;
         $parsedEntries = [];
+        $totalParsedEntries = 0;
         $headerLines = [];
         $footerLines = [];
         $truncated = false;
@@ -42,6 +45,8 @@ class DiagnosticsLogsController extends Controller
             [$contentLines, $truncated] = $this->readLogLines($activeLog['path']);
             $meta = $this->extractLogMetadata($contentLines, $activeLog);
             ['header' => $headerLines, 'entries' => $parsedEntries, 'footer' => $footerLines] = $this->parseLogContent($contentLines);
+            $totalParsedEntries = count($parsedEntries);
+            $parsedEntries = $this->filterParsedEntries($parsedEntries, $severity, $term);
         }
 
         return view('admin/diagnostics/logs', [
@@ -49,11 +54,14 @@ class DiagnosticsLogsController extends Controller
             'logFiles' => $logFiles,
             'selectedFile' => $selectedFile,
             'query' => $query,
+            'severity' => $severity,
+            'term' => $term,
             'activeLog' => $activeLog,
             'contentLines' => $contentLines,
             'meta' => $meta,
             'headerLines' => $headerLines,
             'parsedEntries' => $parsedEntries,
+            'totalParsedEntries' => $totalParsedEntries,
             'footerLines' => $footerLines,
             'truncated' => $truncated,
         ]);
@@ -302,5 +310,36 @@ class DiagnosticsLogsController extends Controller
         }
 
         return 'neutral';
+    }
+
+    /**
+     * @param list<array{timestamp: string, event: string, detail: string, source: string, resolved: string, network: string, tone: string}> $entries
+     * @return list<array{timestamp: string, event: string, detail: string, source: string, resolved: string, network: string, tone: string}>
+     */
+    private function filterParsedEntries(array $entries, string $severity, string $term): array
+    {
+        $normalizedSeverity = strtolower($severity);
+        $normalizedTerm = strtolower($term);
+
+        return array_values(array_filter($entries, static function (array $entry) use ($normalizedSeverity, $normalizedTerm): bool {
+            if ($normalizedSeverity !== '' && $normalizedSeverity !== 'all' && $entry['tone'] !== $normalizedSeverity) {
+                return false;
+            }
+
+            if ($normalizedTerm === '') {
+                return true;
+            }
+
+            $haystack = strtolower(implode(' ', [
+                $entry['event'],
+                $entry['detail'],
+                $entry['source'],
+                $entry['resolved'],
+                $entry['network'],
+                $entry['timestamp'],
+            ]));
+
+            return str_contains($haystack, $normalizedTerm);
+        }));
     }
 }
