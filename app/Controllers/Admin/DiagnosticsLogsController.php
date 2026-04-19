@@ -25,6 +25,7 @@ class DiagnosticsLogsController extends Controller
         $query = trim((string) $this->request->getGet('q'));
         $severity = trim((string) $this->request->getGet('severity'));
         $term = trim((string) $this->request->getGet('term'));
+        $openPicker = $this->request->getGet('openPicker') === '1';
         $logFiles = $this->getLogFiles($query);
         $activeLog = null;
         $contentLines = [];
@@ -56,6 +57,7 @@ class DiagnosticsLogsController extends Controller
             'query' => $query,
             'severity' => $severity,
             'term' => $term,
+            'openPicker' => $openPicker,
             'activeLog' => $activeLog,
             'contentLines' => $contentLines,
             'meta' => $meta,
@@ -83,9 +85,14 @@ class DiagnosticsLogsController extends Controller
     {
         $selectedFile = trim((string) $this->request->getPost('file'));
         $logFile = $this->findLogFile($selectedFile, $this->getLogFiles());
+        $query = trim((string) $this->request->getPost('q'));
+        $redirectQuery = array_filter([
+            'q' => $query,
+            'openPicker' => '1',
+        ]);
 
         if ($logFile === null) {
-            return redirect()->to(base_url('admin/diagnostics/logs'))
+            return redirect()->to(base_url('admin/diagnostics/logs' . ($redirectQuery !== [] ? '?' . http_build_query($redirectQuery) : '')))
                 ->with('error', 'Het gekozen logbestand bestaat niet meer.');
         }
 
@@ -93,17 +100,13 @@ class DiagnosticsLogsController extends Controller
             return redirect()->back()->with('error', 'Logbestand kon niet worden verwijderd.');
         }
 
-        $query = trim((string) $this->request->getPost('q'));
-        $redirectQuery = array_filter([
-            'q' => $query,
-        ]);
-
         return redirect()->to(base_url('admin/diagnostics/logs' . ($redirectQuery !== [] ? '?' . http_build_query($redirectQuery) : '')))
             ->with('success', 'Logbestand verwijderd.');
     }
 
     public function deleteAll(): ResponseInterface
     {
+        $query = trim((string) $this->request->getPost('q'));
         $failures = 0;
 
         foreach ($this->getLogFiles() as $logFile) {
@@ -116,7 +119,12 @@ class DiagnosticsLogsController extends Controller
             return redirect()->back()->with('error', 'Niet alle logbestanden konden worden verwijderd.');
         }
 
-        return redirect()->to(base_url('admin/diagnostics/logs'))
+        $redirectQuery = array_filter([
+            'q' => $query,
+            'openPicker' => '1',
+        ]);
+
+        return redirect()->to(base_url('admin/diagnostics/logs' . ($redirectQuery !== [] ? '?' . http_build_query($redirectQuery) : '')))
             ->with('success', 'Alle logbestanden zijn verwijderd.');
     }
 

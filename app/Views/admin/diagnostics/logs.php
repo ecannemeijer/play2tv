@@ -4,17 +4,11 @@
 <style>
     .log-primary-filters {
         display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
+        justify-content: flex-end;
+        align-items: center;
         gap: 1rem;
         flex-wrap: wrap;
         margin-bottom: .9rem;
-    }
-    .log-primary-form {
-        display: flex;
-        gap: .65rem;
-        align-items: flex-end;
-        flex-wrap: wrap;
     }
     .log-viewer-shell {
         display: flex;
@@ -67,6 +61,16 @@
     }
     .log-modal .btn-close {
         filter: invert(1) grayscale(1);
+    }
+    .log-modal-filter {
+        display: flex;
+        gap: .75rem;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+    .log-modal-filter .form-control {
+        min-width: 320px;
     }
     .log-modal-list {
         max-height: 70vh;
@@ -286,20 +290,6 @@
 <?= $this->section('content') ?>
 
 <div class="log-primary-filters">
-    <form method="get" class="log-primary-form">
-        <div>
-            <label class="form-label small text-muted">Bestanden</label>
-            <input type="text" name="q" class="form-control" value="<?= esc($query) ?>" placeholder="Zoek op device of bestandsnaam" style="min-width:280px;">
-        </div>
-        <?php if ($selectedFile !== ''): ?>
-            <input type="hidden" name="file" value="<?= esc($selectedFile) ?>">
-            <input type="hidden" name="severity" value="<?= esc($severity) ?>">
-            <input type="hidden" name="term" value="<?= esc($term) ?>">
-        <?php endif; ?>
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-search me-1"></i>Filter
-        </button>
-    </form>
     <div class="d-flex align-items-center gap-2 flex-wrap">
         <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#logFilesModal">
             <i class="bi bi-folder2-open me-1"></i>Laad logbestand
@@ -438,6 +428,26 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Sluiten"></button>
             </div>
             <div class="modal-body">
+                <form method="get" class="log-modal-filter">
+                    <?php if ($selectedFile !== ''): ?>
+                        <input type="hidden" name="file" value="<?= esc($selectedFile) ?>">
+                    <?php endif; ?>
+                    <?php if ($severity !== ''): ?>
+                        <input type="hidden" name="severity" value="<?= esc($severity) ?>">
+                    <?php endif; ?>
+                    <?php if ($term !== ''): ?>
+                        <input type="hidden" name="term" value="<?= esc($term) ?>">
+                    <?php endif; ?>
+                    <input type="hidden" name="openPicker" value="1">
+                    <div>
+                        <label class="form-label small text-muted">Bestanden filteren</label>
+                        <input type="text" name="q" class="form-control" value="<?= esc($query) ?>" placeholder="Zoek op device of bestandsnaam">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-search me-1"></i>Filter
+                    </button>
+                </form>
+
                 <?php if ($logFiles === []): ?>
                     <div class="log-empty-state py-4">
                         <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
@@ -472,7 +482,7 @@
                                     </div>
                                 </div>
                                 <div class="log-modal-actions">
-                                    <a href="<?= base_url('admin/diagnostics/logs?' . http_build_query(array_filter(['file' => $file['name'], 'q' => $query]))) ?>" class="btn btn-primary btn-sm">
+                                    <a href="<?= base_url('admin/diagnostics/logs?' . http_build_query(array_filter(['file' => $file['name'], 'q' => $query, 'severity' => $severity, 'term' => $term]))) ?>" class="btn btn-primary btn-sm">
                                         <i class="bi bi-box-arrow-in-down-right me-1"></i>Laden
                                     </a>
                                     <form method="post" action="<?= base_url('admin/diagnostics/logs/delete') ?>" onsubmit="return confirm('Weet je zeker dat je dit logbestand wilt verwijderen?');">
@@ -494,6 +504,7 @@
                 <div class="d-flex gap-2">
                     <form method="post" action="<?= base_url('admin/diagnostics/logs/delete-all') ?>" onsubmit="return confirm('Weet je zeker dat je alle logbestanden wilt verwijderen?');">
                         <?= csrf_field() ?>
+                        <input type="hidden" name="q" value="<?= esc($query) ?>">
                         <button type="submit" class="btn btn-outline-danger btn-sm" <?= $logFiles === [] ? 'disabled' : '' ?>>
                             <i class="bi bi-trash me-1"></i>Verwijder alles
                         </button>
@@ -504,5 +515,21 @@
         </div>
     </div>
 </div>
+
+<?= $this->section('scripts') ?>
+<?php if ($openPicker): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalElement = document.getElementById('logFilesModal');
+    if (!modalElement) {
+        return;
+    }
+
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+});
+</script>
+<?php endif; ?>
+<?= $this->endSection() ?>
 
 <?= $this->endSection() ?>
