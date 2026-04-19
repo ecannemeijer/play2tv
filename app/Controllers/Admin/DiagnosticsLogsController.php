@@ -79,8 +79,49 @@ class DiagnosticsLogsController extends Controller
         return $this->response->download($logFile['path'], null)->setFileName($logFile['name']);
     }
 
+    public function delete(): ResponseInterface
+    {
+        $selectedFile = trim((string) $this->request->getPost('file'));
+        $logFile = $this->findLogFile($selectedFile, $this->getLogFiles());
+
+        if ($logFile === null) {
+            return redirect()->to(base_url('admin/diagnostics/logs'))
+                ->with('error', 'Het gekozen logbestand bestaat niet meer.');
+        }
+
+        if (! @unlink($logFile['path'])) {
+            return redirect()->back()->with('error', 'Logbestand kon niet worden verwijderd.');
+        }
+
+        $query = trim((string) $this->request->getPost('q'));
+        $redirectQuery = array_filter([
+            'q' => $query,
+        ]);
+
+        return redirect()->to(base_url('admin/diagnostics/logs' . ($redirectQuery !== [] ? '?' . http_build_query($redirectQuery) : '')))
+            ->with('success', 'Logbestand verwijderd.');
+    }
+
+    public function deleteAll(): ResponseInterface
+    {
+        $failures = 0;
+
+        foreach ($this->getLogFiles() as $logFile) {
+            if (! @unlink($logFile['path'])) {
+                $failures++;
+            }
+        }
+
+        if ($failures > 0) {
+            return redirect()->back()->with('error', 'Niet alle logbestanden konden worden verwijderd.');
+        }
+
+        return redirect()->to(base_url('admin/diagnostics/logs'))
+            ->with('success', 'Alle logbestanden zijn verwijderd.');
+    }
+
     /**
-     * @return list<array{name: string, path: string, size: int, modified_at: int, device_id: string}>
+    * @return list<array{name: string, path: string, size: int, modified_at: int, device_id: string, generated_at: string, app_version: string, entry_count: string}>
      */
     private function getLogFiles(string $query = ''): array
     {
@@ -113,8 +154,19 @@ class DiagnosticsLogsController extends Controller
                 'size' => (int) filesize($fullPath),
                 'modified_at' => (int) filemtime($fullPath),
                 'device_id' => $this->inferDeviceId($fileName),
+                'generated_at' => '',
+                'app_version' => '',
+                'entry_count' => '',
             ];
         }
+
+        foreach ($entries as &$entry) {
+            $summary = $this->readLogSummary($entry['path']);
+            $entry['generated_at'] = $summary['generated_at'];
+            $entry['app_version'] = $summary['app_version'];
+            $entry['entry_count'] = $summary['entry_count'];
+        }
+        unset($entry);
 
         usort($entries, static fn (array $left, array $right): int => $right['modified_at'] <=> $left['modified_at']);
 
@@ -122,8 +174,8 @@ class DiagnosticsLogsController extends Controller
     }
 
     /**
-     * @param list<array{name: string, path: string, size: int, modified_at: int, device_id: string}> $files
-     * @return array{name: string, path: string, size: int, modified_at: int, device_id: string}|null
+    * @param list<array{name: string, path: string, size: int, modified_at: int, device_id: string, generated_at: string, app_version: string, entry_count: string}> $files
+    * @return array{name: string, path: string, size: int, modified_at: int, device_id: string, generated_at: string, app_version: string, entry_count: string}|null
      */
     private function findLogFile(string $selectedFile, array $files): ?array
     {
@@ -164,7 +216,7 @@ class DiagnosticsLogsController extends Controller
 
     /**
      * @param list<string> $lines
-     * @param array{name: string, path: string, size: int, modified_at: int, device_id: string} $activeLog
+    * @param array{name: string, path: string, size: int, modified_at: int, device_id: string, generated_at: string, app_version: string, entry_count: string} $activeLog
      * @return array<string, string>
      */
     private function extractLogMetadata(array $lines, array $activeLog): array
@@ -221,6 +273,42 @@ class DiagnosticsLogsController extends Controller
         }
 
         return $bytes . ' B';
+    }
+
+    /**
+     * @return array{generated_at: string, app_version: string, entry_count: string}
+     */
+    private function readLogSummary(string $path): array
+    {
+        $summary = [
+            'generated_at' => '',
+            'app_version' => '',
+            'entry_count' => '',
+        ];
+
+        $file = new SplFileObject($path, 'rb');
+        $linesRead = 0;
+
+        while (! $file->eof() && $linesRead < 20) {
+            $line = trim((string) $file->fgets());
+            $linesRead++;
+
+            if ($line === '' || ! str_contains($line, ':')) {
+                continue;
+            }
+
+            [$key, $value] = array_map('trim', explode(':', $line, 2));
+
+            if ($key === 'Generated') {
+                $summary['generated_at'] = $value;
+            } elseif ($key === 'App version') {
+                $summary['app_version'] = $value;
+            } elseif ($key === 'Debug entry count') {
+                $summary['entry_count'] = $value;
+            }
+        }
+
+        return $summary;
     }
 
     /**

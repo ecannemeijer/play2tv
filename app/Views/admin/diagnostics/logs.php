@@ -2,15 +2,6 @@
 
 <?= $this->section('head') ?>
 <style>
-    .log-shell {
-        display: grid;
-        grid-template-columns: 290px minmax(0, 1fr);
-        gap: 1rem;
-    }
-    .log-file-list {
-        max-height: calc(100vh - 170px);
-        overflow: auto;
-    }
     .log-primary-filters {
         display: flex;
         justify-content: space-between;
@@ -25,18 +16,10 @@
         align-items: flex-end;
         flex-wrap: wrap;
     }
-    .log-file-link {
-        display: block;
-        padding: .75rem .9rem;
-        border-bottom: 1px solid #1e2035;
-        color: inherit;
-        text-decoration: none;
-        transition: background .15s ease, border-color .15s ease;
-    }
-    .log-file-link:hover,
-    .log-file-link.active {
-        background: rgba(124, 58, 237, .16);
-        border-color: rgba(196, 181, 253, .25);
+    .log-viewer-shell {
+        display: flex;
+        flex-direction: column;
+        gap: .75rem;
     }
     .log-meta-grid {
         display: grid;
@@ -72,6 +55,88 @@
         border: 1px solid #27324b;
         border-radius: 16px;
         overflow: hidden;
+    }
+    .log-modal .modal-content {
+        background: #111827;
+        border: 1px solid #27324b;
+        color: #e2e8f0;
+    }
+    .log-modal .modal-header,
+    .log-modal .modal-footer {
+        border-color: #27324b;
+    }
+    .log-modal .btn-close {
+        filter: invert(1) grayscale(1);
+    }
+    .log-modal-list {
+        max-height: 70vh;
+        overflow: auto;
+        display: grid;
+        gap: .65rem;
+    }
+    .log-modal-item {
+        display: flex;
+        justify-content: space-between;
+        gap: .9rem;
+        padding: .8rem .9rem;
+        border: 1px solid #28344d;
+        border-radius: 14px;
+        background: rgba(15, 23, 42, .8);
+    }
+    .log-modal-item.active {
+        border-color: rgba(167, 139, 250, .55);
+        box-shadow: inset 0 0 0 1px rgba(167, 139, 250, .25);
+    }
+    .log-modal-main {
+        min-width: 0;
+        flex: 1;
+    }
+    .log-modal-title {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        flex-wrap: wrap;
+        margin-bottom: .4rem;
+    }
+    .log-file-name {
+        font-weight: 700;
+        color: #f8fafc;
+        word-break: break-word;
+    }
+    .log-file-badges {
+        display: flex;
+        gap: .35rem;
+        flex-wrap: wrap;
+    }
+    .log-file-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: .16rem .45rem;
+        border-radius: 999px;
+        background: rgba(51, 65, 85, .8);
+        border: 1px solid #334155;
+        color: #cbd5e1;
+        font-size: .72rem;
+        line-height: 1.1;
+    }
+    .log-file-badge-accent {
+        background: rgba(76, 29, 149, .28);
+        border-color: rgba(167, 139, 250, .35);
+        color: #ddd6fe;
+    }
+    .log-file-meta {
+        display: flex;
+        gap: .8rem;
+        flex-wrap: wrap;
+        font-size: .8rem;
+        color: #94a3b8;
+    }
+    .log-modal-actions {
+        display: flex;
+        gap: .45rem;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        justify-content: flex-end;
     }
     .log-toolbar {
         display: flex;
@@ -213,8 +278,6 @@
         color: #94a3b8;
     }
     @media (max-width: 1200px) {
-        .log-shell { grid-template-columns: 1fr; }
-        .log-file-list, .log-lines { max-height: none; }
         .log-meta-grid { grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
     }
 </style>
@@ -237,65 +300,33 @@
             <i class="bi bi-search me-1"></i>Filter
         </button>
     </form>
-    <span class="badge bg-secondary"><?= number_format(count($logFiles)) ?> logs</span>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#logFilesModal">
+            <i class="bi bi-folder2-open me-1"></i>Laad logbestand
+        </button>
+        <span class="badge bg-secondary"><?= number_format(count($logFiles)) ?> logs</span>
+    </div>
 </div>
 
-<div class="log-shell">
-    <div class="card">
-        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="mb-0"><i class="bi bi-folder2-open me-2"></i>Beschikbare logs</h6>
-            <small class="text-muted">writable/uploads/logs</small>
-        </div>
-        <div class="log-file-list">
-            <?php if ($logFiles === []): ?>
-                <div class="log-empty-state">
-                    <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
-                    Geen logbestanden gevonden.
-                </div>
-            <?php else: ?>
-                <?php foreach ($logFiles as $file): ?>
-                    <?php $isActive = $selectedFile === $file['name']; ?>
-                    <a
-                        href="<?= base_url('admin/diagnostics/logs?' . http_build_query(array_filter(['file' => $file['name'], 'q' => $query]))) ?>"
-                        class="log-file-link <?= $isActive ? 'active' : '' ?>"
-                    >
-                        <div class="d-flex justify-content-between align-items-start gap-2">
-                            <div>
-                                <div class="fw-semibold"><?= esc($file['name']) ?></div>
-                                <div class="small text-muted mt-1">
-                                    Device: <?= esc($file['device_id'] !== '' ? $file['device_id'] : 'onbekend') ?>
-                                </div>
-                            </div>
-                            <span class="badge text-bg-dark"><?= esc(date('d-m H:i', $file['modified_at'])) ?></span>
-                        </div>
-                        <div class="small text-muted mt-2">
-                            <?= esc(number_format($file['size'])) ?> bytes
-                        </div>
-                    </a>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <div class="d-flex flex-column gap-3">
-        <?php if ($activeLog === null): ?>
-            <div class="log-viewer">
-                <div class="log-empty-state">
-                    <i class="bi bi-journal-text fs-1 d-block mb-2"></i>
-                    Kies links een logbestand om de inhoud te bekijken.
-                </div>
+<div class="log-viewer-shell">
+    <?php if ($activeLog === null): ?>
+        <div class="log-viewer">
+            <div class="log-empty-state">
+                <i class="bi bi-journal-text fs-1 d-block mb-2"></i>
+                Kies via de knop <strong>Laad logbestand</strong> een log om de inhoud te bekijken.
             </div>
-        <?php else: ?>
-            <div class="log-meta-grid">
-                <?php foreach ($meta as $label => $value): ?>
-                    <div class="log-meta-card">
-                        <div class="log-meta-label"><?= esc($label) ?></div>
-                        <div class="log-meta-value"><?= esc($value) ?></div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
+        </div>
+    <?php else: ?>
+        <div class="log-meta-grid">
+            <?php foreach ($meta as $label => $value): ?>
+                <div class="log-meta-card">
+                    <div class="log-meta-label"><?= esc($label) ?></div>
+                    <div class="log-meta-value"><?= esc($value) ?></div>
+                </div>
+            <?php endforeach; ?>
+        </div>
 
-            <div class="log-viewer">
+        <div class="log-viewer">
                 <div class="log-toolbar">
                     <div>
                         <div class="fw-semibold"><?= esc($activeLog['name']) ?></div>
@@ -393,7 +424,84 @@
                     <?php endif; ?>
                 </div>
             </div>
-        <?php endif; ?>
+    <?php endif; ?>
+</div>
+
+<div class="modal fade log-modal" id="logFilesModal" tabindex="-1" aria-labelledby="logFilesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title mb-1" id="logFilesModalLabel">Beschikbare logbestanden</h5>
+                    <div class="small text-muted">Kies een log om te laden, of verwijder losse logs of alles tegelijk.</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Sluiten"></button>
+            </div>
+            <div class="modal-body">
+                <?php if ($logFiles === []): ?>
+                    <div class="log-empty-state py-4">
+                        <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
+                        Geen logbestanden gevonden.
+                    </div>
+                <?php else: ?>
+                    <div class="log-modal-list">
+                        <?php foreach ($logFiles as $file): ?>
+                            <?php $isActive = $selectedFile === $file['name']; ?>
+                            <div class="log-modal-item <?= $isActive ? 'active' : '' ?>">
+                                <div class="log-modal-main">
+                                    <div class="log-modal-title">
+                                        <span class="log-file-name"><?= esc($file['name']) ?></span>
+                                        <div class="log-file-badges">
+                                            <?php if ($file['device_id'] !== ''): ?>
+                                                <span class="log-file-badge log-file-badge-accent"><?= esc($file['device_id']) ?></span>
+                                            <?php endif; ?>
+                                            <?php if ($file['entry_count'] !== ''): ?>
+                                                <span class="log-file-badge"><?= esc($file['entry_count']) ?> events</span>
+                                            <?php endif; ?>
+                                            <span class="log-file-badge"><?= esc(number_format($file['size'])) ?> B</span>
+                                        </div>
+                                    </div>
+                                    <div class="log-file-meta">
+                                        <span>Gewijzigd: <?= esc(date('d-m-Y H:i:s', $file['modified_at'])) ?></span>
+                                        <?php if ($file['generated_at'] !== ''): ?>
+                                            <span>Generated: <?= esc($file['generated_at']) ?></span>
+                                        <?php endif; ?>
+                                        <?php if ($file['app_version'] !== ''): ?>
+                                            <span>App: <?= esc($file['app_version']) ?></span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div class="log-modal-actions">
+                                    <a href="<?= base_url('admin/diagnostics/logs?' . http_build_query(array_filter(['file' => $file['name'], 'q' => $query]))) ?>" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-box-arrow-in-down-right me-1"></i>Laden
+                                    </a>
+                                    <form method="post" action="<?= base_url('admin/diagnostics/logs/delete') ?>" onsubmit="return confirm('Weet je zeker dat je dit logbestand wilt verwijderen?');">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="file" value="<?= esc($file['name']) ?>">
+                                        <input type="hidden" name="q" value="<?= esc($query) ?>">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="bi bi-trash3 me-1"></i>Verwijder
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <small class="text-muted">Opslaglocatie: writable/uploads/logs</small>
+                <div class="d-flex gap-2">
+                    <form method="post" action="<?= base_url('admin/diagnostics/logs/delete-all') ?>" onsubmit="return confirm('Weet je zeker dat je alle logbestanden wilt verwijderen?');">
+                        <?= csrf_field() ?>
+                        <button type="submit" class="btn btn-outline-danger btn-sm" <?= $logFiles === [] ? 'disabled' : '' ?>>
+                            <i class="bi bi-trash me-1"></i>Verwijder alles
+                        </button>
+                    </form>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Sluiten</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
