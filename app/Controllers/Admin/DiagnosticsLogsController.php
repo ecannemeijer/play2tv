@@ -13,6 +13,7 @@ class DiagnosticsLogsController extends Controller
 {
     private const MAX_RENDER_LINES = 1200;
     private const MAX_RENDER_BYTES = 512000;
+    private const VIEW_PATH = 'admin/diagnostics';
 
     public function __construct()
     {
@@ -20,6 +21,57 @@ class DiagnosticsLogsController extends Controller
     }
 
     public function index(): string
+    {
+        return view(self::VIEW_PATH . '/logs', $this->buildViewData());
+    }
+
+    public function fragments(): ResponseInterface
+    {
+        try {
+            $viewData = $this->buildViewData();
+        } catch (PageNotFoundException $exception) {
+            return $this->response
+                ->setStatusCode(404)
+                ->setJSON([
+                    'message' => $exception->getMessage(),
+                ]);
+        }
+
+        return $this->response->setJSON([
+            'toolbarHtml' => view(self::VIEW_PATH . '/partials/logs_toolbar', $viewData),
+            'viewerHtml' => view(self::VIEW_PATH . '/partials/logs_viewer', $viewData),
+            'modalHtml' => view(self::VIEW_PATH . '/partials/logs_modal_content', $viewData),
+            'state' => [
+                'selectedFile' => $viewData['selectedFile'],
+                'query' => $viewData['query'],
+                'severity' => $viewData['severity'],
+                'term' => $viewData['term'],
+                'openPicker' => $viewData['openPicker'],
+                'logCount' => count($viewData['logFiles']),
+            ],
+        ]);
+    }
+
+    /**
+     * @return array{
+     *     title: string,
+     *     logFiles: array<int, array{name: string, path: string, size: int, modified_at: int, device_id: string, generated_at: string, app_version: string, entry_count: string}>,
+     *     selectedFile: string,
+     *     query: string,
+     *     severity: string,
+     *     term: string,
+     *     openPicker: bool,
+     *     activeLog: array{name: string, path: string, size: int, modified_at: int, device_id: string, generated_at: string, app_version: string, entry_count: string}|null,
+     *     contentLines: list<string>,
+     *     meta: array<string, string>|null,
+     *     headerLines: list<string>,
+     *     parsedEntries: list<array{timestamp: string, event: string, detail: string, source: string, resolved: string, network: string, tone: string}>,
+     *     totalParsedEntries: int,
+     *     footerLines: list<string>,
+     *     truncated: bool
+     * }
+     */
+    private function buildViewData(): array
     {
         $selectedFile = trim((string) $this->request->getGet('file'));
         $query = trim((string) $this->request->getGet('q'));
@@ -50,7 +102,7 @@ class DiagnosticsLogsController extends Controller
             $parsedEntries = $this->filterParsedEntries($parsedEntries, $severity, $term);
         }
 
-        return view('admin/diagnostics/logs', [
+        return [
             'title' => 'Diagnostics Logs — Play2TV Admin',
             'logFiles' => $logFiles,
             'selectedFile' => $selectedFile,
@@ -66,7 +118,7 @@ class DiagnosticsLogsController extends Controller
             'totalParsedEntries' => $totalParsedEntries,
             'footerLines' => $footerLines,
             'truncated' => $truncated,
-        ]);
+        ];
     }
 
     public function download(): ResponseInterface

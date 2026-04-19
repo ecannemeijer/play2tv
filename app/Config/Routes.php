@@ -117,6 +117,7 @@ $routes->group('admin', ['filter' => 'adminauth'], function ($routes) {
 
     // Diagnostics logs
     $routes->get('diagnostics/logs', 'Admin\DiagnosticsLogsController::index');
+    $routes->get('diagnostics/logs/fragments', 'Admin\DiagnosticsLogsController::fragments');
     $routes->get('diagnostics/logs/download', 'Admin\DiagnosticsLogsController::download');
     $routes->post('diagnostics/logs/delete', 'Admin\DiagnosticsLogsController::delete');
     $routes->post('diagnostics/logs/delete-all', 'Admin\DiagnosticsLogsController::deleteAll');

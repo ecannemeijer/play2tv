@@ -281,6 +281,18 @@
         text-align: center;
         color: #94a3b8;
     }
+    .log-live-alert {
+        display: none;
+        margin-bottom: 1rem;
+    }
+    .log-live-alert.is-visible {
+        display: block;
+    }
+    .log-fragment-loading {
+        opacity: .65;
+        pointer-events: none;
+        transition: opacity .16s ease;
+    }
     @media (max-width: 1200px) {
         .log-meta-grid { grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
     }
@@ -289,247 +301,225 @@
 
 <?= $this->section('content') ?>
 
-<div class="log-primary-filters">
-    <div class="d-flex align-items-center gap-2 flex-wrap">
-        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#logFilesModal">
-            <i class="bi bi-folder2-open me-1"></i>Laad logbestand
-        </button>
-        <span class="badge bg-secondary"><?= number_format(count($logFiles)) ?> logs</span>
-    </div>
+<?php $fragmentData = [
+    'logFiles' => $logFiles,
+    'selectedFile' => $selectedFile,
+    'query' => $query,
+    'severity' => $severity,
+    'term' => $term,
+    'openPicker' => $openPicker,
+    'activeLog' => $activeLog,
+    'contentLines' => $contentLines,
+    'meta' => $meta,
+    'headerLines' => $headerLines,
+    'parsedEntries' => $parsedEntries,
+    'totalParsedEntries' => $totalParsedEntries,
+    'footerLines' => $footerLines,
+    'truncated' => $truncated,
+]; ?>
+
+<div id="diagnosticsLiveAlert" class="alert alert-danger log-live-alert" role="alert"></div>
+
+<div id="diagnosticsToolbar">
+    <?= view('admin/diagnostics/partials/logs_toolbar', $fragmentData) ?>
 </div>
 
-<div class="log-viewer-shell">
-    <?php if ($activeLog === null): ?>
-        <div class="log-viewer">
-            <div class="log-empty-state">
-                <i class="bi bi-journal-text fs-1 d-block mb-2"></i>
-                Kies via de knop <strong>Laad logbestand</strong> een log om de inhoud te bekijken.
-            </div>
-        </div>
-    <?php else: ?>
-        <div class="log-meta-grid">
-            <?php foreach ($meta as $label => $value): ?>
-                <div class="log-meta-card">
-                    <div class="log-meta-label"><?= esc($label) ?></div>
-                    <div class="log-meta-value"><?= esc($value) ?></div>
-                </div>
-            <?php endforeach; ?>
-        </div>
-
-        <div class="log-viewer">
-                <div class="log-toolbar">
-                    <div>
-                        <div class="fw-semibold"><?= esc($activeLog['name']) ?></div>
-                        <div class="small text-muted">Compacte eventweergave met filtering op warning/error/debug/success en zoekwoord.</div>
-                    </div>
-                    <div class="d-flex gap-2 align-items-center flex-wrap justify-content-end">
-                        <form method="get" class="log-secondary-filters">
-                            <input type="hidden" name="file" value="<?= esc($activeLog['name']) ?>">
-                            <?php if ($query !== ''): ?>
-                                <input type="hidden" name="q" value="<?= esc($query) ?>">
-                            <?php endif; ?>
-                            <div class="log-filter-field">
-                                <label class="form-label small text-muted">Type</label>
-                                <select name="severity" class="form-select form-select-sm">
-                                    <option value="">Alles</option>
-                                    <?php foreach (['warning' => 'Warnings', 'error' => 'Errors', 'success' => 'Success', 'debug' => 'Debug', 'neutral' => 'Overig'] as $value => $label): ?>
-                                        <option value="<?= esc($value) ?>" <?= $severity === $value ? 'selected' : '' ?>><?= esc($label) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="log-filter-field" style="min-width:220px;">
-                                <label class="form-label small text-muted">Zoekwoord</label>
-                                <input type="text" name="term" class="form-control form-control-sm" value="<?= esc($term) ?>" placeholder="Bijv. buffering, ignored, line.dino.ws">
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-sm">
-                                <i class="bi bi-funnel me-1"></i>Toepassen
-                            </button>
-                        </form>
-                        <span class="log-results-badge">
-                            <i class="bi bi-filter-circle"></i><?= number_format(count($parsedEntries)) ?>/<?= number_format($totalParsedEntries) ?> events
-                        </span>
-                        <a href="<?= base_url('admin/diagnostics/logs/download?' . http_build_query(['file' => $activeLog['name']])) ?>" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-download me-1"></i>Download
-                        </a>
-                    </div>
-                </div>
-                <div class="log-lines">
-                    <?php if ($headerLines !== []): ?>
-                        <div class="log-header-block">
-                            <?php foreach ($headerLines as $line): ?>
-                                <?php if (preg_match('/^([^:]+):(.*)$/', $line, $matches) === 1): ?>
-                                    <div class="log-header-line">
-                                        <span class="log-header-key"><?= esc(trim($matches[1])) ?>:</span>
-                                        <span class="log-header-value"><?= esc(trim($matches[2])) ?></span>
-                                    </div>
-                                <?php else: ?>
-                                    <div class="log-header-line"><span class="log-header-value"><?= esc($line) ?></span></div>
-                                <?php endif; ?>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if ($parsedEntries !== []): ?>
-                        <div class="log-entry-list">
-                            <?php foreach ($parsedEntries as $entry): ?>
-                                <div class="log-entry-card log-entry-<?= esc($entry['tone']) ?>">
-                                    <div class="log-entry-top">
-                                        <div class="log-entry-title">
-                                            <div class="log-entry-event"><?= esc($entry['event']) ?></div>
-                                            <div class="log-entry-detail"><?= esc($entry['detail']) ?></div>
-                                        </div>
-                                        <div class="log-entry-time">[<?= esc($entry['timestamp']) ?>]</div>
-                                    </div>
-                                    <div class="log-entry-grid">
-                                        <div class="log-chip">
-                                            <div class="log-chip-label">Source</div>
-                                            <div class="log-chip-value"><?= esc($entry['source']) ?></div>
-                                        </div>
-                                        <div class="log-chip">
-                                            <div class="log-chip-label">Resolved</div>
-                                            <div class="log-chip-value"><?= esc($entry['resolved']) ?></div>
-                                        </div>
-                                        <div class="log-chip">
-                                            <div class="log-chip-label">Network</div>
-                                            <div class="log-chip-value"><?= esc($entry['network']) ?></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php else: ?>
-                        <div class="log-empty-state">
-                            Geen events gevonden voor de huidige filters.
-                        </div>
-                    <?php endif; ?>
-
-                    <?php foreach ($footerLines as $footerLine): ?>
-                        <div class="log-footer-note"><?= esc($footerLine) ?></div>
-                    <?php endforeach; ?>
-
-                    <?php if ($truncated): ?>
-                        <div class="log-footer-note">
-                            Weergave ingekort na <?= esc((string) count($contentLines)) ?> regels. Download het bestand voor de volledige inhoud.
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-    <?php endif; ?>
+<div id="diagnosticsViewerShell">
+    <?= view('admin/diagnostics/partials/logs_viewer', $fragmentData) ?>
 </div>
 
 <div class="modal fade log-modal" id="logFilesModal" tabindex="-1" aria-labelledby="logFilesModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div>
-                    <h5 class="modal-title mb-1" id="logFilesModalLabel">Beschikbare logbestanden</h5>
-                    <div class="small text-muted">Kies een log om te laden, of verwijder losse logs of alles tegelijk.</div>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Sluiten"></button>
-            </div>
-            <div class="modal-body">
-                <form method="get" class="log-modal-filter">
-                    <?php if ($selectedFile !== ''): ?>
-                        <input type="hidden" name="file" value="<?= esc($selectedFile) ?>">
-                    <?php endif; ?>
-                    <?php if ($severity !== ''): ?>
-                        <input type="hidden" name="severity" value="<?= esc($severity) ?>">
-                    <?php endif; ?>
-                    <?php if ($term !== ''): ?>
-                        <input type="hidden" name="term" value="<?= esc($term) ?>">
-                    <?php endif; ?>
-                    <input type="hidden" name="openPicker" value="1">
-                    <div>
-                        <label class="form-label small text-muted">Bestanden filteren</label>
-                        <input type="text" name="q" class="form-control" value="<?= esc($query) ?>" placeholder="Zoek op device of bestandsnaam">
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="bi bi-search me-1"></i>Filter
-                    </button>
-                </form>
-
-                <?php if ($logFiles === []): ?>
-                    <div class="log-empty-state py-4">
-                        <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
-                        Geen logbestanden gevonden.
-                    </div>
-                <?php else: ?>
-                    <div class="log-modal-list">
-                        <?php foreach ($logFiles as $file): ?>
-                            <?php $isActive = $selectedFile === $file['name']; ?>
-                            <div class="log-modal-item <?= $isActive ? 'active' : '' ?>">
-                                <div class="log-modal-main">
-                                    <div class="log-modal-title">
-                                        <span class="log-file-name"><?= esc($file['name']) ?></span>
-                                        <div class="log-file-badges">
-                                            <?php if ($file['device_id'] !== ''): ?>
-                                                <span class="log-file-badge log-file-badge-accent"><?= esc($file['device_id']) ?></span>
-                                            <?php endif; ?>
-                                            <?php if ($file['entry_count'] !== ''): ?>
-                                                <span class="log-file-badge"><?= esc($file['entry_count']) ?> events</span>
-                                            <?php endif; ?>
-                                            <span class="log-file-badge"><?= esc(number_format($file['size'])) ?> B</span>
-                                        </div>
-                                    </div>
-                                    <div class="log-file-meta">
-                                        <span>Gewijzigd: <?= esc(date('d-m-Y H:i:s', $file['modified_at'])) ?></span>
-                                        <?php if ($file['generated_at'] !== ''): ?>
-                                            <span>Generated: <?= esc($file['generated_at']) ?></span>
-                                        <?php endif; ?>
-                                        <?php if ($file['app_version'] !== ''): ?>
-                                            <span>App: <?= esc($file['app_version']) ?></span>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                                <div class="log-modal-actions">
-                                    <a href="<?= base_url('admin/diagnostics/logs?' . http_build_query(array_filter(['file' => $file['name'], 'q' => $query, 'severity' => $severity, 'term' => $term]))) ?>" class="btn btn-primary btn-sm">
-                                        <i class="bi bi-box-arrow-in-down-right me-1"></i>Laden
-                                    </a>
-                                    <form method="post" action="<?= base_url('admin/diagnostics/logs/delete') ?>" onsubmit="return confirm('Weet je zeker dat je dit logbestand wilt verwijderen?');">
-                                        <?= csrf_field() ?>
-                                        <input type="hidden" name="file" value="<?= esc($file['name']) ?>">
-                                        <input type="hidden" name="q" value="<?= esc($query) ?>">
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">
-                                            <i class="bi bi-trash3 me-1"></i>Verwijder
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-            <div class="modal-footer d-flex justify-content-between">
-                <small class="text-muted">Opslaglocatie: writable/uploads/logs</small>
-                <div class="d-flex gap-2">
-                    <form method="post" action="<?= base_url('admin/diagnostics/logs/delete-all') ?>" onsubmit="return confirm('Weet je zeker dat je alle logbestanden wilt verwijderen?');">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="q" value="<?= esc($query) ?>">
-                        <button type="submit" class="btn btn-outline-danger btn-sm" <?= $logFiles === [] ? 'disabled' : '' ?>>
-                            <i class="bi bi-trash me-1"></i>Verwijder alles
-                        </button>
-                    </form>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Sluiten</button>
-                </div>
-            </div>
+        <div class="modal-content" id="diagnosticsModalContent">
+            <?= view('admin/diagnostics/partials/logs_modal_content', $fragmentData) ?>
         </div>
     </div>
 </div>
 
+<?= $this->endSection() ?>
+
 <?= $this->section('scripts') ?>
-<?php if ($openPicker): ?>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const toolbarContainer = document.getElementById('diagnosticsToolbar');
+    const viewerContainer = document.getElementById('diagnosticsViewerShell');
+    const alertElement = document.getElementById('diagnosticsLiveAlert');
     const modalElement = document.getElementById('logFilesModal');
-    if (!modalElement) {
+    const modalContent = document.getElementById('diagnosticsModalContent');
+
+    if (!toolbarContainer || !viewerContainer || !alertElement || !modalElement || !modalContent) {
         return;
     }
 
-    const modal = new bootstrap.Modal(modalElement);
-    modal.show();
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+    const basePageUrl = <?= json_encode(base_url('admin/diagnostics/logs')) ?>;
+    const fragmentsUrl = <?= json_encode(base_url('admin/diagnostics/logs/fragments')) ?>;
+    const state = <?= json_encode([
+        'selectedFile' => $selectedFile,
+        'query' => $query,
+        'severity' => $severity,
+        'term' => $term,
+        'openPicker' => $openPicker,
+    ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    let searchDebounceHandle = null;
+    let requestCounter = 0;
+
+    function toggleLoading(isLoading) {
+        toolbarContainer.classList.toggle('log-fragment-loading', isLoading);
+        viewerContainer.classList.toggle('log-fragment-loading', isLoading);
+        modalContent.classList.toggle('log-fragment-loading', isLoading);
+    }
+
+    function setAlert(message) {
+        if (!message) {
+            alertElement.textContent = '';
+            alertElement.classList.remove('is-visible');
+            return;
+        }
+
+        alertElement.textContent = message;
+        alertElement.classList.add('is-visible');
+    }
+
+    function buildQueryString(nextState) {
+        const params = new URLSearchParams();
+
+        if (nextState.selectedFile) {
+            params.set('file', nextState.selectedFile);
+        }
+        if (nextState.query) {
+            params.set('q', nextState.query);
+        }
+        if (nextState.severity) {
+            params.set('severity', nextState.severity);
+        }
+        if (nextState.term) {
+            params.set('term', nextState.term);
+        }
+        if (nextState.openPicker) {
+            params.set('openPicker', '1');
+        }
+
+        return params.toString();
+    }
+
+    function replaceFragments(payload) {
+        toolbarContainer.innerHTML = payload.toolbarHtml;
+        viewerContainer.innerHTML = payload.viewerHtml;
+        modalContent.innerHTML = payload.modalHtml;
+        Object.assign(state, payload.state);
+        const queryString = buildQueryString(state);
+        window.history.replaceState({}, '', queryString ? `${basePageUrl}?${queryString}` : basePageUrl);
+    }
+
+    async function refreshFragments(overrides = {}, options = {}) {
+        const requestId = ++requestCounter;
+        const nextState = {
+            selectedFile: overrides.selectedFile ?? state.selectedFile ?? '',
+            query: overrides.query ?? state.query ?? '',
+            severity: overrides.severity ?? state.severity ?? '',
+            term: overrides.term ?? state.term ?? '',
+            openPicker: options.openPicker ?? false,
+        };
+        const queryString = buildQueryString(nextState);
+
+        toggleLoading(true);
+        setAlert('');
+
+        try {
+            const response = await fetch(queryString ? `${fragmentsUrl}?${queryString}` : fragmentsUrl, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+
+            const payload = await response.json();
+
+            if (!response.ok) {
+                throw new Error(payload.message || 'De diagnostics-fragmenten konden niet worden geladen.');
+            }
+
+            if (requestId !== requestCounter) {
+                return;
+            }
+
+            replaceFragments(payload);
+
+            if (options.keepModalOpen) {
+                modal.show();
+            }
+
+            if (options.closeModal) {
+                modal.hide();
+            }
+        } catch (error) {
+            if (requestId !== requestCounter) {
+                return;
+            }
+
+            setAlert(error instanceof Error ? error.message : 'Er ging iets mis bij het verversen van de diagnostics-view.');
+        } finally {
+            if (requestId === requestCounter) {
+                toggleLoading(false);
+            }
+        }
+    }
+
+    modalElement.addEventListener('show.bs.modal', function () {
+        refreshFragments({}, { keepModalOpen: true });
+    });
+
+    document.addEventListener('submit', function (event) {
+        const form = event.target;
+
+        if (!(form instanceof HTMLFormElement) || form.id !== 'logModalFilterForm') {
+            return;
+        }
+
+        event.preventDefault();
+        const formData = new FormData(form);
+        refreshFragments({
+            query: String(formData.get('q') || ''),
+            selectedFile: String(formData.get('file') || state.selectedFile || ''),
+            severity: String(formData.get('severity') || state.severity || ''),
+            term: String(formData.get('term') || state.term || ''),
+        }, { keepModalOpen: true });
+    });
+
+    document.addEventListener('input', function (event) {
+        const target = event.target;
+
+        if (!(target instanceof HTMLInputElement) || target.name !== 'q' || target.closest('#logModalFilterForm') === null) {
+            return;
+        }
+
+        window.clearTimeout(searchDebounceHandle);
+        searchDebounceHandle = window.setTimeout(function () {
+            refreshFragments({
+                query: target.value.trim(),
+                selectedFile: state.selectedFile,
+                severity: state.severity,
+                term: state.term,
+            }, { keepModalOpen: true });
+        }, 220);
+    });
+
+    document.addEventListener('click', function (event) {
+        const loadButton = event.target instanceof Element ? event.target.closest('.js-load-log') : null;
+
+        if (!(loadButton instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        event.preventDefault();
+        refreshFragments({ selectedFile: loadButton.dataset.fileName || '' }, { closeModal: true });
+    });
+
+    if (state.openPicker) {
+        modal.show();
+    }
 });
 </script>
-<?php endif; ?>
-<?= $this->endSection() ?>
-
 <?= $this->endSection() ?>
