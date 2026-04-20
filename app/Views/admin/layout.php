@@ -209,6 +209,10 @@
            class="nav-link <?= str_starts_with(uri_string(), 'admin/diagnostics') ? 'active' : '' ?>">
             <i class="bi bi-journal-text"></i> Diagnostics Logs
         </a>
+        <a href="<?= base_url('admin/telemetry') ?>"
+           class="nav-link <?= str_starts_with(uri_string(), 'admin/telemetry') ? 'active' : '' ?>">
+            <i class="bi bi-activity"></i> Telemetry
+        </a>
         <a href="<?= base_url('admin/redis') ?>"
            class="nav-link <?= str_starts_with(uri_string(), 'admin/redis') ? 'active' : '' ?>">
             <i class="bi bi-database"></i> REDIS

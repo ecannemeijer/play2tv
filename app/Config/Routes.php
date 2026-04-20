@@ -31,6 +31,9 @@ $routes->options('api/refresh', static function () {
 $routes->options('api/logout', static function () {
     return service('response')->setStatusCode(204);
 });
+$routes->options('telemetry', static function () {
+    return service('response')->setStatusCode(204);
+});
 $routes->options('api/(:segment)', static function () {
     return service('response')->setStatusCode(204);
 });
@@ -46,6 +49,7 @@ $routes->post('api/login',    'Api\AuthController::login');
 $routes->post('api/refresh',  'Api\AuthController::refresh');
 $routes->post('api/logout',   'Api\AuthController::logout');
 $routes->post('api/diagnostics/upload', 'Api\DiagnosticsController::upload');
+$routes->post('telemetry', 'Api\TelemetryController::store');
 
 // Protected (JWT required — JwtFilter applied in Filters.php)
 $routes->group('api', ['filter' => 'jwt'], function ($routes) {
@@ -121,6 +125,9 @@ $routes->group('admin', ['filter' => 'adminauth'], function ($routes) {
     $routes->get('diagnostics/logs/download', 'Admin\DiagnosticsLogsController::download');
     $routes->post('diagnostics/logs/delete', 'Admin\DiagnosticsLogsController::delete');
     $routes->post('diagnostics/logs/delete-all', 'Admin\DiagnosticsLogsController::deleteAll');
+
+    // Telemetry
+    $routes->get('telemetry', 'Admin\TelemetryController::index');
 
     // Users
     $routes->get('users',                'Admin\UserController::index');

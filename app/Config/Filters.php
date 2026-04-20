@@ -90,7 +90,7 @@ class Filters extends BaseFilters
         'before' => [
             'secureheadersapi',
             // 'honeypot',
-            'csrf' => ['except' => ['api/*']], // CSRF for admin pages only, not API
+            'csrf' => ['except' => ['api/*', 'telemetry']], // CSRF for admin pages only, not API or telemetry ingest
             // 'invalidchars',
         ],
         'after' => [
