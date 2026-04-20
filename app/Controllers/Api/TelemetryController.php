@@ -112,19 +112,30 @@ class TelemetryController extends BaseApiController
     private function guardRateLimit(): ?\CodeIgniter\HTTP\ResponseInterface
     {
         $maxRequests = max(30, (int) env('telemetry.maxRequestsPerMinute', 240));
-        $bucket = 'telemetry:' . sha1((string) $this->request->getIPAddress()) . ':' . gmdate('YmdHi');
-        $cache = cache();
-        $count = (int) ($cache->get($bucket) ?? 0);
+        $bucket = sprintf(
+            'telemetry_rate_%s_%s',
+            sha1((string) $this->request->getIPAddress()),
+            gmdate('YmdHi')
+        );
 
-        if ($count >= $maxRequests) {
-            $this->securityEvents->log('telemetry_rate_limited', 'warning', $this->request, null, [
-                'route' => 'telemetry',
+        try {
+            $cache = cache();
+            $count = (int) ($cache->get($bucket) ?? 0);
+
+            if ($count >= $maxRequests) {
+                $this->securityEvents->log('telemetry_rate_limited', 'warning', $this->request, null, [
+                    'route' => 'telemetry',
+                ]);
+
+                return $this->rateLimitError('Telemetry rate limit bereikt.', 60);
+            }
+
+            $cache->save($bucket, $count + 1, 60);
+        } catch (Throwable $exception) {
+            log_message('warning', 'Telemetry rate limit cache unavailable: {message}', [
+                'message' => $exception->getMessage(),
             ]);
-
-            return $this->rateLimitError('Telemetry rate limit bereikt.', 60);
         }
-
-        $cache->save($bucket, $count + 1, 60);
 
         return null;
     }
