@@ -59,6 +59,12 @@ class TelemetryEventModel extends Model
     {
         $table = $this->db->table($this->table);
         $total = (int) $table->countAllResults();
+        $latestRow = $this->db->table($this->table)
+            ->select('created_at')
+            ->orderBy('created_at', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
 
         $last24h = (int) $this->db->table($this->table)
             ->where('created_at >=', date('Y-m-d H:i:s', strtotime('-24 hours')))
@@ -83,6 +89,7 @@ class TelemetryEventModel extends Model
             'last24h' => $last24h,
             'crashes24h' => $crashes24h,
             'manualReports24h' => $manualReports24h,
+            'latestCreatedAt' => $latestRow['created_at'] ?? null,
         ];
     }
 

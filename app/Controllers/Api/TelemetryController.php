@@ -9,6 +9,7 @@ use App\Libraries\SecurityEventService;
 use App\Models\TelemetryEventModel;
 use DateTimeImmutable;
 use DateTimeZone;
+use RuntimeException;
 use Throwable;
 
 class TelemetryController extends BaseApiController
@@ -81,7 +82,19 @@ class TelemetryController extends BaseApiController
                 'created_at' => gmdate('Y-m-d H:i:s'),
             ];
 
-            $this->telemetryEvents->insert($record, false);
+            $inserted = $this->telemetryEvents->insert($record, false);
+            if ($inserted === false) {
+                $dbError = $this->telemetryEvents->db->error();
+                $modelErrors = $this->telemetryEvents->errors();
+
+                log_message('error', 'Telemetry insert failed. DB error: {dbError}; Model errors: {modelErrors}; Record: {record}', [
+                    'dbError' => json_encode($dbError, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                    'modelErrors' => json_encode($modelErrors, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                    'record' => json_encode($record, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                ]);
+
+                throw new RuntimeException('Telemetry insert failed.');
+            }
 
             return $this->created([
                 'id' => (int) $this->telemetryEvents->getInsertID(),

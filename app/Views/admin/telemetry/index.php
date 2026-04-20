@@ -29,6 +29,11 @@
     </div>
 </div>
 
+<p class="text-muted small mb-4">
+    Laatst opgeslagen event:
+    <strong><?= ! empty($overview['latestCreatedAt']) ? esc(date('d-m-Y H:i:s', strtotime((string) $overview['latestCreatedAt']))) : 'geen data' ?></strong>
+</p>
+
 <div class="card mb-4">
     <div class="card-header py-3">
         <h6 class="mb-0"><i class="bi bi-funnel me-2"></i>Filters</h6>
