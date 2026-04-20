@@ -68,6 +68,45 @@
                 <a href="<?= base_url('admin/telemetry') ?>" class="btn btn-outline-secondary">Reset</a>
             </div>
         </form>
+
+        <div class="d-flex flex-wrap gap-2 mt-3 pt-3 border-top">
+            <a href="<?= base_url('admin/telemetry/export/csv') . ($baseQuery !== [] ? '?' . http_build_query($baseQuery) : '') ?>" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-download me-1"></i>Export CSV
+            </a>
+            <a href="<?= base_url('admin/telemetry/export/json') . ($baseQuery !== [] ? '?' . http_build_query($baseQuery) : '') ?>" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-filetype-json me-1"></i>Export JSON
+            </a>
+            <form method="post" action="<?= base_url('admin/telemetry/delete-filtered') ?>" onsubmit="return confirm('Weet je zeker dat je alle gefilterde telemetry events wilt verwijderen?');" class="d-inline-flex gap-2">
+                <?= csrf_field() ?>
+                <input type="hidden" name="q" value="<?= esc($query) ?>">
+                <input type="hidden" name="type" value="<?= esc($type) ?>">
+                <input type="hidden" name="severity" value="<?= esc($severity) ?>">
+                <input type="hidden" name="app_version" value="<?= esc($appVersion) ?>">
+                <button type="submit" class="btn btn-outline-warning btn-sm" <?= $baseQuery === [] ? 'disabled' : '' ?>>
+                    <i class="bi bi-funnel-fill me-1"></i>Verwijder gefilterd
+                </button>
+            </form>
+            <form method="post" action="<?= base_url('admin/telemetry/prune') ?>" onsubmit="return confirm('Verwijder alle telemetry ouder dan 30 dagen?');" class="d-inline-flex gap-2 align-items-center">
+                <?= csrf_field() ?>
+                <input type="hidden" name="days" value="30">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-clock-history me-1"></i>Opschonen 30+ dagen
+                </button>
+            </form>
+            <form method="post" action="<?= base_url('admin/telemetry/delete-all') ?>" onsubmit="return confirm('Weet je zeker dat je ALLE telemetry events wilt verwijderen?');" class="d-inline-flex gap-2">
+                <?= csrf_field() ?>
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-trash3 me-1"></i>Verwijder alles
+                </button>
+            </form>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            <a href="<?= base_url('admin/telemetry?severity=error') ?>" class="btn btn-sm btn-outline-danger">Alle errors</a>
+            <a href="<?= base_url('admin/telemetry?type=manual_report') ?>" class="btn btn-sm btn-outline-secondary">Manual reports</a>
+            <a href="<?= base_url('admin/telemetry?type=player_rebuffer') ?>" class="btn btn-sm btn-outline-secondary">Rebuffers</a>
+            <a href="<?= base_url('admin/telemetry?type=crash') ?>" class="btn btn-sm btn-outline-secondary">Crashes</a>
+        </div>
     </div>
 </div>
 
@@ -188,8 +227,36 @@
                         <dd class="col-sm-7"><small><?= esc(substr((string) ($selectedEvent['fingerprint_hash'] ?? ''), 0, 16)) ?><?= ! empty($selectedEvent['fingerprint_hash']) ? '…' : '—' ?></small></dd>
                     </dl>
 
+                    <form method="post" action="<?= base_url('admin/telemetry/delete') ?>" onsubmit="return confirm('Dit telemetry event verwijderen?');" class="mb-3">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="id" value="<?= esc((string) $selectedEvent['id']) ?>">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-trash3 me-1"></i>Verwijder dit event
+                        </button>
+                    </form>
+
                     <label class="form-label small text-muted">Gesaniteerde payload</label>
                     <pre class="mb-0 p-3 rounded" style="background:#0b1120;border:1px solid #1e293b;white-space:pre-wrap;word-break:break-word;"><?= esc(json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) ?></pre>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header py-3">
+                <h6 class="mb-0"><i class="bi bi-bar-chart-line me-2"></i>Top event types 24 uur</h6>
+            </div>
+            <div class="card-body">
+                <?php if (empty($overview['topTypes24h'])): ?>
+                    <p class="text-muted mb-0">Nog geen data beschikbaar.</p>
+                <?php else: ?>
+                    <div class="list-group list-group-flush">
+                        <?php foreach ($overview['topTypes24h'] as $typeRow): ?>
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-0" style="background:transparent;">
+                                <code><?= esc((string) ($typeRow['event_type'] ?? 'onbekend')) ?></code>
+                                <span class="badge bg-secondary"><?= number_format((int) ($typeRow['total'] ?? 0)) ?></span>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
                 <?php endif; ?>
             </div>
         </div>

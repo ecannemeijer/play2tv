@@ -128,6 +128,12 @@ $routes->group('admin', ['filter' => 'adminauth'], function ($routes) {
 
     // Telemetry
     $routes->get('telemetry', 'Admin\TelemetryController::index');
+    $routes->get('telemetry/export/csv', 'Admin\TelemetryController::exportCsv');
+    $routes->get('telemetry/export/json', 'Admin\TelemetryController::exportJson');
+    $routes->post('telemetry/delete', 'Admin\TelemetryController::delete');
+    $routes->post('telemetry/delete-filtered', 'Admin\TelemetryController::deleteFiltered');
+    $routes->post('telemetry/delete-all', 'Admin\TelemetryController::deleteAll');
+    $routes->post('telemetry/prune', 'Admin\TelemetryController::prune');
 
     // Users
     $routes->get('users',                'Admin\UserController::index');

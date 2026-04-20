@@ -8,6 +8,8 @@ use CodeIgniter\Model;
 
 class TelemetryEventModel extends Model
 {
+    private const EXPORT_LIMIT = 5000;
+
     protected $table = 'telemetry_events';
     protected $primaryKey = 'id';
 
@@ -84,13 +86,63 @@ class TelemetryEventModel extends Model
             ->where('created_at >=', date('Y-m-d H:i:s', strtotime('-24 hours')))
             ->countAllResults();
 
+        $topTypes = $this->db->table($this->table)
+            ->select('event_type, COUNT(*) AS total')
+            ->where('created_at >=', date('Y-m-d H:i:s', strtotime('-24 hours')))
+            ->groupBy('event_type')
+            ->orderBy('total', 'DESC')
+            ->limit(5)
+            ->get()
+            ->getResultArray();
+
         return [
             'total' => $total,
             'last24h' => $last24h,
             'crashes24h' => $crashes24h,
             'manualReports24h' => $manualReports24h,
             'latestCreatedAt' => $latestRow['created_at'] ?? null,
+            'topTypes24h' => $topTypes,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     * @return list<array<string, mixed>>
+     */
+    public function getExportRows(array $filters = [], int $limit = self::EXPORT_LIMIT): array
+    {
+        $builder = $this->db->table($this->table . ' te');
+        $this->applyFilters($builder, $filters);
+
+        return $builder
+            ->orderBy('te.created_at', 'DESC')
+            ->limit(max(1, min(self::EXPORT_LIMIT, $limit)))
+            ->get()
+            ->getResultArray();
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     */
+    public function deleteByFilters(array $filters = []): int
+    {
+        $builder = $this->db->table($this->table . ' te');
+        $this->applyFilters($builder, $filters);
+        $builder->delete();
+
+        return $this->db->affectedRows();
+    }
+
+    public function pruneOlderThanDays(int $days): int
+    {
+        $days = max(1, $days);
+        $cutoff = date('Y-m-d H:i:s', strtotime('-' . $days . ' days'));
+
+        $this->db->table($this->table)
+            ->where('created_at <', $cutoff)
+            ->delete();
+
+        return $this->db->affectedRows();
     }
 
     /**
