@@ -32,10 +32,6 @@ class TelemetryController extends Controller
         $totalPages = max(1, (int) ceil($result['total'] / self::PER_PAGE));
         $baseQuery = $this->buildBaseQuery($filters, $groupOptions);
 
-        if ($selectedFingerprint === '' && $result['rows'] !== []) {
-            $selectedFingerprint = (string) ($result['rows'][0]['fingerprint_key'] ?? '');
-        }
-
         $selectedFingerprintSummary = $selectedFingerprint !== ''
             ? $this->telemetryEvents->getFingerprintGroupSummary($selectedFingerprint, $filters)
             : null;
