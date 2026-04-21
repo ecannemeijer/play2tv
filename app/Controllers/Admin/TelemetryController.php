@@ -24,12 +24,13 @@ class TelemetryController extends Controller
     {
         $page = max(1, (int) ($this->request->getGet('page') ?? 1));
         $filters = $this->readFilters('get');
+        $groupOptions = $this->readGroupOptions();
         $selectedFingerprint = $this->readFingerprint('get');
         $selectedId = max(0, (int) ($this->request->getGet('id') ?? 0));
 
-        $result = $this->telemetryEvents->getFingerprintGroups($page, self::PER_PAGE, $filters);
+        $result = $this->telemetryEvents->getFingerprintGroups($page, self::PER_PAGE, $filters, $groupOptions);
         $totalPages = max(1, (int) ceil($result['total'] / self::PER_PAGE));
-        $baseQuery = $this->buildBaseQuery($filters);
+        $baseQuery = $this->buildBaseQuery($filters, $groupOptions);
 
         if ($selectedFingerprint === '' && $result['rows'] !== []) {
             $selectedFingerprint = (string) ($result['rows'][0]['fingerprint_key'] ?? '');
@@ -57,6 +58,8 @@ class TelemetryController extends Controller
             'type' => $filters['type'],
             'severity' => $filters['severity'],
             'appVersion' => $filters['app_version'],
+            'groupQuery' => $groupOptions['group_query'],
+            'groupSort' => $groupOptions['sort'],
             'selectedFingerprint' => $selectedFingerprint,
             'selectedFingerprintSummary' => $selectedFingerprintSummary,
             'selectedFingerprintEvents' => $selectedFingerprintEvents,
@@ -97,6 +100,7 @@ class TelemetryController extends Controller
     {
         $eventId = max(0, (int) ($this->request->getPost('id') ?? 0));
         $filters = $this->readFilters('post');
+        $groupOptions = $this->readGroupOptions('post');
         $fingerprint = $this->readFingerprint('post');
         $page = max(1, (int) ($this->request->getPost('page') ?? 1));
         if ($eventId <= 0) {
@@ -108,20 +112,21 @@ class TelemetryController extends Controller
             return redirect()->back()->with('error', 'Telemetry event kon niet worden verwijderd.');
         }
 
-        return redirect()->to($this->buildIndexUrl($filters, $fingerprint, $page))->with('success', 'Telemetry event verwijderd.');
+        return redirect()->to($this->buildIndexUrl($filters, $groupOptions, $fingerprint, $page))->with('success', 'Telemetry event verwijderd.');
     }
 
     public function deleteFiltered(): ResponseInterface
     {
         $filters = $this->readFilters('post');
+        $groupOptions = $this->readGroupOptions('post');
         $fingerprint = $this->readFingerprint('post');
-        if ($this->buildBaseQuery($filters) === [] && $fingerprint === '') {
+        if ($this->buildBaseQuery($filters, $groupOptions) === [] && $fingerprint === '') {
             return redirect()->back()->with('error', 'Gebruik eerst minimaal één filter voordat je gefilterde telemetry verwijdert.');
         }
 
         $deletedCount = $this->telemetryEvents->deleteByFilters($filters, $fingerprint ?: null);
 
-        return redirect()->to(base_url('admin/telemetry'))->with('success', sprintf('%d telemetry events verwijderd op basis van de huidige selectie.', $deletedCount));
+        return redirect()->to($this->buildIndexUrl($filters, $groupOptions, '', 1))->with('success', sprintf('%d telemetry events verwijderd op basis van de huidige selectie.', $deletedCount));
     }
 
     public function deleteAll(): ResponseInterface
@@ -156,6 +161,24 @@ class TelemetryController extends Controller
         ];
     }
 
+    /**
+     * @return array{group_query: string, sort: string}
+     */
+    private function readGroupOptions(string $source = 'get'): array
+    {
+        $reader = $source === 'post'
+            ? fn (string $key): string => trim((string) ($this->request->getPost($key) ?? ''))
+            : fn (string $key): string => trim((string) ($this->request->getGet($key) ?? ''));
+
+        $sort = $reader('sort');
+        $allowedSorts = ['latest', 'errors', 'events', 'device', 'fingerprint'];
+
+        return [
+            'group_query' => $reader('group_query'),
+            'sort' => in_array($sort, $allowedSorts, true) ? $sort : 'latest',
+        ];
+    }
+
     private function readFingerprint(string $source = 'get'): string
     {
         return trim((string) ($source === 'post'
@@ -167,13 +190,15 @@ class TelemetryController extends Controller
      * @param array{query: string, type: string, severity: string, app_version: string} $filters
      * @return array<string, string>
      */
-    private function buildBaseQuery(array $filters): array
+    private function buildBaseQuery(array $filters, array $groupOptions = []): array
     {
         return array_filter([
             'q' => $filters['query'],
             'type' => $filters['type'],
             'severity' => $filters['severity'],
             'app_version' => $filters['app_version'],
+            'group_query' => (string) ($groupOptions['group_query'] ?? ''),
+            'sort' => ((string) ($groupOptions['sort'] ?? 'latest')) !== 'latest' ? (string) $groupOptions['sort'] : '',
         ], static fn ($value): bool => $value !== '');
     }
 
@@ -254,9 +279,9 @@ class TelemetryController extends Controller
     /**
      * @param array{query: string, type: string, severity: string, app_version: string} $filters
      */
-    private function buildIndexUrl(array $filters, string $fingerprint, int $page): string
+    private function buildIndexUrl(array $filters, array $groupOptions, string $fingerprint, int $page): string
     {
-        $query = $this->buildBaseQuery($filters);
+        $query = $this->buildBaseQuery($filters, $groupOptions);
         if ($fingerprint !== '') {
             $query['fingerprint'] = $fingerprint;
         }

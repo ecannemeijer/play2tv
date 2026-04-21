@@ -110,40 +110,9 @@
         padding: 1.25rem;
     }
     .fingerprint-scroll {
-        display: grid;
-        gap: .85rem;
         max-height: 920px;
         overflow: auto;
         padding-right: .25rem;
-    }
-    .fingerprint-card {
-        display: grid;
-        gap: .75rem;
-        text-decoration: none;
-        color: inherit;
-        border-radius: 18px;
-        padding: 1rem;
-        background: rgba(15, 23, 42, .64);
-        border: 1px solid rgba(148, 163, 184, .12);
-        transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
-    }
-    .fingerprint-card:hover {
-        transform: translateY(-1px);
-        border-color: rgba(96, 165, 250, .38);
-        box-shadow: 0 12px 30px rgba(15, 23, 42, .28);
-    }
-    .fingerprint-card.active {
-        background: linear-gradient(180deg, rgba(29, 78, 216, .24), rgba(15, 23, 42, .82));
-        border-color: rgba(96, 165, 250, .52);
-        box-shadow: 0 18px 36px rgba(30, 64, 175, .18);
-    }
-    .fingerprint-card-top,
-    .fingerprint-card-bottom,
-    .fingerprint-card-metrics {
-        display: flex;
-        justify-content: space-between;
-        gap: .75rem;
-        align-items: flex-start;
     }
     .fingerprint-hash {
         display: inline-flex;
@@ -204,7 +173,8 @@
     }
     .telemetry-chip-row,
     .telemetry-action-row,
-    .telemetry-type-cloud {
+    .telemetry-type-cloud,
+    .telemetry-list-toolbar {
         display: flex;
         flex-wrap: wrap;
         gap: .55rem;
@@ -294,6 +264,101 @@
         color: rgba(203, 213, 225, .68);
         text-align: center;
     }
+    .telemetry-list-toolbar {
+        justify-content: space-between;
+        align-items: end;
+        margin-bottom: .9rem;
+    }
+    .telemetry-list-meta {
+        color: rgba(203, 213, 225, .62);
+        font-size: .84rem;
+    }
+    .telemetry-list-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 .55rem;
+    }
+    .telemetry-list-table th {
+        padding: 0 .85rem .25rem;
+        color: rgba(203, 213, 225, .62);
+        font-size: .72rem;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+    .telemetry-list-table td {
+        padding: 0;
+        vertical-align: middle;
+    }
+    .telemetry-row-link {
+        display: grid;
+        grid-template-columns: minmax(0, 1.6fr) minmax(90px, .7fr) minmax(80px, .55fr) minmax(80px, .55fr);
+        gap: .8rem;
+        align-items: center;
+        padding: .9rem .95rem;
+        border-radius: 16px;
+        background: rgba(15, 23, 42, .64);
+        border: 1px solid rgba(148, 163, 184, .12);
+        text-decoration: none;
+        color: inherit;
+        transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+    .telemetry-row-link:hover {
+        transform: translateY(-1px);
+        border-color: rgba(96, 165, 250, .38);
+        box-shadow: 0 12px 30px rgba(15, 23, 42, .22);
+    }
+    .telemetry-row-link.active {
+        background: linear-gradient(180deg, rgba(29, 78, 216, .24), rgba(15, 23, 42, .82));
+        border-color: rgba(96, 165, 250, .52);
+        box-shadow: 0 18px 36px rgba(30, 64, 175, .18);
+    }
+    .telemetry-row-primary {
+        min-width: 0;
+        display: grid;
+        gap: .35rem;
+    }
+    .telemetry-row-secondary,
+    .telemetry-row-metric {
+        display: grid;
+        gap: .2rem;
+    }
+    .telemetry-row-secondary strong,
+    .telemetry-row-metric strong {
+        font-size: .92rem;
+        color: #f8fafc;
+    }
+    .telemetry-row-caption {
+        color: rgba(203, 213, 225, .58);
+        font-size: .74rem;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+    }
+    .telemetry-row-fingerprint {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        font-weight: 700;
+        min-width: 0;
+    }
+    .telemetry-row-fingerprint code {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .telemetry-row-device {
+        color: rgba(226, 232, 240, .82);
+        font-size: .86rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .telemetry-row-types {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .35rem;
+    }
     @media (max-width: 1399px) {
         .telemetry-hero-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -307,6 +372,9 @@
         .telemetry-detail-grid {
             grid-template-columns: 1fr;
         }
+        .telemetry-row-link {
+            grid-template-columns: 1fr 1fr;
+        }
     }
     @media (max-width: 767px) {
         .telemetry-hero-grid {
@@ -318,6 +386,13 @@
         .telemetry-detail-grid {
             padding-left: 1rem;
             padding-right: 1rem;
+        }
+        .telemetry-list-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .telemetry-row-link {
+            grid-template-columns: 1fr;
         }
     }
 </style>
@@ -411,21 +486,23 @@
             </form>
 
             <div class="telemetry-action-row mt-3 pt-3 border-top">
-                <a href="<?= base_url('admin/telemetry/export/csv') . ($selectedFingerprintLinkQuery !== [] ? '?' . http_build_query($selectedFingerprintLinkQuery) : '') ?>" class="btn btn-outline-secondary btn-sm">
+                <a href="<?= base_url('admin/telemetry/export/csv') . ($selectedFingerprintLinkQuery !== [] ? '?' . http_build_query($selectedFingerprintLinkQuery) : '') ?>" class="btn btn-outline-secondary btn-sm" data-telemetry-export-link="csv">
                     <i class="bi bi-download me-1"></i>Export CSV
                 </a>
-                <a href="<?= base_url('admin/telemetry/export/json') . ($selectedFingerprintLinkQuery !== [] ? '?' . http_build_query($selectedFingerprintLinkQuery) : '') ?>" class="btn btn-outline-secondary btn-sm">
+                <a href="<?= base_url('admin/telemetry/export/json') . ($selectedFingerprintLinkQuery !== [] ? '?' . http_build_query($selectedFingerprintLinkQuery) : '') ?>" class="btn btn-outline-secondary btn-sm" data-telemetry-export-link="json">
                     <i class="bi bi-filetype-json me-1"></i>Export JSON
                 </a>
-                <form method="post" action="<?= base_url('admin/telemetry/delete-filtered') ?>" onsubmit="return confirm('Weet je zeker dat je alle gefilterde telemetry events wilt verwijderen?');" class="d-inline-flex gap-2">
+                <form method="post" action="<?= base_url('admin/telemetry/delete-filtered') ?>" onsubmit="return confirm('Weet je zeker dat je alle gefilterde telemetry events wilt verwijderen?');" class="d-inline-flex gap-2" data-telemetry-delete-filtered-form>
                     <?= csrf_field() ?>
                     <input type="hidden" name="q" value="<?= esc($query) ?>">
                     <input type="hidden" name="type" value="<?= esc($type) ?>">
                     <input type="hidden" name="severity" value="<?= esc($severity) ?>">
                     <input type="hidden" name="app_version" value="<?= esc($appVersion) ?>">
-                    <input type="hidden" name="fingerprint" value="<?= esc($selectedFingerprint) ?>">
-                    <button type="submit" class="btn btn-outline-warning btn-sm" <?= ($baseQuery === [] && $selectedFingerprint === '') ? 'disabled' : '' ?>>
-                        <i class="bi bi-funnel-fill me-1"></i>Verwijder huidige selectie
+                    <input type="hidden" name="group_query" value="<?= esc($groupQuery) ?>" data-telemetry-group-query>
+                    <input type="hidden" name="sort" value="<?= esc($groupSort) ?>" data-telemetry-group-sort>
+                    <input type="hidden" name="fingerprint" value="<?= esc($selectedFingerprint) ?>" data-telemetry-selected-fingerprint>
+                    <button type="submit" class="btn btn-outline-warning btn-sm" data-telemetry-delete-filtered-button <?= ($baseQuery === [] && $selectedFingerprint === '') ? 'disabled' : '' ?>>
+                        <i class="bi bi-funnel-fill me-1"></i><span data-telemetry-delete-filtered-label><?= $selectedFingerprint !== '' ? 'Verwijder gekozen fingerprint' : 'Verwijder huidige selectie' ?></span>
                     </button>
                 </form>
                 <form method="post" action="<?= base_url('admin/telemetry/prune') ?>" onsubmit="return confirm('Verwijder alle telemetry ouder dan 30 dagen?');" class="d-inline-flex gap-2 align-items-center">
@@ -459,49 +536,95 @@
                 <span class="badge bg-secondary"><?= number_format($totalFingerprints) ?> groepen</span>
             </div>
             <div class="telemetry-panel-body">
+                <form method="get" class="telemetry-list-toolbar">
+                    <input type="hidden" name="q" value="<?= esc($query) ?>">
+                    <input type="hidden" name="type" value="<?= esc($type) ?>">
+                    <input type="hidden" name="severity" value="<?= esc($severity) ?>">
+                    <input type="hidden" name="app_version" value="<?= esc($appVersion) ?>">
+                    <?php if ($selectedFingerprint !== ''): ?>
+                        <input type="hidden" name="fingerprint" value="<?= esc($selectedFingerprint) ?>">
+                    <?php endif; ?>
+                    <div class="flex-grow-1">
+                        <label class="form-label small text-muted">Zoek fingerprint of device</label>
+                        <input type="text" name="group_query" class="form-control" value="<?= esc($groupQuery) ?>" placeholder="fingerprint, device, app versie, event type">
+                    </div>
+                    <div style="min-width: 180px;">
+                        <label class="form-label small text-muted">Sorteer op</label>
+                        <select name="sort" class="form-select">
+                            <option value="latest" <?= $groupSort === 'latest' ? 'selected' : '' ?>>Laatst gezien</option>
+                            <option value="errors" <?= $groupSort === 'errors' ? 'selected' : '' ?>>Meeste errors</option>
+                            <option value="events" <?= $groupSort === 'events' ? 'selected' : '' ?>>Meeste events</option>
+                            <option value="device" <?= $groupSort === 'device' ? 'selected' : '' ?>>Device naam</option>
+                            <option value="fingerprint" <?= $groupSort === 'fingerprint' ? 'selected' : '' ?>>Fingerprint</option>
+                        </select>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-outline-secondary">Toepassen</button>
+                        <?php if ($groupQuery !== '' || $groupSort !== 'latest'): ?>
+                            <a href="<?= base_url('admin/telemetry' . ($baseQuery !== [] ? '?' . http_build_query(array_diff_key($baseQuery, ['group_query' => true, 'sort' => true])) : '')) ?>" class="btn btn-outline-secondary">Wis</a>
+                        <?php endif; ?>
+                    </div>
+                </form>
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="telemetry-subtle"><?= number_format($totalEvents) ?> events binnen huidige filters</span>
-                    <span class="telemetry-subtle">Klik op een fingerprint voor detail</span>
+                    <span class="telemetry-list-meta"><?= number_format($totalEvents) ?> events binnen huidige filters</span>
+                    <span class="telemetry-list-meta">Compacte lijst voor grote aantallen fingerprints</span>
                 </div>
                 <?php if (empty($fingerprintGroups)): ?>
                     <div class="telemetry-empty">Geen fingerprint-groepen gevonden voor de huidige filters.</div>
                 <?php else: ?>
                     <div class="fingerprint-scroll" data-telemetry-scroll-list>
-                        <?php foreach ($fingerprintGroups as $group): ?>
-                            <?php
-                                $groupFingerprint = (string) ($group['fingerprint_key'] ?? 'unknown');
-                                $groupLabel = $groupFingerprint === 'unknown' ? 'Onbekende fingerprint' : $groupFingerprint;
-                                $groupQuery = array_merge($baseQuery, ['page' => $page, 'fingerprint' => $groupFingerprint]);
-                                $groupTypes = array_filter(array_map('trim', explode(',', (string) ($group['event_types_csv'] ?? ''))));
-                            ?>
-                            <a href="<?= current_url() . '?' . http_build_query($groupQuery) ?>" class="fingerprint-card <?= $selectedFingerprint === $groupFingerprint ? 'active' : '' ?>">
-                                <div class="fingerprint-card-top">
-                                    <div class="d-grid gap-1">
-                                        <div class="fingerprint-hash">
-                                            <i class="bi bi-fingerprint"></i>
-                                            <code><?= esc($groupLabel === 'Onbekende fingerprint' ? $groupLabel : substr($groupLabel, 0, 18) . '...') ?></code>
-                                        </div>
-                                        <span class="fingerprint-hint"><?= esc((string) ($group['sample_device_name'] ?: 'Onbekend device')) ?><?= ! empty($group['sample_app_version']) ? ' · v' . esc((string) $group['sample_app_version']) : '' ?></span>
-                                    </div>
-                                    <?php if ((int) ($group['error_events'] ?? 0) > 0): ?>
-                                        <span class="metric-pill error"><i class="bi bi-exclamation-octagon"></i><?= number_format((int) $group['error_events']) ?> errors</span>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="fingerprint-card-metrics">
-                                    <span class="metric-pill"><i class="bi bi-activity"></i><?= number_format((int) ($group['total_events'] ?? 0)) ?> events</span>
-                                    <span class="metric-pill"><i class="bi bi-diagram-3"></i><?= number_format((int) ($group['unique_event_types'] ?? 0)) ?> types</span>
-                                    <span class="metric-pill"><i class="bi bi-broadcast"></i><?= number_format((int) ($group['unique_channels'] ?? 0)) ?> kanalen</span>
-                                </div>
-                                <div class="fingerprint-card-bottom">
-                                    <div class="telemetry-subtle">Laatst gezien <?= ! empty($group['latest_created_at']) ? esc(date('d-m-Y H:i:s', strtotime((string) ($group['latest_created_at'])))) : '—' ?></div>
-                                    <div class="d-flex flex-wrap justify-content-end gap-2">
-                                        <?php foreach (array_slice($groupTypes, 0, 3) as $eventType): ?>
-                                            <span class="type-pill"><?= esc($eventType) ?></span>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                            </a>
-                        <?php endforeach; ?>
+                        <table class="telemetry-list-table">
+                            <thead>
+                                <tr>
+                                    <th>Fingerprint / Device</th>
+                                    <th>Laatst gezien</th>
+                                    <th>Errors</th>
+                                    <th>Events</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($fingerprintGroups as $group): ?>
+                                    <?php
+                                        $groupFingerprint = (string) ($group['fingerprint_key'] ?? 'unknown');
+                                        $groupLabel = $groupFingerprint === 'unknown' ? 'Onbekende fingerprint' : $groupFingerprint;
+                                        $fingerprintUrlQuery = array_merge($baseQuery, ['page' => $page, 'fingerprint' => $groupFingerprint]);
+                                        $groupTypes = array_filter(array_map('trim', explode(',', (string) ($group['event_types_csv'] ?? ''))));
+                                    ?>
+                                    <tr>
+                                        <td colspan="4">
+                                            <a href="<?= current_url() . '?' . http_build_query($fingerprintUrlQuery) ?>" class="telemetry-row-link <?= $selectedFingerprint === $groupFingerprint ? 'active' : '' ?>">
+                                                <div class="telemetry-row-primary">
+                                                    <div class="telemetry-row-fingerprint">
+                                                        <i class="bi bi-fingerprint"></i>
+                                                        <code><?= esc($groupLabel) ?></code>
+                                                    </div>
+                                                    <div class="telemetry-row-device">
+                                                        <?= esc((string) ($group['sample_device_name'] ?: 'Onbekend device')) ?><?= ! empty($group['sample_app_version']) ? ' · v' . esc((string) $group['sample_app_version']) : '' ?>
+                                                    </div>
+                                                    <div class="telemetry-row-types">
+                                                        <?php foreach (array_slice($groupTypes, 0, 3) as $eventType): ?>
+                                                            <span class="type-pill"><?= esc($eventType) ?></span>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                </div>
+                                                <div class="telemetry-row-secondary">
+                                                    <span class="telemetry-row-caption">Laatste event</span>
+                                                    <strong><?= ! empty($group['latest_created_at']) ? esc(date('d-m-Y H:i:s', strtotime((string) ($group['latest_created_at'])))) : '—' ?></strong>
+                                                </div>
+                                                <div class="telemetry-row-metric">
+                                                    <span class="telemetry-row-caption">Errors</span>
+                                                    <strong><?= number_format((int) ($group['error_events'] ?? 0)) ?></strong>
+                                                </div>
+                                                <div class="telemetry-row-metric">
+                                                    <span class="telemetry-row-caption">Events</span>
+                                                    <strong><?= number_format((int) ($group['total_events'] ?? 0)) ?></strong>
+                                                </div>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
                 <?php endif; ?>
             </div>
@@ -555,6 +678,24 @@
                         <span class="telemetry-chip"><i class="bi bi-phone"></i><strong><?= esc((string) ($selectedFingerprintSummary['sample_device_name'] ?: 'Onbekend device')) ?></strong></span>
                         <span class="telemetry-chip"><i class="bi bi-box"></i><strong><?= esc((string) ($selectedFingerprintSummary['sample_app_version'] ?: 'Onbekende versie')) ?></strong></span>
                         <span class="telemetry-chip"><i class="bi bi-calendar-event"></i><strong><?= ! empty($selectedFingerprintSummary['latest_created_at']) ? esc(date('d-m-Y H:i:s', strtotime((string) ($selectedFingerprintSummary['latest_created_at'])))) : '—' ?></strong></span>
+                    </div>
+                    <div class="telemetry-action-row">
+                        <a href="<?= base_url('admin/telemetry/export/json') . ($selectedFingerprintLinkQuery !== [] ? '?' . http_build_query($selectedFingerprintLinkQuery) : '') ?>" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-filetype-json me-1"></i>Export gekozen fingerprint
+                        </a>
+                        <form method="post" action="<?= base_url('admin/telemetry/delete-filtered') ?>" onsubmit="return confirm('Weet je zeker dat je alle events van deze fingerprint wilt verwijderen?');" class="d-inline-flex gap-2">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="q" value="<?= esc($query) ?>">
+                            <input type="hidden" name="type" value="<?= esc($type) ?>">
+                            <input type="hidden" name="severity" value="<?= esc($severity) ?>">
+                            <input type="hidden" name="app_version" value="<?= esc($appVersion) ?>">
+                            <input type="hidden" name="group_query" value="<?= esc($groupQuery) ?>">
+                            <input type="hidden" name="sort" value="<?= esc($groupSort) ?>">
+                            <input type="hidden" name="fingerprint" value="<?= esc($selectedFingerprint) ?>">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-trash3 me-1"></i>Verwijder hele fingerprint
+                            </button>
+                        </form>
                     </div>
                     <div class="telemetry-type-cloud">
                         <?php foreach (array_slice($selectedTypes, 0, 8) as $eventType): ?>
@@ -637,6 +778,8 @@
                                     <input type="hidden" name="type" value="<?= esc($type) ?>">
                                     <input type="hidden" name="severity" value="<?= esc($severity) ?>">
                                     <input type="hidden" name="app_version" value="<?= esc($appVersion) ?>">
+                                    <input type="hidden" name="group_query" value="<?= esc($groupQuery) ?>">
+                                    <input type="hidden" name="sort" value="<?= esc($groupSort) ?>">
                                     <input type="hidden" name="fingerprint" value="<?= esc($selectedFingerprint) ?>">
                                     <input type="hidden" name="page" value="<?= esc((string) $page) ?>">
                                     <button type="submit" class="btn btn-outline-danger btn-sm">
@@ -682,8 +825,88 @@
     (() => {
         let isNavigating = false;
 
+        const exportBaseUrls = {
+            csv: <?= json_encode(base_url('admin/telemetry/export/csv'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>,
+            json: <?= json_encode(base_url('admin/telemetry/export/json'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>,
+        };
+        const selectedFingerprint = <?= json_encode($selectedFingerprint, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+        const hasBaseFilters = <?= json_encode($baseQuery !== []) ?>;
+        const selectedGroupQuery = <?= json_encode($groupQuery, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+        const selectedGroupSort = <?= json_encode($groupSort, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+
         const getTelemetryRoot = () => document.getElementById('telemetry-browser');
         const getFingerprintList = (root = document) => root.querySelector('[data-telemetry-scroll-list]');
+        const getDeleteFilteredFingerprintInput = () => document.querySelector('[data-telemetry-selected-fingerprint]');
+        const getDeleteFilteredButton = () => document.querySelector('[data-telemetry-delete-filtered-button]');
+        const getDeleteFilteredLabel = () => document.querySelector('[data-telemetry-delete-filtered-label]');
+        const getGroupQueryInputs = () => document.querySelectorAll('[data-telemetry-group-query]');
+        const getGroupSortInputs = () => document.querySelectorAll('[data-telemetry-group-sort]');
+        const getExportLink = (kind) => document.querySelector(`[data-telemetry-export-link="${kind}"]`);
+
+        const syncTopActionState = (fingerprint, baseQuery, hasFilters, groupQuery, groupSort) => {
+            const fingerprintValue = typeof fingerprint === 'string' ? fingerprint : '';
+            const query = baseQuery && typeof baseQuery === 'object' ? { ...baseQuery } : {};
+            if (fingerprintValue !== '') {
+                query.fingerprint = fingerprintValue;
+            }
+            if (groupQuery) {
+                query.group_query = groupQuery;
+            }
+            if (groupSort && groupSort !== 'latest') {
+                query.sort = groupSort;
+            }
+
+            const csvLink = getExportLink('csv');
+            if (csvLink) {
+                csvLink.href = exportBaseUrls.csv + (Object.keys(query).length > 0 ? `?${new URLSearchParams(query).toString()}` : '');
+            }
+
+            const jsonLink = getExportLink('json');
+            if (jsonLink) {
+                jsonLink.href = exportBaseUrls.json + (Object.keys(query).length > 0 ? `?${new URLSearchParams(query).toString()}` : '');
+            }
+
+            const fingerprintInput = getDeleteFilteredFingerprintInput();
+            if (fingerprintInput) {
+                fingerprintInput.value = fingerprintValue;
+            }
+
+            getGroupQueryInputs().forEach((input) => {
+                input.value = groupQuery || '';
+            });
+            getGroupSortInputs().forEach((input) => {
+                input.value = groupSort || 'latest';
+            });
+
+            const deleteButton = getDeleteFilteredButton();
+            if (deleteButton) {
+                deleteButton.disabled = !hasFilters && fingerprintValue === '';
+            }
+
+            const deleteLabel = getDeleteFilteredLabel();
+            if (deleteLabel) {
+                deleteLabel.textContent = fingerprintValue !== '' ? 'Verwijder gekozen fingerprint' : 'Verwijder huidige selectie';
+            }
+        };
+
+        const extractNavigationState = (url, root) => {
+            const nextUrl = new URL(url, window.location.origin);
+            const nextBaseQuery = {};
+            for (const [key, value] of nextUrl.searchParams.entries()) {
+                if (['q', 'type', 'severity', 'app_version'].includes(key) && value !== '') {
+                    nextBaseQuery[key] = value;
+                }
+            }
+
+            const nextFingerprintInput = root.querySelector('[name="fingerprint"]');
+            return {
+                fingerprint: nextFingerprintInput instanceof HTMLInputElement ? nextFingerprintInput.value : (nextUrl.searchParams.get('fingerprint') || ''),
+                baseQuery: nextBaseQuery,
+                hasFilters: Object.keys(nextBaseQuery).length > 0,
+                groupQuery: nextUrl.searchParams.get('group_query') || '',
+                groupSort: nextUrl.searchParams.get('sort') || 'latest',
+            };
+        };
 
         const isTelemetryNavigationLink = (link) => {
             if (!(link instanceof HTMLAnchorElement)) {
@@ -751,6 +974,9 @@
 
                 swapTelemetryRoot(nextRoot, listScrollTop);
 
+                const nextState = extractNavigationState(url, nextRoot);
+                syncTopActionState(nextState.fingerprint, nextState.baseQuery, nextState.hasFilters, nextState.groupQuery, nextState.groupSort);
+
                 if (pushState) {
                     window.history.pushState({ telemetryUrl: url }, '', url);
                 }
@@ -790,6 +1016,8 @@
 
             navigateTelemetry(window.location.href, false);
         });
+
+        syncTopActionState(selectedFingerprint, <?= json_encode($baseQuery, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>, hasBaseFilters, selectedGroupQuery, selectedGroupSort);
     })();
 </script>
 <?= $this->endSection() ?>

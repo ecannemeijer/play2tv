@@ -112,14 +112,16 @@ class TelemetryEventModel extends Model
      * @param array<string, mixed> $filters
      * @return array{rows: list<array<string, mixed>>, total: int}
      */
-    public function getFingerprintGroups(int $page, int $perPage, array $filters = []): array
+    public function getFingerprintGroups(int $page, int $perPage, array $filters = [], array $groupOptions = []): array
     {
         $page = max(1, $page);
         $perPage = max(1, min(100, $perPage));
 
-        $total = $this->buildGroupedFingerprintBuilder($filters)->get()->getNumRows();
-        $rows = $this->buildGroupedFingerprintBuilder($filters)
-            ->orderBy('latest_created_at', 'DESC')
+        $total = $this->buildGroupedFingerprintBuilder($filters, $groupOptions)->get()->getNumRows();
+        $rows = $this->applyGroupedSort(
+            $this->buildGroupedFingerprintBuilder($filters, $groupOptions),
+            (string) ($groupOptions['sort'] ?? 'latest')
+        )
             ->limit($perPage, ($page - 1) * $perPage)
             ->get()
             ->getResultArray();
@@ -248,13 +250,13 @@ class TelemetryEventModel extends Model
         }
     }
 
-    private function buildGroupedFingerprintBuilder(array $filters = [])
+    private function buildGroupedFingerprintBuilder(array $filters = [], array $groupOptions = [])
     {
         $builder = $this->db->table($this->table . ' te');
         $this->applyFilters($builder, $filters);
         $fingerprintExpr = $this->fingerprintKeyExpression();
 
-        return $builder
+        $builder = $builder
             ->select($fingerprintExpr . ' AS fingerprint_key', false)
             ->select('COUNT(*) AS total_events', false)
             ->select('SUM(CASE WHEN te.severity = "error" THEN 1 ELSE 0 END) AS error_events', false)
@@ -267,6 +269,41 @@ class TelemetryEventModel extends Model
             ->select('MAX(NULLIF(te.app_version, "")) AS sample_app_version', false)
             ->select('GROUP_CONCAT(DISTINCT te.event_type ORDER BY te.event_type SEPARATOR ",") AS event_types_csv', false)
             ->groupBy($fingerprintExpr, false);
+
+        $this->applyGroupFilters($builder, $groupOptions);
+
+        return $builder;
+    }
+
+    private function applyGroupFilters($builder, array $groupOptions): void
+    {
+        $groupQuery = trim((string) ($groupOptions['group_query'] ?? ''));
+        if ($groupQuery === '') {
+            return;
+        }
+
+        $escapedLike = $this->db->escapeLikeString($groupQuery);
+        $likeValue = $this->db->escape('%' . $escapedLike . '%');
+
+        $builder->having(
+            sprintf(
+                '(fingerprint_key LIKE %1$s ESCAPE "!" OR sample_device_name LIKE %1$s ESCAPE "!" OR sample_app_version LIKE %1$s ESCAPE "!" OR event_types_csv LIKE %1$s ESCAPE "!")',
+                $likeValue
+            ),
+            null,
+            false
+        );
+    }
+
+    private function applyGroupedSort($builder, string $sort)
+    {
+        return match ($sort) {
+            'errors' => $builder->orderBy('error_events', 'DESC')->orderBy('latest_created_at', 'DESC'),
+            'events' => $builder->orderBy('total_events', 'DESC')->orderBy('latest_created_at', 'DESC'),
+            'device' => $builder->orderBy('sample_device_name', 'ASC')->orderBy('latest_created_at', 'DESC'),
+            'fingerprint' => $builder->orderBy('fingerprint_key', 'ASC')->orderBy('latest_created_at', 'DESC'),
+            default => $builder->orderBy('latest_created_at', 'DESC')->orderBy('error_events', 'DESC'),
+        };
     }
 
     private function applyFingerprintScope($builder, string $fingerprintKey): void
