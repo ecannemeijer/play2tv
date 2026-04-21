@@ -680,49 +680,91 @@
 <?= $this->section('scripts') ?>
 <script>
     (() => {
-        const storageKey = 'telemetry-admin-scroll-state';
-        const telemetryRoot = document.getElementById('telemetry-browser');
-        const fingerprintList = document.querySelector('[data-telemetry-scroll-list]');
+        let isNavigating = false;
 
-        if (!telemetryRoot) {
-            return;
-        }
+        const getTelemetryRoot = () => document.getElementById('telemetry-browser');
+        const getFingerprintList = (root = document) => root.querySelector('[data-telemetry-scroll-list]');
 
-        const saveScrollState = () => {
-            try {
-                sessionStorage.setItem(storageKey, JSON.stringify({
-                    path: window.location.pathname,
-                    scrollY: window.scrollY,
-                    fingerprintScrollTop: fingerprintList ? fingerprintList.scrollTop : 0,
-                }));
-            } catch (error) {
-                console.debug('Unable to persist telemetry scroll state', error);
+        const isTelemetryNavigationLink = (link) => {
+            if (!(link instanceof HTMLAnchorElement)) {
+                return false;
+            }
+
+            if (link.target && link.target !== '_self') {
+                return false;
+            }
+
+            const telemetryRoot = getTelemetryRoot();
+            if (!telemetryRoot || !telemetryRoot.contains(link)) {
+                return false;
+            }
+
+            const url = new URL(link.href, window.location.origin);
+            return url.origin === window.location.origin && url.pathname === window.location.pathname;
+        };
+
+        const swapTelemetryRoot = (nextRoot, listScrollTop) => {
+            const currentRoot = getTelemetryRoot();
+            if (!currentRoot || !nextRoot) {
+                return;
+            }
+
+            currentRoot.replaceWith(nextRoot);
+            const nextList = getFingerprintList(nextRoot);
+            if (nextList) {
+                nextList.scrollTop = listScrollTop;
             }
         };
 
-        const restoreScrollState = () => {
+        const navigateTelemetry = async (url, pushState = true) => {
+            const currentRoot = getTelemetryRoot();
+            if (!currentRoot || isNavigating) {
+                return;
+            }
+
+            isNavigating = true;
+            const currentList = getFingerprintList(currentRoot);
+            const listScrollTop = currentList ? currentList.scrollTop : 0;
+            const currentHeight = currentRoot.offsetHeight;
+            currentRoot.style.minHeight = `${currentHeight}px`;
+            currentRoot.style.opacity = '0.6';
+            currentRoot.style.pointerEvents = 'none';
+
             try {
-                const rawState = sessionStorage.getItem(storageKey);
-                if (!rawState) {
-                    return;
-                }
-
-                const state = JSON.parse(rawState);
-                if (!state || state.path !== window.location.pathname) {
-                    sessionStorage.removeItem(storageKey);
-                    return;
-                }
-
-                requestAnimationFrame(() => {
-                    window.scrollTo({ top: Number(state.scrollY) || 0, behavior: 'auto' });
-                    if (fingerprintList) {
-                        fingerprintList.scrollTop = Number(state.fingerprintScrollTop) || 0;
-                    }
-                    sessionStorage.removeItem(storageKey);
+                const response = await fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
                 });
+
+                if (!response.ok) {
+                    throw new Error(`Telemetry navigation failed with status ${response.status}`);
+                }
+
+                const html = await response.text();
+                const documentFragment = new DOMParser().parseFromString(html, 'text/html');
+                const nextRoot = documentFragment.getElementById('telemetry-browser');
+
+                if (!nextRoot) {
+                    throw new Error('Telemetry browser fragment not found in response');
+                }
+
+                swapTelemetryRoot(nextRoot, listScrollTop);
+
+                if (pushState) {
+                    window.history.pushState({ telemetryUrl: url }, '', url);
+                }
             } catch (error) {
-                console.debug('Unable to restore telemetry scroll state', error);
-                sessionStorage.removeItem(storageKey);
+                console.debug('Falling back to full telemetry navigation', error);
+                window.location.assign(url);
+            } finally {
+                const updatedRoot = getTelemetryRoot();
+                if (updatedRoot) {
+                    updatedRoot.style.minHeight = '';
+                    updatedRoot.style.opacity = '';
+                    updatedRoot.style.pointerEvents = '';
+                }
+                isNavigating = false;
             }
         };
 
@@ -733,38 +775,21 @@
             }
 
             const link = target.closest('a');
-            if (!link) {
+            if (!isTelemetryNavigationLink(link)) {
                 return;
             }
 
-            const url = new URL(link.href, window.location.origin);
-            if (url.origin !== window.location.origin || url.pathname !== window.location.pathname) {
-                return;
-            }
-
-            saveScrollState();
+            event.preventDefault();
+            navigateTelemetry(link.href);
         });
 
-        document.addEventListener('submit', (event) => {
-            const form = event.target;
-            if (!(form instanceof HTMLFormElement)) {
+        window.addEventListener('popstate', () => {
+            if (!window.location.pathname.includes('/admin/telemetry')) {
                 return;
             }
 
-            const action = form.getAttribute('action');
-            if (!action) {
-                return;
-            }
-
-            const url = new URL(action, window.location.origin);
-            if (url.origin !== window.location.origin || !url.pathname.includes('/admin/telemetry')) {
-                return;
-            }
-
-            saveScrollState();
+            navigateTelemetry(window.location.href, false);
         });
-
-        restoreScrollState();
     })();
 </script>
 <?= $this->endSection() ?>
