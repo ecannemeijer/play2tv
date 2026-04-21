@@ -199,10 +199,10 @@ class TelemetryEventModel extends Model
      */
     public function deleteByFilters(array $filters = [], ?string $fingerprintKey = null): int
     {
-        $builder = $this->db->table($this->table . ' te');
-        $this->applyFilters($builder, $filters);
+        $builder = $this->db->table($this->table);
+        $this->applyFilters($builder, $filters, '');
         if ($fingerprintKey !== null && $fingerprintKey !== '') {
-            $this->applyFingerprintScope($builder, $fingerprintKey);
+            $this->applyFingerprintScope($builder, $fingerprintKey, 'fingerprint_hash');
         }
         $builder->delete();
 
@@ -224,28 +224,30 @@ class TelemetryEventModel extends Model
     /**
      * @param array<string, mixed> $filters
      */
-    private function applyFilters($builder, array $filters): void
+    private function applyFilters($builder, array $filters, string $tableAlias = 'te'): void
     {
+        $column = static fn (string $field): string => $tableAlias !== '' ? $tableAlias . '.' . $field : $field;
+
         if (! empty($filters['type'])) {
-            $builder->where('te.event_type', (string) $filters['type']);
+            $builder->where($column('event_type'), (string) $filters['type']);
         }
 
         if (! empty($filters['severity'])) {
-            $builder->where('te.severity', (string) $filters['severity']);
+            $builder->where($column('severity'), (string) $filters['severity']);
         }
 
         if (! empty($filters['app_version'])) {
-            $builder->where('te.app_version', (string) $filters['app_version']);
+            $builder->where($column('app_version'), (string) $filters['app_version']);
         }
 
         if (! empty($filters['query'])) {
             $query = trim((string) $filters['query']);
             $builder->groupStart()
-                ->like('te.event_type', $query)
-                ->orLike('te.channel_name', $query)
-                ->orLike('te.last_action', $query)
-                ->orLike('te.device_name', $query)
-                ->orLike('te.data_json', $query)
+                ->like($column('event_type'), $query)
+                ->orLike($column('channel_name'), $query)
+                ->orLike($column('last_action'), $query)
+                ->orLike($column('device_name'), $query)
+                ->orLike($column('data_json'), $query)
                 ->groupEnd();
         }
     }
@@ -306,18 +308,18 @@ class TelemetryEventModel extends Model
         };
     }
 
-    private function applyFingerprintScope($builder, string $fingerprintKey): void
+    private function applyFingerprintScope($builder, string $fingerprintKey, string $fingerprintColumn = 'te.fingerprint_hash'): void
     {
         if ($this->isUnknownFingerprintKey($fingerprintKey)) {
             $builder->groupStart()
-                ->where('te.fingerprint_hash IS NULL', null, false)
-                ->orWhere('te.fingerprint_hash', '')
+                ->where($fingerprintColumn . ' IS NULL', null, false)
+                ->orWhere($fingerprintColumn, '')
                 ->groupEnd();
 
             return;
         }
 
-        $builder->where('te.fingerprint_hash', $fingerprintKey);
+        $builder->where($fingerprintColumn, $fingerprintKey);
     }
 
     private function fingerprintKeyExpression(): string

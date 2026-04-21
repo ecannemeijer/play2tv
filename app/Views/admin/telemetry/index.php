@@ -724,10 +724,6 @@
                                     <div class="telemetry-row-actions">
                                         <form method="post" action="<?= base_url('admin/telemetry/delete-filtered') ?>" onsubmit="return confirm('Weet je zeker dat je alle events van deze fingerprint wilt verwijderen?');">
                                             <?= csrf_field() ?>
-                                            <input type="hidden" name="q" value="<?= esc($query) ?>">
-                                            <input type="hidden" name="type" value="<?= esc($type) ?>">
-                                            <input type="hidden" name="severity" value="<?= esc($severity) ?>">
-                                            <input type="hidden" name="app_version" value="<?= esc($appVersion) ?>">
                                             <input type="hidden" name="group_query" value="<?= esc($groupQuery) ?>">
                                             <input type="hidden" name="sort" value="<?= esc($groupSort) ?>">
                                             <input type="hidden" name="per_page" value="<?= esc((string) $perPage) ?>">
@@ -801,10 +797,6 @@
                     </a>
                     <form method="post" action="<?= base_url('admin/telemetry/delete-filtered') ?>" onsubmit="return confirm('Weet je zeker dat je alle events van deze fingerprint wilt verwijderen?');" class="d-inline-flex gap-2">
                         <?= csrf_field() ?>
-                        <input type="hidden" name="q" value="<?= esc($query) ?>">
-                        <input type="hidden" name="type" value="<?= esc($type) ?>">
-                        <input type="hidden" name="severity" value="<?= esc($severity) ?>">
-                        <input type="hidden" name="app_version" value="<?= esc($appVersion) ?>">
                         <input type="hidden" name="group_query" value="<?= esc($groupQuery) ?>">
                         <input type="hidden" name="sort" value="<?= esc($groupSort) ?>">
                         <input type="hidden" name="per_page" value="<?= esc((string) $perPage) ?>">
