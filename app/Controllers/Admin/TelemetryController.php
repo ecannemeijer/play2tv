@@ -10,7 +10,8 @@ use CodeIgniter\HTTP\ResponseInterface;
 
 class TelemetryController extends Controller
 {
-    private const PER_PAGE = 50;
+    private const DEFAULT_PER_PAGE = 25;
+    private const ALLOWED_PER_PAGE = [10, 25, 50, 100];
 
     private TelemetryEventModel $telemetryEvents;
 
@@ -23,14 +24,20 @@ class TelemetryController extends Controller
     public function index(): string
     {
         $page = max(1, (int) ($this->request->getGet('page') ?? 1));
+        $perPage = $this->readPerPage('get');
         $filters = $this->readFilters('get');
         $groupOptions = $this->readGroupOptions();
         $selectedFingerprint = $this->readFingerprint('get');
         $selectedId = max(0, (int) ($this->request->getGet('id') ?? 0));
 
-        $result = $this->telemetryEvents->getFingerprintGroups($page, self::PER_PAGE, $filters, $groupOptions);
-        $totalPages = max(1, (int) ceil($result['total'] / self::PER_PAGE));
-        $baseQuery = $this->buildBaseQuery($filters, $groupOptions);
+        $result = $this->telemetryEvents->getFingerprintGroups($page, $perPage, $filters, $groupOptions);
+        $totalPages = max(1, (int) ceil($result['total'] / $perPage));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+            $result = $this->telemetryEvents->getFingerprintGroups($page, $perPage, $filters, $groupOptions);
+        }
+
+        $baseQuery = $this->buildBaseQuery($filters, $groupOptions, $perPage);
 
         $selectedFingerprintSummary = $selectedFingerprint !== ''
             ? $this->telemetryEvents->getFingerprintGroupSummary($selectedFingerprint, $filters)
@@ -45,7 +52,8 @@ class TelemetryController extends Controller
             'fingerprintGroups' => $result['rows'],
             'overview' => $this->telemetryEvents->getOverview(),
             'page' => $page,
-            'perPage' => self::PER_PAGE,
+            'perPage' => $perPage,
+            'perPageOptions' => self::ALLOWED_PER_PAGE,
             'totalEvents' => $this->telemetryEvents->countFiltered($filters),
             'totalFingerprints' => $result['total'],
             'totalPages' => $totalPages,
@@ -95,6 +103,7 @@ class TelemetryController extends Controller
     public function delete(): ResponseInterface
     {
         $eventId = max(0, (int) ($this->request->getPost('id') ?? 0));
+        $perPage = $this->readPerPage('post');
         $filters = $this->readFilters('post');
         $groupOptions = $this->readGroupOptions('post');
         $fingerprint = $this->readFingerprint('post');
@@ -108,21 +117,23 @@ class TelemetryController extends Controller
             return redirect()->back()->with('error', 'Telemetry event kon niet worden verwijderd.');
         }
 
-        return redirect()->to($this->buildIndexUrl($filters, $groupOptions, $fingerprint, $page))->with('success', 'Telemetry event verwijderd.');
+        return redirect()->to($this->buildIndexUrl($filters, $groupOptions, $fingerprint, $page, $perPage))->with('success', 'Telemetry event verwijderd.');
     }
 
     public function deleteFiltered(): ResponseInterface
     {
+        $perPage = $this->readPerPage('post');
         $filters = $this->readFilters('post');
         $groupOptions = $this->readGroupOptions('post');
         $fingerprint = $this->readFingerprint('post');
+        $page = max(1, (int) ($this->request->getPost('page') ?? 1));
         if ($this->buildBaseQuery($filters, $groupOptions) === [] && $fingerprint === '') {
             return redirect()->back()->with('error', 'Gebruik eerst minimaal één filter voordat je gefilterde telemetry verwijdert.');
         }
 
         $deletedCount = $this->telemetryEvents->deleteByFilters($filters, $fingerprint ?: null);
 
-        return redirect()->to($this->buildIndexUrl($filters, $groupOptions, '', 1))->with('success', sprintf('%d telemetry events verwijderd op basis van de huidige selectie.', $deletedCount));
+        return redirect()->to($this->buildIndexUrl($filters, $groupOptions, '', $page, $perPage))->with('success', sprintf('%d telemetry events verwijderd op basis van de huidige selectie.', $deletedCount));
     }
 
     public function deleteAll(): ResponseInterface
@@ -182,11 +193,20 @@ class TelemetryController extends Controller
             : ($this->request->getGet('fingerprint') ?? '')));
     }
 
+    private function readPerPage(string $source = 'get'): int
+    {
+        $value = max(1, (int) ($source === 'post'
+            ? ($this->request->getPost('per_page') ?? self::DEFAULT_PER_PAGE)
+            : ($this->request->getGet('per_page') ?? self::DEFAULT_PER_PAGE)));
+
+        return in_array($value, self::ALLOWED_PER_PAGE, true) ? $value : self::DEFAULT_PER_PAGE;
+    }
+
     /**
      * @param array{query: string, type: string, severity: string, app_version: string} $filters
      * @return array<string, string>
      */
-    private function buildBaseQuery(array $filters, array $groupOptions = []): array
+    private function buildBaseQuery(array $filters, array $groupOptions = [], ?int $perPage = null): array
     {
         return array_filter([
             'q' => $filters['query'],
@@ -195,6 +215,7 @@ class TelemetryController extends Controller
             'app_version' => $filters['app_version'],
             'group_query' => (string) ($groupOptions['group_query'] ?? ''),
             'sort' => ((string) ($groupOptions['sort'] ?? 'latest')) !== 'latest' ? (string) $groupOptions['sort'] : '',
+            'per_page' => $perPage !== null && $perPage !== self::DEFAULT_PER_PAGE ? (string) $perPage : '',
         ], static fn ($value): bool => $value !== '');
     }
 
@@ -275,9 +296,9 @@ class TelemetryController extends Controller
     /**
      * @param array{query: string, type: string, severity: string, app_version: string} $filters
      */
-    private function buildIndexUrl(array $filters, array $groupOptions, string $fingerprint, int $page): string
+    private function buildIndexUrl(array $filters, array $groupOptions, string $fingerprint, int $page, int $perPage): string
     {
-        $query = $this->buildBaseQuery($filters, $groupOptions);
+        $query = $this->buildBaseQuery($filters, $groupOptions, $perPage);
         if ($fingerprint !== '') {
             $query['fingerprint'] = $fingerprint;
         }

@@ -157,10 +157,10 @@
     }
     .telemetry-table-tools {
         display: grid;
-        grid-template-columns: minmax(250px, 1fr) minmax(180px, .55fr) auto;
+        grid-template-columns: minmax(250px, 1fr) minmax(180px, .55fr) minmax(120px, .32fr) auto;
         gap: .65rem;
         align-items: end;
-        min-width: min(100%, 620px);
+        min-width: min(100%, 760px);
     }
     .telemetry-table-wrap {
         overflow: auto;
@@ -258,6 +258,18 @@
     .telemetry-pagination-meta {
         color: rgba(203, 213, 225, .6);
         font-size: .82rem;
+    }
+    .telemetry-row-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: .45rem;
+        white-space: nowrap;
+    }
+    .telemetry-row-actions .btn {
+        white-space: nowrap;
+    }
+    .telemetry-killswitch {
+        opacity: .58;
     }
     .telemetry-drawer-shell {
         position: fixed;
@@ -493,6 +505,8 @@
     $drawerCloseUrl = current_url() . ($drawerCloseQuery !== [] ? '?' . http_build_query($drawerCloseQuery) : '');
     $hasDrawer = ! empty($selectedFingerprintSummary);
     $hasGlobalDeleteScope = $query !== '' || $type !== '' || $severity !== '' || $appVersion !== '';
+    $pageStart = $totalFingerprints > 0 ? (($page - 1) * $perPage) + 1 : 0;
+    $pageEnd = min($totalFingerprints, $page * $perPage);
 ?>
 
 <div class="telemetry-page" id="telemetry-page">
@@ -510,6 +524,8 @@
         <form method="get" class="telemetry-filter-form" data-telemetry-form>
             <input type="hidden" name="group_query" value="<?= esc($groupQuery) ?>">
             <input type="hidden" name="sort" value="<?= esc($groupSort) ?>">
+            <input type="hidden" name="per_page" value="<?= esc((string) $perPage) ?>">
+            <input type="hidden" name="page" value="1">
             <div class="telemetry-filter-grid">
                 <div class="telemetry-field full">
                     <label class="form-label small text-muted">Zoeken in events</label>
@@ -583,6 +599,8 @@
                 <input type="hidden" name="app_version" value="<?= esc($appVersion) ?>">
                 <input type="hidden" name="group_query" value="<?= esc($groupQuery) ?>">
                 <input type="hidden" name="sort" value="<?= esc($groupSort) ?>">
+                <input type="hidden" name="per_page" value="<?= esc((string) $perPage) ?>">
+                <input type="hidden" name="page" value="<?= esc((string) $page) ?>">
                 <button type="submit" class="btn btn-outline-warning btn-sm" <?= ! $hasGlobalDeleteScope ? 'disabled' : '' ?>>
                     <i class="bi bi-funnel-fill me-1"></i>Verwijder gefilterd
                 </button>
@@ -613,7 +631,7 @@
         <div class="telemetry-table-header">
             <div class="telemetry-table-heading">
                 <h3>Fingerprints</h3>
-                <p><?= number_format($totalFingerprints) ?> groepen, sorteer en open details in de drawer zonder de pagina te verlaten.</p>
+                <p>Server-side paging actief. <?= $totalFingerprints > 0 ? number_format($pageStart) . '–' . number_format($pageEnd) : '0' ?> van <?= number_format($totalFingerprints) ?> groepen op deze paginaweergave.</p>
             </div>
 
             <form method="get" class="telemetry-table-tools" data-telemetry-form>
@@ -621,6 +639,7 @@
                 <input type="hidden" name="type" value="<?= esc($type) ?>">
                 <input type="hidden" name="severity" value="<?= esc($severity) ?>">
                 <input type="hidden" name="app_version" value="<?= esc($appVersion) ?>">
+                <input type="hidden" name="page" value="1">
                 <div class="telemetry-field">
                     <label class="form-label small text-muted">Zoek fingerprint of device</label>
                     <input type="text" name="group_query" class="form-control" value="<?= esc($groupQuery) ?>" placeholder="fingerprint, device, app versie, event type">
@@ -635,12 +654,20 @@
                         <option value="fingerprint" <?= $groupSort === 'fingerprint' ? 'selected' : '' ?>>Fingerprint</option>
                     </select>
                 </div>
+                <div class="telemetry-field">
+                    <label class="form-label small text-muted">Per pagina</label>
+                    <select name="per_page" class="form-select">
+                        <?php foreach ($perPageOptions as $option): ?>
+                            <option value="<?= esc((string) $option) ?>" <?= $perPage === $option ? 'selected' : '' ?>><?= esc((string) $option) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
                 <div class="telemetry-filter-actions">
                     <button type="submit" class="btn btn-outline-secondary">Toepassen</button>
-                    <?php if ($groupQuery !== '' || $groupSort !== 'latest'): ?>
+                    <?php if ($groupQuery !== '' || $groupSort !== 'latest' || $perPage !== 25): ?>
                         <?php
                             $clearGroupQuery = $baseQuery;
-                            unset($clearGroupQuery['group_query'], $clearGroupQuery['sort']);
+                            unset($clearGroupQuery['group_query'], $clearGroupQuery['sort'], $clearGroupQuery['per_page']);
                         ?>
                         <a href="<?= current_url() . ($clearGroupQuery !== [] ? '?' . http_build_query($clearGroupQuery) : '') ?>" class="btn btn-outline-secondary" data-telemetry-nav>Wis</a>
                     <?php endif; ?>
@@ -662,6 +689,7 @@
                             <th>Warnings</th>
                             <th>Events</th>
                             <th>Types</th>
+                            <th class="text-end">Acties</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -692,6 +720,28 @@
                                 <td><span class="telemetry-pill"><?= number_format((int) ($group['warning_events'] ?? 0)) ?></span></td>
                                 <td><span class="telemetry-pill"><?= number_format((int) ($group['total_events'] ?? 0)) ?></span></td>
                                 <td><span class="telemetry-pill"><?= number_format((int) ($group['unique_event_types'] ?? 0)) ?></span></td>
+                                <td>
+                                    <div class="telemetry-row-actions">
+                                        <form method="post" action="<?= base_url('admin/telemetry/delete-filtered') ?>" onsubmit="return confirm('Weet je zeker dat je alle events van deze fingerprint wilt verwijderen?');">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="q" value="<?= esc($query) ?>">
+                                            <input type="hidden" name="type" value="<?= esc($type) ?>">
+                                            <input type="hidden" name="severity" value="<?= esc($severity) ?>">
+                                            <input type="hidden" name="app_version" value="<?= esc($appVersion) ?>">
+                                            <input type="hidden" name="group_query" value="<?= esc($groupQuery) ?>">
+                                            <input type="hidden" name="sort" value="<?= esc($groupSort) ?>">
+                                            <input type="hidden" name="per_page" value="<?= esc((string) $perPage) ?>">
+                                            <input type="hidden" name="page" value="<?= esc((string) $page) ?>">
+                                            <input type="hidden" name="fingerprint" value="<?= esc($groupFingerprint) ?>">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash3 me-1"></i>Delete
+                                            </button>
+                                        </form>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary telemetry-killswitch" disabled title="Killswitch placeholder">
+                                            <i class="bi bi-power me-1"></i>Killswitch
+                                        </button>
+                                    </div>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -757,6 +807,8 @@
                         <input type="hidden" name="app_version" value="<?= esc($appVersion) ?>">
                         <input type="hidden" name="group_query" value="<?= esc($groupQuery) ?>">
                         <input type="hidden" name="sort" value="<?= esc($groupSort) ?>">
+                        <input type="hidden" name="per_page" value="<?= esc((string) $perPage) ?>">
+                        <input type="hidden" name="page" value="<?= esc((string) $page) ?>">
                         <input type="hidden" name="fingerprint" value="<?= esc($selectedFingerprint) ?>">
                         <button type="submit" class="btn btn-outline-danger btn-sm">
                             <i class="bi bi-trash3 me-1"></i>Verwijder fingerprint
@@ -840,6 +892,7 @@
                                         <input type="hidden" name="app_version" value="<?= esc($appVersion) ?>">
                                         <input type="hidden" name="group_query" value="<?= esc($groupQuery) ?>">
                                         <input type="hidden" name="sort" value="<?= esc($groupSort) ?>">
+                                        <input type="hidden" name="per_page" value="<?= esc((string) $perPage) ?>">
                                         <input type="hidden" name="fingerprint" value="<?= esc($selectedFingerprint) ?>">
                                         <input type="hidden" name="page" value="<?= esc((string) $page) ?>">
                                         <button type="submit" class="btn btn-outline-danger btn-sm">
