@@ -179,6 +179,36 @@
         .alert-warning { background: #2d1f00; border-color: #92400e; color: #fcd34d; }
         canvas { max-height: 220px; }
     </style>
+    <script>
+        (() => {
+            const beaconSelector = 'script[src*="static.cloudflareinsights.com/beacon.min.js"],script[data-cf-beacon]';
+
+            const removeInjectedBeacons = (root = document) => {
+                root.querySelectorAll(beaconSelector).forEach((node) => node.remove());
+            };
+
+            removeInjectedBeacons();
+
+            const observer = new MutationObserver((mutations) => {
+                for (const mutation of mutations) {
+                    for (const node of mutation.addedNodes) {
+                        if (!(node instanceof Element)) {
+                            continue;
+                        }
+
+                        if (node.matches(beaconSelector)) {
+                            node.remove();
+                            continue;
+                        }
+
+                        removeInjectedBeacons(node);
+                    }
+                }
+            });
+
+            observer.observe(document.documentElement, { childList: true, subtree: true });
+        })();
+    </script>
     <?= $this->renderSection('head') ?>
 </head>
 <body>

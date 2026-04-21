@@ -723,10 +723,10 @@
         <?php endif; ?>
     </section>
 
-    <div class="telemetry-drawer-shell" data-telemetry-drawer-shell data-open="<?= $hasDrawer ? '1' : '0' ?>">
-        <a href="<?= $drawerCloseUrl ?>" class="telemetry-drawer-backdrop" data-telemetry-close data-telemetry-nav aria-label="Sluit detailweergave"></a>
-        <aside class="telemetry-drawer" role="dialog" aria-modal="true" aria-label="Fingerprint details">
-            <?php if ($hasDrawer): ?>
+    <?php if ($hasDrawer): ?>
+        <div class="telemetry-drawer-shell" data-telemetry-drawer-shell data-open="1">
+            <a href="<?= $drawerCloseUrl ?>" class="telemetry-drawer-backdrop" data-telemetry-close data-telemetry-nav aria-label="Sluit detailweergave"></a>
+            <aside class="telemetry-drawer" role="dialog" aria-modal="true" aria-label="Fingerprint details">
                 <?php $selectedTypes = array_filter(array_map('trim', explode(',', (string) ($selectedFingerprintSummary['event_types_csv'] ?? '')))); ?>
                 <div class="telemetry-drawer-head">
                     <div>
@@ -874,9 +874,9 @@
                         <?php endif; ?>
                     </div>
                 </div>
-            <?php endif; ?>
-        </aside>
-    </div>
+            </aside>
+        </div>
+    <?php endif; ?>
 </div>
 
 <?= $this->endSection() ?>
