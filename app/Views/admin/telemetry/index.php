@@ -242,10 +242,49 @@
         font-size: .76rem;
         white-space: nowrap;
     }
+    .telemetry-pill.info {
+        background: rgba(30, 64, 175, .42);
+        color: #dbeafe;
+        border-color: rgba(96, 165, 250, .24);
+    }
+    .telemetry-pill.warning {
+        background: rgba(133, 77, 14, .42);
+        color: #fde68a;
+        border-color: rgba(251, 191, 36, .24);
+    }
     .telemetry-pill.error {
         background: rgba(127, 29, 29, .48);
         color: #fecaca;
         border-color: rgba(248, 113, 113, .2);
+    }
+    .telemetry-filter-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .45rem;
+        align-items: center;
+    }
+    .telemetry-filter-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 32px;
+        padding: .42rem .72rem;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, .12);
+        background: rgba(30, 41, 59, .64);
+        color: #dbeafe;
+        font-size: .78rem;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .telemetry-filter-pill:hover {
+        filter: brightness(1.08);
+    }
+    .telemetry-filter-pill.is-active {
+        background: linear-gradient(135deg, #2563eb, #0ea5e9);
+        color: #eff6ff;
+        border-color: rgba(147, 197, 253, .3);
     }
     .telemetry-pagination {
         display: flex;
@@ -342,6 +381,47 @@
         flex-wrap: wrap;
         gap: .55rem;
         padding: .9rem 1.2rem 0;
+        align-items: center;
+    }
+    .telemetry-drawer-actions > form,
+    .telemetry-drawer-actions > a {
+        margin: 0;
+        flex: 0 0 auto;
+    }
+    .telemetry-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .42rem;
+        min-height: 36px;
+        padding: .5rem .82rem;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        font-size: .82rem;
+        font-weight: 700;
+        line-height: 1;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: transform .14s ease, filter .14s ease, border-color .14s ease;
+    }
+    .telemetry-action-btn:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.05);
+    }
+    .telemetry-action-btn.primary {
+        background: linear-gradient(135deg, #2563eb, #0ea5e9);
+        color: #eff6ff;
+        border-color: rgba(147, 197, 253, .28);
+    }
+    .telemetry-action-btn.danger {
+        background: linear-gradient(135deg, #b91c1c, #ef4444);
+        color: #fff1f2;
+        border-color: rgba(252, 165, 165, .24);
+    }
+    .telemetry-action-btn.subtle {
+        background: linear-gradient(135deg, rgba(30, 41, 59, .96), rgba(51, 65, 85, .92));
+        color: #e2e8f0;
+        border-color: rgba(148, 163, 184, .16);
     }
     .telemetry-chip {
         display: inline-flex;
@@ -540,6 +620,12 @@
     $hasGlobalDeleteScope = $query !== '' || $type !== '' || $severity !== '' || $appVersion !== '';
     $pageStart = $totalFingerprints > 0 ? (($page - 1) * $perPage) + 1 : 0;
     $pageEnd = min($totalFingerprints, $page * $perPage);
+    $drawerSeverityOptions = [
+        '' => 'Alles',
+        'info' => 'Info',
+        'warning' => 'Warning',
+        'error' => 'Error',
+    ];
 ?>
 
 <div class="telemetry-page" id="telemetry-page">
@@ -825,7 +911,7 @@
                 </div>
 
                 <div class="telemetry-drawer-actions">
-                    <a href="<?= base_url('admin/telemetry/export/json') . ($selectedFingerprintLinkQuery !== [] ? '?' . http_build_query($selectedFingerprintLinkQuery) : '') ?>" class="btn btn-outline-secondary btn-sm">
+                    <a href="<?= base_url('admin/telemetry/export/json') . ($selectedFingerprintLinkQuery !== [] ? '?' . http_build_query($selectedFingerprintLinkQuery) : '') ?>" class="telemetry-action-btn primary">
                         <i class="bi bi-filetype-json me-1"></i>Export fingerprint
                     </a>
                     <form method="post" action="<?= base_url('admin/telemetry/delete-filtered') ?>" onsubmit="return confirm('Weet je zeker dat je alle events van deze fingerprint wilt verwijderen?');" class="d-inline-flex gap-2">
@@ -835,7 +921,7 @@
                         <input type="hidden" name="per_page" value="<?= esc((string) $perPage) ?>">
                         <input type="hidden" name="page" value="<?= esc((string) $page) ?>">
                         <input type="hidden" name="fingerprint" value="<?= esc($selectedFingerprint) ?>">
-                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <button type="submit" class="telemetry-action-btn danger">
                             <i class="bi bi-trash3 me-1"></i>Verwijder fingerprint
                         </button>
                     </form>
@@ -848,8 +934,29 @@
                     <div class="telemetry-drawer-column">
                         <section class="telemetry-drawer-section">
                             <div class="telemetry-drawer-section-head">
-                                <h4>Events</h4>
-                                <span class="telemetry-muted"><?= count($selectedFingerprintEvents) ?> geladen</span>
+                                <div>
+                                    <h4>Events</h4>
+                                    <span class="telemetry-muted"><?= count($selectedFingerprintEvents) ?> geladen</span>
+                                </div>
+                                <div class="telemetry-filter-pills">
+                                    <?php foreach ($drawerSeverityOptions as $severityValue => $severityLabel): ?>
+                                        <?php
+                                            $severityQuery = array_merge($baseQuery, [
+                                                'page' => $page,
+                                                'fingerprint' => $selectedFingerprint,
+                                            ]);
+                                            if ($severityValue === '') {
+                                                unset($severityQuery['severity'], $severityQuery['id']);
+                                            } else {
+                                                $severityQuery['severity'] = $severityValue;
+                                                unset($severityQuery['id']);
+                                            }
+                                        ?>
+                                        <a href="<?= current_url() . '?' . http_build_query($severityQuery) ?>" class="telemetry-filter-pill <?= $severity === $severityValue ? 'is-active' : '' ?>" data-telemetry-nav>
+                                            <?= esc($severityLabel) ?>
+                                        </a>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
                             <div class="telemetry-events" data-telemetry-events-list>
                                 <?php foreach ($selectedFingerprintEvents as $event): ?>
@@ -860,8 +967,8 @@
                                         ]);
                                         $severityClass = match ($event['severity'] ?? '') {
                                             'error' => 'telemetry-pill error',
-                                            'warning' => 'telemetry-pill',
-                                            default => 'telemetry-pill',
+                                            'warning' => 'telemetry-pill warning',
+                                            default => 'telemetry-pill info',
                                         };
                                     ?>
                                     <a href="<?= current_url() . '?' . http_build_query($eventQuery) ?>" class="telemetry-event-card <?= $selectedEventId === (int) ($event['id'] ?? 0) ? 'is-active' : '' ?>" data-telemetry-nav data-telemetry-event-link>
@@ -887,11 +994,19 @@
                             <?php
                                 $decoded = json_decode((string) ($selectedEvent['data_json'] ?? '{}'), true) ?: [];
                                 $payloadLines = $flattenPayloadLines($decoded);
+                                $selectedSeverityClass = match ($selectedEvent['severity'] ?? '') {
+                                    'error' => 'telemetry-pill error',
+                                    'warning' => 'telemetry-pill warning',
+                                    default => 'telemetry-pill info',
+                                };
                             ?>
                             <section class="telemetry-drawer-section">
                                 <div class="telemetry-drawer-section-head">
                                     <h4>Payload detail</h4>
-                                    <span class="telemetry-pill"><code><?= esc((string) ($selectedEvent['event_type'] ?? 'onbekend')) ?></code></span>
+                                    <div class="telemetry-filter-pills">
+                                        <span class="telemetry-pill"><code><?= esc((string) ($selectedEvent['event_type'] ?? 'onbekend')) ?></code></span>
+                                        <span class="<?= $selectedSeverityClass ?>"><?= esc((string) ($selectedEvent['severity'] ?? 'info')) ?></span>
+                                    </div>
                                 </div>
                                 <div style="padding: 1rem; display: grid; gap: .9rem;">
                                     <dl class="row small mb-0">
@@ -923,7 +1038,7 @@
                                         <input type="hidden" name="per_page" value="<?= esc((string) $perPage) ?>">
                                         <input type="hidden" name="fingerprint" value="<?= esc($selectedFingerprint) ?>">
                                         <input type="hidden" name="page" value="<?= esc((string) $page) ?>">
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <button type="submit" class="telemetry-action-btn subtle">
                                             <i class="bi bi-trash3 me-1"></i>Verwijder event
                                         </button>
                                     </form>
