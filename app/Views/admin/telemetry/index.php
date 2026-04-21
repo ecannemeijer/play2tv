@@ -450,11 +450,20 @@
         min-height: 0;
         align-content: start;
     }
+    .telemetry-drawer-column[data-telemetry-event-details] {
+        grid-template-rows: minmax(0, 1fr);
+    }
     .telemetry-drawer-section {
         border-radius: 20px;
         background: rgba(15, 23, 42, .72);
         border: 1px solid rgba(148, 163, 184, .1);
         overflow: hidden;
+    }
+    .telemetry-drawer-section.payload-detail {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        min-height: 0;
+        height: 100%;
     }
     .telemetry-drawer-section-head {
         display: flex;
@@ -511,7 +520,9 @@
         background: rgba(2, 6, 23, .9);
         border: 1px solid rgba(30, 41, 59, .95);
         color: #dbeafe;
-        max-height: min(68vh, 760px);
+        min-height: 0;
+        height: 100%;
+        max-height: none;
         overflow: auto;
         font-size: .94rem;
         line-height: 1.5;
@@ -1000,7 +1011,7 @@
                                     default => 'telemetry-pill info',
                                 };
                             ?>
-                            <section class="telemetry-drawer-section">
+                            <section class="telemetry-drawer-section payload-detail">
                                 <div class="telemetry-drawer-section-head">
                                     <h4>Payload detail</h4>
                                     <div class="telemetry-filter-pills">
@@ -1008,7 +1019,7 @@
                                         <span class="<?= $selectedSeverityClass ?>"><?= esc((string) ($selectedEvent['severity'] ?? 'info')) ?></span>
                                     </div>
                                 </div>
-                                <div style="padding: 1rem; display: grid; gap: .9rem;">
+                                <div style="padding: 1rem; display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: .9rem; min-height: 0; height: 100%;">
                                     <dl class="row small mb-0">
                                         <dt class="col-sm-5 text-muted">Ontvangen</dt>
                                         <dd class="col-sm-7"><?= ! empty($selectedEvent['created_at']) ? esc(date('d-m-Y H:i:s', strtotime((string) ($selectedEvent['created_at'])))) : '—' ?></dd>
@@ -1051,24 +1062,6 @@
                                             <?php endforeach; ?>
                                         </div>
                                     </div>
-                                </div>
-                            </section>
-
-                            <section class="telemetry-drawer-section">
-                                <div class="telemetry-drawer-section-head">
-                                    <h4>Top event types 24 uur</h4>
-                                </div>
-                                <div style="padding: .95rem 1rem; display: grid; gap: .5rem;">
-                                    <?php if (empty($overview['topTypes24h'])): ?>
-                                        <div class="telemetry-muted">Nog geen data beschikbaar.</div>
-                                    <?php else: ?>
-                                        <?php foreach ($overview['topTypes24h'] as $typeRow): ?>
-                                            <div class="d-flex justify-content-between align-items-center gap-2">
-                                                <span class="telemetry-pill"><code><?= esc((string) ($typeRow['event_type'] ?? 'onbekend')) ?></code></span>
-                                                <span class="telemetry-muted"><?= number_format((int) ($typeRow['total'] ?? 0)) ?></span>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
                                 </div>
                             </section>
                         <?php endif; ?>
