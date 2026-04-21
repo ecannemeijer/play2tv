@@ -9,6 +9,9 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+        html {
+            font-size: 80%;
+        }
         :root {
             --sidebar-width: 240px;
             --primary: #7c3aed;

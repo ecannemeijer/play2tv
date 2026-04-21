@@ -359,7 +359,7 @@
     }
     .telemetry-drawer-body {
         display: grid;
-        grid-template-columns: minmax(0, .9fr) minmax(320px, .8fr);
+        grid-template-columns: minmax(0, .82fr) minmax(420px, 1.08fr);
         gap: 1rem;
         min-height: 0;
         padding: 1rem 1.2rem 1.2rem;
@@ -423,18 +423,23 @@
         align-items: center;
     }
     .telemetry-payload-box {
+        display: grid;
+        gap: .18rem;
         margin: 0;
-        padding: 1rem;
+        padding: 1rem 1.1rem;
         border-radius: 16px;
         background: rgba(2, 6, 23, .9);
         border: 1px solid rgba(30, 41, 59, .95);
         color: #dbeafe;
+        max-height: min(68vh, 760px);
+        overflow: auto;
+        font-size: .94rem;
+        line-height: 1.5;
+    }
+    .telemetry-payload-line {
+        font-family: "Cascadia Code", "Consolas", monospace;
         white-space: pre-wrap;
         word-break: break-word;
-        max-height: 360px;
-        overflow: auto;
-        font-size: .86rem;
-        line-height: 1.42;
     }
     .telemetry-empty {
         padding: 1.25rem;
@@ -490,6 +495,34 @@
 <?= $this->section('content') ?>
 
 <?php
+    $flattenPayloadLines = static function (mixed $value, string $prefix = '') use (&$flattenPayloadLines): array {
+        if (is_array($value)) {
+            if ($value === []) {
+                return [$prefix !== '' ? $prefix . ': []' : '[]'];
+            }
+
+            $lines = [];
+            foreach ($value as $key => $child) {
+                $path = $prefix === '' ? (string) $key : $prefix . '.' . $key;
+                $lines = array_merge($lines, $flattenPayloadLines($child, $path));
+            }
+
+            return $lines;
+        }
+
+        if (is_object($value)) {
+            return $flattenPayloadLines((array) $value, $prefix);
+        }
+
+        $normalized = match (true) {
+            is_bool($value) => $value ? 'true' : 'false',
+            $value === null => 'null',
+            default => (string) $value,
+        };
+
+        return [$prefix !== '' ? $prefix . ': ' . $normalized : $normalized];
+    };
+
     $selectedFingerprintLabel = $selectedFingerprint === '' || $selectedFingerprint === 'unknown'
         ? 'Onbekende fingerprint'
         : $selectedFingerprint;
@@ -818,7 +851,7 @@
                                 <h4>Events</h4>
                                 <span class="telemetry-muted"><?= count($selectedFingerprintEvents) ?> geladen</span>
                             </div>
-                            <div class="telemetry-events">
+                            <div class="telemetry-events" data-telemetry-events-list>
                                 <?php foreach ($selectedFingerprintEvents as $event): ?>
                                     <?php
                                         $eventQuery = array_merge($selectedFingerprintLinkQuery, [
@@ -831,7 +864,7 @@
                                             default => 'telemetry-pill',
                                         };
                                     ?>
-                                    <a href="<?= current_url() . '?' . http_build_query($eventQuery) ?>" class="telemetry-event-card <?= $selectedEventId === (int) ($event['id'] ?? 0) ? 'is-active' : '' ?>" data-telemetry-nav>
+                                    <a href="<?= current_url() . '?' . http_build_query($eventQuery) ?>" class="telemetry-event-card <?= $selectedEventId === (int) ($event['id'] ?? 0) ? 'is-active' : '' ?>" data-telemetry-nav data-telemetry-event-link>
                                         <div class="telemetry-event-top">
                                             <span class="telemetry-pill"><code><?= esc((string) ($event['event_type'] ?? 'onbekend')) ?></code></span>
                                             <span class="<?= $severityClass ?>"><?= esc((string) ($event['severity'] ?? 'info')) ?></span>
@@ -847,11 +880,14 @@
                         </section>
                     </div>
 
-                    <div class="telemetry-drawer-column">
+                    <div class="telemetry-drawer-column" data-telemetry-event-details>
                         <?php if (empty($selectedEvent)): ?>
                             <div class="telemetry-empty">Selecteer een event om de payload en metadata te bekijken.</div>
                         <?php else: ?>
-                            <?php $decoded = json_decode((string) ($selectedEvent['data_json'] ?? '{}'), true) ?: []; ?>
+                            <?php
+                                $decoded = json_decode((string) ($selectedEvent['data_json'] ?? '{}'), true) ?: [];
+                                $payloadLines = $flattenPayloadLines($decoded);
+                            ?>
                             <section class="telemetry-drawer-section">
                                 <div class="telemetry-drawer-section-head">
                                     <h4>Payload detail</h4>
@@ -894,7 +930,11 @@
 
                                     <div>
                                         <label class="form-label small text-muted">Gesaniteerde payload</label>
-                                        <pre class="telemetry-payload-box"><?= esc(json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) ?></pre>
+                                        <div class="telemetry-payload-box">
+                                            <?php foreach ($payloadLines as $line): ?>
+                                                <div class="telemetry-payload-line"><?= esc($line) ?></div>
+                                            <?php endforeach; ?>
+                                        </div>
                                     </div>
                                 </div>
                             </section>
@@ -933,6 +973,8 @@
 
         const getPageRoot = () => document.getElementById('telemetry-page');
         const getDrawerShell = (root = document) => root.querySelector('[data-telemetry-drawer-shell]');
+        const getEventDetailsColumn = (root = document) => root.querySelector('[data-telemetry-event-details]');
+        const getEventList = (root = document) => root.querySelector('[data-telemetry-events-list]');
 
         const revealDrawer = (root = document) => {
             const shell = getDrawerShell(root);
@@ -995,6 +1037,65 @@
             }
         };
 
+        const fetchDrawerEventDetails = async (url, pushState = true) => {
+            if (isNavigating) {
+                return;
+            }
+
+            const currentDetails = getEventDetailsColumn();
+            if (!currentDetails) {
+                fetchAndSwap(url, pushState);
+                return;
+            }
+
+            const currentList = getEventList();
+            const listScrollTop = currentList ? currentList.scrollTop : 0;
+
+            isNavigating = true;
+            currentDetails.style.opacity = '.55';
+
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Telemetry detail request failed with status ${response.status}`);
+                }
+
+                const html = await response.text();
+                const parsed = new DOMParser().parseFromString(html, 'text/html');
+                const nextDetails = getEventDetailsColumn(parsed);
+                const nextList = getEventList(parsed);
+
+                if (!nextDetails) {
+                    throw new Error('Telemetry event detail column not found in response');
+                }
+
+                currentDetails.replaceWith(nextDetails);
+
+                if (currentList && nextList) {
+                    currentList.replaceWith(nextList);
+                    nextList.scrollTop = listScrollTop;
+                }
+
+                if (pushState) {
+                    window.history.pushState({ telemetryUrl: url }, '', url);
+                }
+            } catch (error) {
+                console.debug('Telemetry event detail fetch failed, falling back to full reload.', error);
+                window.location.assign(url);
+            } finally {
+                const details = getEventDetailsColumn();
+                if (details) {
+                    details.style.opacity = '';
+                }
+                isNavigating = false;
+            }
+        };
+
         const handleRowClick = (event) => {
             const target = event.target;
             if (!(target instanceof Element)) {
@@ -1048,6 +1149,12 @@
                     window.setTimeout(() => fetchAndSwap(link.href), 170);
                     return;
                 }
+            }
+
+            if (link.hasAttribute('data-telemetry-event-link')) {
+                event.preventDefault();
+                fetchDrawerEventDetails(link.href);
+                return;
             }
 
             event.preventDefault();
