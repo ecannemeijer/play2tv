@@ -9,6 +9,7 @@ use CodeIgniter\Model;
 class TelemetryEventModel extends Model
 {
     private const EXPORT_LIMIT = 5000;
+    private const FINGERPRINT_EVENT_LIMIT = 120;
 
     protected $table = 'telemetry_events';
     protected $primaryKey = 'id';
@@ -61,6 +62,7 @@ class TelemetryEventModel extends Model
     {
         $table = $this->db->table($this->table);
         $total = (int) $table->countAllResults();
+        $uniqueFingerprints = (int) $this->buildGroupedFingerprintBuilder()->get()->getNumRows();
         $latestRow = $this->db->table($this->table)
             ->select('created_at')
             ->orderBy('created_at', 'DESC')
@@ -97,6 +99,7 @@ class TelemetryEventModel extends Model
 
         return [
             'total' => $total,
+            'uniqueFingerprints' => $uniqueFingerprints,
             'last24h' => $last24h,
             'crashes24h' => $crashes24h,
             'manualReports24h' => $manualReports24h,
@@ -107,12 +110,80 @@ class TelemetryEventModel extends Model
 
     /**
      * @param array<string, mixed> $filters
+     * @return array{rows: list<array<string, mixed>>, total: int}
+     */
+    public function getFingerprintGroups(int $page, int $perPage, array $filters = []): array
+    {
+        $page = max(1, $page);
+        $perPage = max(1, min(100, $perPage));
+
+        $total = $this->buildGroupedFingerprintBuilder($filters)->get()->getNumRows();
+        $rows = $this->buildGroupedFingerprintBuilder($filters)
+            ->orderBy('latest_created_at', 'DESC')
+            ->limit($perPage, ($page - 1) * $perPage)
+            ->get()
+            ->getResultArray();
+
+        return [
+            'rows' => $rows,
+            'total' => $total,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     * @return array<string, mixed>|null
+     */
+    public function getFingerprintGroupSummary(string $fingerprintKey, array $filters = []): ?array
+    {
+        $builder = $this->buildGroupedFingerprintBuilder($filters);
+        $this->applyFingerprintScope($builder, $fingerprintKey);
+
+        return $builder->get()->getRowArray();
+    }
+
+    /**
+     * @param array<string, mixed> $filters
      * @return list<array<string, mixed>>
      */
-    public function getExportRows(array $filters = [], int $limit = self::EXPORT_LIMIT): array
+    public function getFingerprintEvents(string $fingerprintKey, array $filters = [], int $limit = self::FINGERPRINT_EVENT_LIMIT): array
     {
         $builder = $this->db->table($this->table . ' te');
         $this->applyFilters($builder, $filters);
+        $this->applyFingerprintScope($builder, $fingerprintKey);
+
+        return $builder
+            ->orderBy('te.created_at', 'DESC')
+            ->limit(max(1, min(self::FINGERPRINT_EVENT_LIMIT, $limit)))
+            ->get()
+            ->getResultArray();
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     */
+    public function countFiltered(array $filters = [], ?string $fingerprintKey = null): int
+    {
+        $builder = $this->db->table($this->table . ' te');
+        $this->applyFilters($builder, $filters);
+        if ($fingerprintKey !== null && $fingerprintKey !== '') {
+            $this->applyFingerprintScope($builder, $fingerprintKey);
+        }
+
+        return (int) $builder->countAllResults();
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     * @return list<array<string, mixed>>
+     */
+    public function getExportRows(array $filters = [], int $limit = self::EXPORT_LIMIT, ?string $fingerprintKey = null): array
+    {
+        $builder = $this->db->table($this->table . ' te');
+        $this->applyFilters($builder, $filters);
+        if ($fingerprintKey !== null && $fingerprintKey !== '') {
+            $this->applyFingerprintScope($builder, $fingerprintKey);
+        }
 
         return $builder
             ->orderBy('te.created_at', 'DESC')
@@ -124,10 +195,13 @@ class TelemetryEventModel extends Model
     /**
      * @param array<string, mixed> $filters
      */
-    public function deleteByFilters(array $filters = []): int
+    public function deleteByFilters(array $filters = [], ?string $fingerprintKey = null): int
     {
         $builder = $this->db->table($this->table . ' te');
         $this->applyFilters($builder, $filters);
+        if ($fingerprintKey !== null && $fingerprintKey !== '') {
+            $this->applyFingerprintScope($builder, $fingerprintKey);
+        }
         $builder->delete();
 
         return $this->db->affectedRows();
@@ -172,5 +246,50 @@ class TelemetryEventModel extends Model
                 ->orLike('te.data_json', $query)
                 ->groupEnd();
         }
+    }
+
+    private function buildGroupedFingerprintBuilder(array $filters = [])
+    {
+        $builder = $this->db->table($this->table . ' te');
+        $this->applyFilters($builder, $filters);
+        $fingerprintExpr = $this->fingerprintKeyExpression();
+
+        return $builder
+            ->select($fingerprintExpr . ' AS fingerprint_key', false)
+            ->select('COUNT(*) AS total_events', false)
+            ->select('SUM(CASE WHEN te.severity = "error" THEN 1 ELSE 0 END) AS error_events', false)
+            ->select('SUM(CASE WHEN te.severity = "warning" THEN 1 ELSE 0 END) AS warning_events', false)
+            ->select('MAX(te.created_at) AS latest_created_at', false)
+            ->select('MIN(te.created_at) AS first_created_at', false)
+            ->select('COUNT(DISTINCT te.event_type) AS unique_event_types', false)
+            ->select('COUNT(DISTINCT te.channel_name) AS unique_channels', false)
+            ->select('MAX(NULLIF(te.device_name, "")) AS sample_device_name', false)
+            ->select('MAX(NULLIF(te.app_version, "")) AS sample_app_version', false)
+            ->select('GROUP_CONCAT(DISTINCT te.event_type ORDER BY te.event_type SEPARATOR ",") AS event_types_csv', false)
+            ->groupBy($fingerprintExpr, false);
+    }
+
+    private function applyFingerprintScope($builder, string $fingerprintKey): void
+    {
+        if ($this->isUnknownFingerprintKey($fingerprintKey)) {
+            $builder->groupStart()
+                ->where('te.fingerprint_hash IS NULL', null, false)
+                ->orWhere('te.fingerprint_hash', '')
+                ->groupEnd();
+
+            return;
+        }
+
+        $builder->where('te.fingerprint_hash', $fingerprintKey);
+    }
+
+    private function fingerprintKeyExpression(): string
+    {
+        return "COALESCE(NULLIF(te.fingerprint_hash, ''), 'unknown')";
+    }
+
+    private function isUnknownFingerprintKey(string $fingerprintKey): bool
+    {
+        return $fingerprintKey === '' || $fingerprintKey === 'unknown';
     }
 }

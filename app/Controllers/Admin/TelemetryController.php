@@ -24,33 +24,52 @@ class TelemetryController extends Controller
     {
         $page = max(1, (int) ($this->request->getGet('page') ?? 1));
         $filters = $this->readFilters('get');
+        $selectedFingerprint = $this->readFingerprint('get');
         $selectedId = max(0, (int) ($this->request->getGet('id') ?? 0));
 
-        $result = $this->telemetryEvents->getPaged($page, self::PER_PAGE, $filters);
+        $result = $this->telemetryEvents->getFingerprintGroups($page, self::PER_PAGE, $filters);
         $totalPages = max(1, (int) ceil($result['total'] / self::PER_PAGE));
-        $selectedEvent = $selectedId > 0 ? $this->telemetryEvents->find($selectedId) : null;
         $baseQuery = $this->buildBaseQuery($filters);
+
+        if ($selectedFingerprint === '' && $result['rows'] !== []) {
+            $selectedFingerprint = (string) ($result['rows'][0]['fingerprint_key'] ?? '');
+        }
+
+        $selectedFingerprintSummary = $selectedFingerprint !== ''
+            ? $this->telemetryEvents->getFingerprintGroupSummary($selectedFingerprint, $filters)
+            : null;
+        $selectedFingerprintEvents = $selectedFingerprintSummary !== null
+            ? $this->telemetryEvents->getFingerprintEvents($selectedFingerprint, $filters)
+            : [];
+        $selectedEvent = $this->resolveSelectedEvent($selectedFingerprintEvents, $selectedId);
 
         return view('admin/telemetry/index', [
             'title' => 'Telemetry — Play2TV Admin',
-            'events' => $result['rows'],
+            'fingerprintGroups' => $result['rows'],
             'overview' => $this->telemetryEvents->getOverview(),
             'page' => $page,
             'perPage' => self::PER_PAGE,
-            'totalEvents' => $result['total'],
+            'totalEvents' => $this->telemetryEvents->countFiltered($filters),
+            'totalFingerprints' => $result['total'],
             'totalPages' => $totalPages,
             'baseQuery' => $baseQuery,
             'query' => $filters['query'],
             'type' => $filters['type'],
             'severity' => $filters['severity'],
             'appVersion' => $filters['app_version'],
+            'selectedFingerprint' => $selectedFingerprint,
+            'selectedFingerprintSummary' => $selectedFingerprintSummary,
+            'selectedFingerprintEvents' => $selectedFingerprintEvents,
             'selectedEvent' => $selectedEvent,
         ]);
     }
 
     public function exportCsv(): ResponseInterface
     {
-        $rows = $this->telemetryEvents->getExportRows($this->readFilters('get'));
+        $rows = $this->telemetryEvents->getExportRows(
+            $this->readFilters('get'),
+            fingerprintKey: $this->readFingerprint('get') ?: null
+        );
 
         return $this->response
             ->setHeader('Content-Type', 'text/csv; charset=utf-8')
@@ -60,7 +79,10 @@ class TelemetryController extends Controller
 
     public function exportJson(): ResponseInterface
     {
-        $rows = $this->telemetryEvents->getExportRows($this->readFilters('get'));
+        $rows = $this->telemetryEvents->getExportRows(
+            $this->readFilters('get'),
+            fingerprintKey: $this->readFingerprint('get') ?: null
+        );
 
         return $this->response
             ->setHeader('Content-Disposition', 'attachment; filename="telemetry-export-' . date('Ymd-His') . '.json"')
@@ -74,6 +96,9 @@ class TelemetryController extends Controller
     public function delete(): ResponseInterface
     {
         $eventId = max(0, (int) ($this->request->getPost('id') ?? 0));
+        $filters = $this->readFilters('post');
+        $fingerprint = $this->readFingerprint('post');
+        $page = max(1, (int) ($this->request->getPost('page') ?? 1));
         if ($eventId <= 0) {
             return redirect()->back()->with('error', 'Geen telemetry event geselecteerd.');
         }
@@ -83,19 +108,20 @@ class TelemetryController extends Controller
             return redirect()->back()->with('error', 'Telemetry event kon niet worden verwijderd.');
         }
 
-        return redirect()->to(base_url('admin/telemetry'))->with('success', 'Telemetry event verwijderd.');
+        return redirect()->to($this->buildIndexUrl($filters, $fingerprint, $page))->with('success', 'Telemetry event verwijderd.');
     }
 
     public function deleteFiltered(): ResponseInterface
     {
         $filters = $this->readFilters('post');
-        if ($this->buildBaseQuery($filters) === []) {
+        $fingerprint = $this->readFingerprint('post');
+        if ($this->buildBaseQuery($filters) === [] && $fingerprint === '') {
             return redirect()->back()->with('error', 'Gebruik eerst minimaal één filter voordat je gefilterde telemetry verwijdert.');
         }
 
-        $deletedCount = $this->telemetryEvents->deleteByFilters($filters);
+        $deletedCount = $this->telemetryEvents->deleteByFilters($filters, $fingerprint ?: null);
 
-        return redirect()->to(base_url('admin/telemetry'))->with('success', sprintf('%d telemetry events verwijderd op basis van de huidige filters.', $deletedCount));
+        return redirect()->to(base_url('admin/telemetry'))->with('success', sprintf('%d telemetry events verwijderd op basis van de huidige selectie.', $deletedCount));
     }
 
     public function deleteAll(): ResponseInterface
@@ -128,6 +154,13 @@ class TelemetryController extends Controller
             'severity' => $reader('severity'),
             'app_version' => $reader('app_version'),
         ];
+    }
+
+    private function readFingerprint(string $source = 'get'): string
+    {
+        return trim((string) ($source === 'post'
+            ? ($this->request->getPost('fingerprint') ?? '')
+            : ($this->request->getGet('fingerprint') ?? '')));
     }
 
     /**
@@ -167,6 +200,7 @@ class TelemetryController extends Controller
             'channel_name',
             'last_action',
             'stream_type',
+            'fingerprint_hash',
             'data_json',
         ]);
 
@@ -184,6 +218,7 @@ class TelemetryController extends Controller
                 $row['channel_name'] ?? '',
                 $row['last_action'] ?? '',
                 $row['stream_type'] ?? '',
+                $row['fingerprint_hash'] ?? '',
                 $row['data_json'] ?? '',
             ]);
         }
@@ -193,5 +228,42 @@ class TelemetryController extends Controller
         fclose($handle);
 
         return $csv;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $events
+     * @return array<string, mixed>|null
+     */
+    private function resolveSelectedEvent(array $events, int $selectedId): ?array
+    {
+        if ($events === []) {
+            return null;
+        }
+
+        if ($selectedId > 0) {
+            foreach ($events as $event) {
+                if ((int) ($event['id'] ?? 0) === $selectedId) {
+                    return $event;
+                }
+            }
+        }
+
+        return $events[0];
+    }
+
+    /**
+     * @param array{query: string, type: string, severity: string, app_version: string} $filters
+     */
+    private function buildIndexUrl(array $filters, string $fingerprint, int $page): string
+    {
+        $query = $this->buildBaseQuery($filters);
+        if ($fingerprint !== '') {
+            $query['fingerprint'] = $fingerprint;
+        }
+        if ($page > 1) {
+            $query['page'] = (string) $page;
+        }
+
+        return base_url('admin/telemetry' . ($query !== [] ? '?' . http_build_query($query) : ''));
     }
 }
