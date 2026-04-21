@@ -452,7 +452,7 @@
         </div>
     </div>
 
-    <div class="telemetry-layout">
+    <div class="telemetry-layout" id="telemetry-browser">
         <div class="telemetry-panel">
             <div class="telemetry-panel-header d-flex justify-content-between align-items-center">
                 <h6><i class="bi bi-person-bounding-box me-2"></i>Fingerprint groepen</h6>
@@ -466,7 +466,7 @@
                 <?php if (empty($fingerprintGroups)): ?>
                     <div class="telemetry-empty">Geen fingerprint-groepen gevonden voor de huidige filters.</div>
                 <?php else: ?>
-                    <div class="fingerprint-scroll">
+                    <div class="fingerprint-scroll" data-telemetry-scroll-list>
                         <?php foreach ($fingerprintGroups as $group): ?>
                             <?php
                                 $groupFingerprint = (string) ($group['fingerprint_key'] ?? 'unknown');
@@ -675,4 +675,96 @@
     </div>
 </div>
 
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
+<script>
+    (() => {
+        const storageKey = 'telemetry-admin-scroll-state';
+        const telemetryRoot = document.getElementById('telemetry-browser');
+        const fingerprintList = document.querySelector('[data-telemetry-scroll-list]');
+
+        if (!telemetryRoot) {
+            return;
+        }
+
+        const saveScrollState = () => {
+            try {
+                sessionStorage.setItem(storageKey, JSON.stringify({
+                    path: window.location.pathname,
+                    scrollY: window.scrollY,
+                    fingerprintScrollTop: fingerprintList ? fingerprintList.scrollTop : 0,
+                }));
+            } catch (error) {
+                console.debug('Unable to persist telemetry scroll state', error);
+            }
+        };
+
+        const restoreScrollState = () => {
+            try {
+                const rawState = sessionStorage.getItem(storageKey);
+                if (!rawState) {
+                    return;
+                }
+
+                const state = JSON.parse(rawState);
+                if (!state || state.path !== window.location.pathname) {
+                    sessionStorage.removeItem(storageKey);
+                    return;
+                }
+
+                requestAnimationFrame(() => {
+                    window.scrollTo({ top: Number(state.scrollY) || 0, behavior: 'auto' });
+                    if (fingerprintList) {
+                        fingerprintList.scrollTop = Number(state.fingerprintScrollTop) || 0;
+                    }
+                    sessionStorage.removeItem(storageKey);
+                });
+            } catch (error) {
+                console.debug('Unable to restore telemetry scroll state', error);
+                sessionStorage.removeItem(storageKey);
+            }
+        };
+
+        document.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) {
+                return;
+            }
+
+            const link = target.closest('a');
+            if (!link) {
+                return;
+            }
+
+            const url = new URL(link.href, window.location.origin);
+            if (url.origin !== window.location.origin || url.pathname !== window.location.pathname) {
+                return;
+            }
+
+            saveScrollState();
+        });
+
+        document.addEventListener('submit', (event) => {
+            const form = event.target;
+            if (!(form instanceof HTMLFormElement)) {
+                return;
+            }
+
+            const action = form.getAttribute('action');
+            if (!action) {
+                return;
+            }
+
+            const url = new URL(action, window.location.origin);
+            if (url.origin !== window.location.origin || !url.pathname.includes('/admin/telemetry')) {
+                return;
+            }
+
+            saveScrollState();
+        });
+
+        restoreScrollState();
+    })();
+</script>
 <?= $this->endSection() ?>
