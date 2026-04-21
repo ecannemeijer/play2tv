@@ -4,102 +4,119 @@
 <style>
     .telemetry-shell {
         display: grid;
-        gap: 1.5rem;
+        gap: 1rem;
     }
-    .telemetry-hero {
-        position: relative;
-        overflow: hidden;
-        border-radius: 20px;
-        padding: 1.5rem;
-        background:
-            radial-gradient(circle at top right, rgba(34, 197, 94, .22), transparent 35%),
-            radial-gradient(circle at bottom left, rgba(59, 130, 246, .24), transparent 40%),
-            linear-gradient(135deg, #111827, #0f172a 60%, #111827);
-        border: 1px solid rgba(148, 163, 184, .16);
-        box-shadow: 0 24px 60px rgba(2, 6, 23, .35);
-    }
-    .telemetry-hero-grid {
+    .telemetry-command-bar {
         display: grid;
-        grid-template-columns: minmax(0, 1.6fr) repeat(4, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1.15fr) minmax(360px, .85fr);
         gap: 1rem;
+        padding: 1.1rem 1.2rem;
+        border-radius: 24px;
+        background:
+            linear-gradient(135deg, rgba(7, 17, 34, .96), rgba(17, 24, 39, .92)),
+            radial-gradient(circle at top right, rgba(14, 165, 233, .18), transparent 35%);
+        border: 1px solid rgba(148, 163, 184, .12);
+        box-shadow: 0 20px 48px rgba(2, 6, 23, .26);
     }
-    .telemetry-hero-copy {
-        min-height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        gap: 1rem;
+    .telemetry-command-copy {
+        display: grid;
+        gap: .8rem;
+        align-content: start;
     }
     .telemetry-kicker {
         display: inline-flex;
         align-items: center;
-        gap: .5rem;
-        padding: .35rem .7rem;
+        gap: .45rem;
+        padding: .3rem .65rem;
         border-radius: 999px;
-        background: rgba(15, 23, 42, .55);
-        border: 1px solid rgba(148, 163, 184, .14);
+        background: rgba(15, 23, 42, .7);
+        border: 1px solid rgba(148, 163, 184, .12);
         color: #bfdbfe;
-        font-size: .78rem;
+        font-size: .72rem;
         letter-spacing: .08em;
         text-transform: uppercase;
     }
-    .telemetry-hero h2 {
-        font-size: clamp(1.5rem, 3vw, 2.4rem);
-        line-height: 1.05;
+    .telemetry-command-title {
         margin: 0;
-        max-width: 14ch;
+        font-size: clamp(1.2rem, 2vw, 1.8rem);
+        line-height: 1.1;
     }
-    .telemetry-hero p {
+    .telemetry-command-description {
         margin: 0;
-        color: rgba(226, 232, 240, .74);
-        max-width: 54ch;
+        color: rgba(226, 232, 240, .72);
+        max-width: 62ch;
+        font-size: .92rem;
     }
-    .telemetry-latest {
-        display: inline-flex;
+    .telemetry-command-meta {
+        display: flex;
         flex-wrap: wrap;
-        gap: .5rem;
+        gap: .6rem;
         align-items: center;
-        color: rgba(226, 232, 240, .82);
+        color: rgba(203, 213, 225, .74);
+        font-size: .84rem;
     }
-    .telemetry-stat-tile {
-        padding: 1.1rem 1rem;
+    .telemetry-command-meta strong {
+        color: #f8fafc;
+    }
+    .telemetry-command-actions {
+        display: grid;
+        gap: .85rem;
+        align-content: start;
+    }
+    .telemetry-filter-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .75rem;
+    }
+    .telemetry-input-stack {
+        display: grid;
+        gap: .35rem;
+    }
+    .telemetry-input-stack.full {
+        grid-column: 1 / -1;
+    }
+    .telemetry-overview-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: .75rem;
+    }
+    .telemetry-kpi {
+        padding: .95rem 1rem;
         border-radius: 18px;
-        background: rgba(15, 23, 42, .52);
-        border: 1px solid rgba(148, 163, 184, .16);
-        backdrop-filter: blur(12px);
+        background: linear-gradient(180deg, rgba(15, 23, 42, .88), rgba(15, 23, 42, .72));
+        border: 1px solid rgba(148, 163, 184, .12);
     }
-    .telemetry-stat-tile .label {
-        display: block;
-        color: #93c5fd;
-        font-size: .78rem;
-        text-transform: uppercase;
+    .telemetry-kpi-label {
+        color: rgba(147, 197, 253, .88);
+        font-size: .72rem;
         letter-spacing: .08em;
-        margin-bottom: .5rem;
+        text-transform: uppercase;
+        margin-bottom: .45rem;
     }
-    .telemetry-stat-tile .value {
-        font-size: clamp(1.45rem, 2.2vw, 2rem);
+    .telemetry-kpi-value {
+        font-size: 1.6rem;
         font-weight: 800;
         line-height: 1;
-        margin-bottom: .35rem;
+        margin-bottom: .25rem;
     }
-    .telemetry-stat-tile .meta {
+    .telemetry-kpi-meta {
         color: rgba(203, 213, 225, .62);
-        font-size: .82rem;
+        font-size: .8rem;
     }
     .telemetry-layout {
         display: grid;
-        grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
-        gap: 1.5rem;
+        grid-template-columns: minmax(330px, 410px) minmax(0, 1fr);
+        gap: 1rem;
         align-items: start;
     }
     .telemetry-panel {
-        border-radius: 22px;
-        background: linear-gradient(180deg, rgba(15, 23, 42, .96), rgba(15, 23, 42, .88));
+        border-radius: 24px;
+        background: linear-gradient(180deg, rgba(15, 23, 42, .97), rgba(15, 23, 42, .9));
         border: 1px solid rgba(148, 163, 184, .14);
-        box-shadow: 0 16px 42px rgba(2, 6, 23, .24);
+        box-shadow: 0 16px 36px rgba(2, 6, 23, .18);
     }
     .telemetry-panel-header {
-        padding: 1.15rem 1.25rem;
+        padding: .95rem 1.1rem;
         border-bottom: 1px solid rgba(148, 163, 184, .11);
     }
     .telemetry-panel-header h6 {
@@ -155,10 +172,10 @@
     .telemetry-detail-head {
         display: grid;
         gap: 1rem;
-        padding: 1.1rem 1.25rem 1.2rem;
+        padding: 1rem 1.1rem 1.1rem;
         border-bottom: 1px solid rgba(148, 163, 184, .11);
         background: linear-gradient(180deg, rgba(15, 23, 42, .98), rgba(15, 23, 42, .9));
-        border-radius: 22px 22px 0 0;
+        border-radius: 24px 24px 0 0;
     }
     .telemetry-detail-title {
         display: flex;
@@ -196,8 +213,8 @@
     .telemetry-detail-grid {
         display: grid;
         grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
-        gap: 1.25rem;
-        padding: 1.25rem;
+        gap: 1rem;
+        padding: 1rem 1.1rem 1.1rem;
     }
     .telemetry-event-stream {
         display: grid;
@@ -263,11 +280,6 @@
         border: 1px dashed rgba(148, 163, 184, .18);
         color: rgba(203, 213, 225, .68);
         text-align: center;
-    }
-    .telemetry-list-toolbar {
-        justify-content: space-between;
-        align-items: end;
-        margin-bottom: .9rem;
     }
     .telemetry-list-meta {
         color: rgba(203, 213, 225, .62);
@@ -359,15 +371,24 @@
         flex-wrap: wrap;
         gap: .35rem;
     }
+    .telemetry-quick-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+        padding-top: .8rem;
+        border-top: 1px solid rgba(148, 163, 184, .11);
+    }
     @media (max-width: 1399px) {
-        .telemetry-hero-grid {
+        .telemetry-command-bar,
+        .telemetry-overview-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
-        .telemetry-hero-copy {
+        .telemetry-command-copy {
             grid-column: 1 / -1;
         }
     }
     @media (max-width: 1199px) {
+        .telemetry-command-bar,
         .telemetry-layout,
         .telemetry-detail-grid {
             grid-template-columns: 1fr;
@@ -377,7 +398,8 @@
         }
     }
     @media (max-width: 767px) {
-        .telemetry-hero-grid {
+        .telemetry-overview-grid,
+        .telemetry-filter-grid {
             grid-template-columns: 1fr;
         }
         .telemetry-panel-header,
@@ -386,10 +408,6 @@
         .telemetry-detail-grid {
             padding-left: 1rem;
             padding-right: 1rem;
-        }
-        .telemetry-list-toolbar {
-            flex-direction: column;
-            align-items: stretch;
         }
         .telemetry-row-link {
             grid-template-columns: 1fr;
@@ -412,59 +430,29 @@
 ?>
 
 <div class="telemetry-shell">
-    <section class="telemetry-hero">
-        <div class="telemetry-hero-grid">
-            <div class="telemetry-hero-copy">
-                <div class="d-grid gap-3">
-                    <span class="telemetry-kicker"><i class="bi bi-fingerprint"></i> Telemetry fingerprints</span>
-                    <div class="d-grid gap-2">
-                        <h2>Groepeer binnenkomende telemetry per device fingerprint.</h2>
-                        <p>Klik op een fingerprint om alle events, payloads en terugkerende problemen van dat device in een moderne master-detail weergave te bekijken.</p>
-                    </div>
-                </div>
-                <div class="telemetry-latest">
-                    <span class="telemetry-subtle">Laatst opgeslagen event</span>
-                    <strong><?= ! empty($overview['latestCreatedAt']) ? esc(date('d-m-Y H:i:s', strtotime((string) ($overview['latestCreatedAt'])))) : 'geen data' ?></strong>
-                </div>
+    <section class="telemetry-command-bar">
+        <div class="telemetry-command-copy">
+            <span class="telemetry-kicker"><i class="bi bi-fingerprint"></i> Telemetry fingerprints</span>
+            <div class="d-grid gap-2">
+                <h2 class="telemetry-command-title">Device telemetry browser</h2>
+                <p class="telemetry-command-description">Gebruik deze pagina als operationele cockpit: filter ruis weg, vind problematische fingerprints snel terug en werk direct vanuit dezelfde detailweergave.</p>
             </div>
-            <div class="telemetry-stat-tile">
-                <span class="label">Events</span>
-                <div class="value"><?= number_format((int) ($overview['total'] ?? 0)) ?></div>
-                <div class="meta">Alle opgeslagen telemetry events</div>
-            </div>
-            <div class="telemetry-stat-tile">
-                <span class="label">Fingerprints</span>
-                <div class="value"><?= number_format((int) ($overview['uniqueFingerprints'] ?? 0)) ?></div>
-                <div class="meta">Unieke device groepen</div>
-            </div>
-            <div class="telemetry-stat-tile">
-                <span class="label">24 uur</span>
-                <div class="value"><?= number_format((int) ($overview['last24h'] ?? 0)) ?></div>
-                <div class="meta">Nieuwe events in de laatste 24 uur</div>
-            </div>
-            <div class="telemetry-stat-tile">
-                <span class="label">Errors</span>
-                <div class="value"><?= number_format((int) ($overview['crashes24h'] ?? 0)) ?></div>
-                <div class="meta">Crashes en errors in 24 uur</div>
+            <div class="telemetry-command-meta">
+                <span>Laatst opgeslagen event</span>
+                <strong><?= ! empty($overview['latestCreatedAt']) ? esc(date('d-m-Y H:i:s', strtotime((string) ($overview['latestCreatedAt'])))) : 'geen data' ?></strong>
             </div>
         </div>
-    </section>
-
-    <div class="telemetry-panel">
-        <div class="telemetry-panel-header">
-            <h6><i class="bi bi-funnel me-2"></i>Filters en acties</h6>
-        </div>
-        <div class="telemetry-panel-body">
-            <form method="get" class="row g-3 align-items-end">
-                <div class="col-md-4">
-                    <label class="form-label small text-muted">Zoeken</label>
+        <div class="telemetry-command-actions">
+            <form method="get" class="telemetry-filter-grid">
+                <div class="telemetry-input-stack full">
+                    <label class="form-label small text-muted">Zoeken in events</label>
                     <input type="text" name="q" class="form-control" value="<?= esc($query) ?>" placeholder="event, kanaal, actie, data">
                 </div>
-                <div class="col-md-2">
+                <div class="telemetry-input-stack">
                     <label class="form-label small text-muted">Type</label>
                     <input type="text" name="type" class="form-control" value="<?= esc($type) ?>" placeholder="player_error">
                 </div>
-                <div class="col-md-2">
+                <div class="telemetry-input-stack">
                     <label class="form-label small text-muted">Severity</label>
                     <select name="severity" class="form-select">
                         <option value="">Alle</option>
@@ -473,19 +461,20 @@
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="telemetry-input-stack">
                     <label class="form-label small text-muted">App versie</label>
                     <input type="text" name="app_version" class="form-control" value="<?= esc($appVersion) ?>" placeholder="1.0.0">
                 </div>
-                <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-search me-1"></i>Filter
-                    </button>
-                    <a href="<?= base_url('admin/telemetry') ?>" class="btn btn-outline-secondary">Reset</a>
+                <div class="telemetry-input-stack" style="align-content:end;">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search me-1"></i>Filter
+                        </button>
+                        <a href="<?= base_url('admin/telemetry') ?>" class="btn btn-outline-secondary">Reset</a>
+                    </div>
                 </div>
             </form>
-
-            <div class="telemetry-action-row mt-3 pt-3 border-top">
+            <div class="telemetry-quick-row">
                 <a href="<?= base_url('admin/telemetry/export/csv') . ($selectedFingerprintLinkQuery !== [] ? '?' . http_build_query($selectedFingerprintLinkQuery) : '') ?>" class="btn btn-outline-secondary btn-sm" data-telemetry-export-link="csv">
                     <i class="bi bi-download me-1"></i>Export CSV
                 </a>
@@ -518,16 +507,36 @@
                         <i class="bi bi-trash3 me-1"></i>Verwijder alles
                     </button>
                 </form>
-            </div>
-
-            <div class="telemetry-action-row mt-3">
                 <a href="<?= base_url('admin/telemetry?severity=error') ?>" class="btn btn-sm btn-outline-danger">Alle errors</a>
                 <a href="<?= base_url('admin/telemetry?type=manual_report') ?>" class="btn btn-sm btn-outline-secondary">Manual reports</a>
                 <a href="<?= base_url('admin/telemetry?type=player_rebuffer') ?>" class="btn btn-sm btn-outline-secondary">Rebuffers</a>
                 <a href="<?= base_url('admin/telemetry?type=crash') ?>" class="btn btn-sm btn-outline-secondary">Crashes</a>
             </div>
         </div>
-    </div>
+    </section>
+
+    <section class="telemetry-overview-grid">
+        <div class="telemetry-kpi">
+            <div class="telemetry-kpi-label">Events</div>
+            <div class="telemetry-kpi-value"><?= number_format((int) ($overview['total'] ?? 0)) ?></div>
+            <div class="telemetry-kpi-meta">Alle opgeslagen telemetry events</div>
+        </div>
+        <div class="telemetry-kpi">
+            <div class="telemetry-kpi-label">Fingerprints</div>
+            <div class="telemetry-kpi-value"><?= number_format((int) ($overview['uniqueFingerprints'] ?? 0)) ?></div>
+            <div class="telemetry-kpi-meta">Unieke device groepen</div>
+        </div>
+        <div class="telemetry-kpi">
+            <div class="telemetry-kpi-label">24 uur</div>
+            <div class="telemetry-kpi-value"><?= number_format((int) ($overview['last24h'] ?? 0)) ?></div>
+            <div class="telemetry-kpi-meta">Nieuwe events in de laatste 24 uur</div>
+        </div>
+        <div class="telemetry-kpi">
+            <div class="telemetry-kpi-label">Errors</div>
+            <div class="telemetry-kpi-value"><?= number_format((int) ($overview['crashes24h'] ?? 0)) ?></div>
+            <div class="telemetry-kpi-meta">Crashes en errors in 24 uur</div>
+        </div>
+    </section>
 
     <div class="telemetry-layout" id="telemetry-browser">
         <div class="telemetry-panel">
