@@ -81,7 +81,7 @@ class TelemetryController extends Controller
         if (! $this->telemetryConfig->setTelemetryEnabled($enabled)) {
             return redirect()->back()->with(
                 'error',
-                'Telemetry killswitch kon niet worden opgeslagen. Controleer of de app_settings migratie is uitgevoerd.'
+                'Telemetry killswitch kon niet worden opgeslagen. Controleer of de writable-map schrijfbaar is.'
             );
         }
 

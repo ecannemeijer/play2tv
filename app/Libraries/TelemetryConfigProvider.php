@@ -4,23 +4,17 @@ declare(strict_types=1);
 
 namespace App\Libraries;
 
-use App\Models\AppSettingModel;
+use RuntimeException;
 use Throwable;
 
 class TelemetryConfigProvider
 {
+    private const STORAGE_FILE_NAME = 'telemetry-config.json';
     private const TELEMETRY_ENABLED_SETTING_KEY = 'telemetry_enabled';
     private const DEFAULT_ENABLED = true;
     private const DEFAULT_SAMPLE_RATE = 0.3;
     private const DEFAULT_BATCH_SIZE = 20;
     private const DEFAULT_FLUSH_INTERVAL_SEC = 30;
-
-    private AppSettingModel $appSettings;
-
-    public function __construct()
-    {
-        $this->appSettings = new AppSettingModel();
-    }
 
     /**
      * @return array<string, bool|float|int>
@@ -38,7 +32,9 @@ class TelemetryConfigProvider
     public function setTelemetryEnabled(bool $enabled): bool
     {
         try {
-            $this->appSettings->setValue(self::TELEMETRY_ENABLED_SETTING_KEY, $enabled ? '1' : '0');
+            $storedConfig = $this->readStoredConfig();
+            $storedConfig[self::TELEMETRY_ENABLED_SETTING_KEY] = $enabled;
+            $this->writeStoredConfig($storedConfig);
 
             return true;
         } catch (Throwable $exception) {
@@ -53,9 +49,9 @@ class TelemetryConfigProvider
     private function resolveTelemetryEnabled(): bool
     {
         try {
-            $override = $this->appSettings->getValue(self::TELEMETRY_ENABLED_SETTING_KEY);
-            if ($override !== null) {
-                return $this->parseBool($override);
+            $storedConfig = $this->readStoredConfig();
+            if (array_key_exists(self::TELEMETRY_ENABLED_SETTING_KEY, $storedConfig)) {
+                return $this->parseBool($storedConfig[self::TELEMETRY_ENABLED_SETTING_KEY]);
             }
         } catch (Throwable $exception) {
             log_message('warning', 'Unable to read telemetry killswitch override: {message}', [
@@ -64,6 +60,52 @@ class TelemetryConfigProvider
         }
 
         return $this->parseBool(env('telemetry.enabled', self::DEFAULT_ENABLED));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function readStoredConfig(): array
+    {
+        $storagePath = $this->storagePath();
+        if (! is_file($storagePath)) {
+            return [];
+        }
+
+        $rawJson = @file_get_contents($storagePath);
+        if ($rawJson === false || trim($rawJson) === '') {
+            return [];
+        }
+
+        $decoded = json_decode($rawJson, true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function writeStoredConfig(array $config): void
+    {
+        $storagePath = $this->storagePath();
+        $directory = dirname($storagePath);
+        if (! is_dir($directory) && ! @mkdir($directory, 0775, true) && ! is_dir($directory)) {
+            throw new RuntimeException('Telemetry config map kon niet worden aangemaakt.');
+        }
+
+        $json = json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        if ($json === false) {
+            throw new RuntimeException('Telemetry config kon niet worden gecodeerd.');
+        }
+
+        if (@file_put_contents($storagePath, $json, LOCK_EX) === false) {
+            throw new RuntimeException('Telemetry config kon niet worden opgeslagen.');
+        }
+    }
+
+    private function storagePath(): string
+    {
+        return rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . self::STORAGE_FILE_NAME;
     }
 
     private function parseBool(mixed $value): bool
