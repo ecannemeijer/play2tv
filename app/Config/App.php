@@ -133,7 +133,7 @@ class App extends BaseConfig
      * @see https://www.php.net/manual/en/timezones.php for list of timezones
      *      supported by PHP.
      */
-    public string $appTimezone = 'UTC';
+    public string $appTimezone = 'Europe/Amsterdam';
 
     /**
      * --------------------------------------------------------------------------
@@ -210,6 +210,7 @@ class App extends BaseConfig
         parent::__construct();
 
         $this->baseURL = (string) env('app.baseURL', $this->baseURL);
+        $this->appTimezone = (string) env('app.appTimezone', $this->appTimezone);
         $this->forceGlobalSecureRequests = (bool) env('app.forceHTTPS', true);
 
         $allowedHostnames = trim((string) env('app.allowedHostnames', ''));

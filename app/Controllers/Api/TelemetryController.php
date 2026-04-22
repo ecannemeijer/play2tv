@@ -7,6 +7,7 @@ namespace App\Controllers\Api;
 use App\Libraries\DeviceFingerprintService;
 use App\Libraries\SecurityEventService;
 use App\Models\TelemetryEventModel;
+use Config\App;
 use DateTimeImmutable;
 use DateTimeZone;
 use InvalidArgumentException;
@@ -23,12 +24,14 @@ class TelemetryController extends BaseApiController
     private TelemetryEventModel $telemetryEvents;
     private DeviceFingerprintService $fingerprints;
     private SecurityEventService $securityEvents;
+    private DateTimeZone $appTimeZone;
 
     public function __construct()
     {
         $this->telemetryEvents = new TelemetryEventModel();
         $this->fingerprints = new DeviceFingerprintService();
         $this->securityEvents = new SecurityEventService();
+        $this->appTimeZone = new DateTimeZone(config(App::class)->appTimezone);
     }
 
     public function store()
@@ -163,7 +166,7 @@ class TelemetryController extends BaseApiController
                 $this->sanitizeScalarText($payload['device'] ?? null, 120)
             ),
             'data_json' => json_encode($sanitizedData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-            'created_at' => gmdate('Y-m-d H:i:s'),
+            'created_at' => date('Y-m-d H:i:s'),
         ];
     }
 
@@ -262,7 +265,7 @@ class TelemetryController extends BaseApiController
         }
 
         return (new DateTimeImmutable('@' . $timestamp))
-            ->setTimezone(new DateTimeZone('UTC'))
+            ->setTimezone($this->appTimeZone)
             ->format('Y-m-d H:i:s');
     }
 
