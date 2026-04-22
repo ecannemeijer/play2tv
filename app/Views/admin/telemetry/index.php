@@ -631,6 +631,7 @@
     $hasGlobalDeleteScope = $query !== '' || $type !== '' || $severity !== '' || $appVersion !== '';
     $pageStart = $totalFingerprints > 0 ? (($page - 1) * $perPage) + 1 : 0;
     $pageEnd = min($totalFingerprints, $page * $perPage);
+    $telemetryRemoteEnabled = (bool) ($telemetryRemoteEnabled ?? true);
     $drawerSeverityOptions = [
         '' => 'Alles',
         'info' => 'Info',
@@ -750,6 +751,13 @@
             </form>
         </div>
         <div class="telemetry-toolbar-group">
+            <form method="post" action="<?= base_url('admin/telemetry/toggle-remote') ?>" onsubmit="return confirm('Weet je zeker dat je de globale telemetry killswitch wilt wijzigen?');" class="d-inline-flex gap-2">
+                <?= csrf_field() ?>
+                <input type="hidden" name="enabled" value="<?= $telemetryRemoteEnabled ? '0' : '1' ?>">
+                <button type="submit" class="btn btn-sm <?= $telemetryRemoteEnabled ? 'btn-outline-danger' : 'btn-outline-success' ?>">
+                    <i class="bi <?= $telemetryRemoteEnabled ? 'bi-power' : 'bi-power' ?> me-1"></i><?= $telemetryRemoteEnabled ? 'Killswitch AAN' : 'Killswitch UIT' ?>
+                </button>
+            </form>
             <a href="<?= base_url('admin/telemetry?severity=error') ?>" class="btn btn-sm btn-outline-danger" data-telemetry-nav>Alle errors</a>
             <a href="<?= base_url('admin/telemetry?type=manual_report') ?>" class="btn btn-sm btn-outline-secondary" data-telemetry-nav>Manual reports</a>
             <a href="<?= base_url('admin/telemetry?type=player_rebuffer') ?>" class="btn btn-sm btn-outline-secondary" data-telemetry-nav>Rebuffers</a>
@@ -863,9 +871,13 @@
                                                 <i class="bi bi-trash3 me-1"></i>Delete
                                             </button>
                                         </form>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary telemetry-killswitch" disabled title="Killswitch placeholder">
-                                            <i class="bi bi-power me-1"></i>Killswitch
-                                        </button>
+                                        <form method="post" action="<?= base_url('admin/telemetry/toggle-remote') ?>" onsubmit="return confirm('Weet je zeker dat je de globale telemetry killswitch wilt wijzigen?');">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="enabled" value="<?= $telemetryRemoteEnabled ? '0' : '1' ?>">
+                                            <button type="submit" class="btn btn-sm <?= $telemetryRemoteEnabled ? 'btn-outline-warning' : 'btn-outline-success' ?> telemetry-killswitch" title="Globale client killswitch">
+                                                <i class="bi bi-power me-1"></i><?= $telemetryRemoteEnabled ? 'Disable' : 'Enable' ?>
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>

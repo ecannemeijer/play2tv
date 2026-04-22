@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Libraries\TelemetryConfigProvider;
 use App\Models\TelemetryEventModel;
 use CodeIgniter\Controller;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -14,10 +15,12 @@ class TelemetryController extends Controller
     private const ALLOWED_PER_PAGE = [10, 25, 50, 100];
 
     private TelemetryEventModel $telemetryEvents;
+    private TelemetryConfigProvider $telemetryConfig;
 
     public function __construct()
     {
         $this->telemetryEvents = new TelemetryEventModel();
+        $this->telemetryConfig = new TelemetryConfigProvider();
         helper(['url', 'form']);
     }
 
@@ -68,7 +71,21 @@ class TelemetryController extends Controller
             'selectedFingerprintSummary' => $selectedFingerprintSummary,
             'selectedFingerprintEvents' => $selectedFingerprintEvents,
             'selectedEvent' => $selectedEvent,
+            'telemetryRemoteEnabled' => $this->telemetryConfig->getConfig()['telemetry_enabled'],
         ]);
+    }
+
+    public function toggleRemote(): ResponseInterface
+    {
+        $enabled = trim((string) ($this->request->getPost('enabled') ?? '')) === '1';
+        $this->telemetryConfig->setTelemetryEnabled($enabled);
+
+        return redirect()->back()->with(
+            'success',
+            $enabled
+                ? 'Telemetry killswitch uitgeschakeld. Clients mogen weer telemetry verzenden.'
+                : 'Telemetry killswitch geactiveerd. Clients krijgen telemetry_enabled = false.'
+        );
     }
 
     public function exportCsv(): ResponseInterface
