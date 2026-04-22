@@ -3,12 +3,57 @@
 <?= $this->section('head') ?>
 <style>
     .telemetry-page {
+        position: relative;
         display: grid;
         gap: 1rem;
     }
     .telemetry-page.is-loading {
         opacity: .72;
         transition: opacity .18s ease;
+    }
+    .telemetry-loading-indicator {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 5;
+        display: inline-flex;
+        align-items: center;
+        gap: .55rem;
+        padding: .6rem .8rem;
+        border-radius: 999px;
+        background: rgba(8, 15, 30, .92);
+        border: 1px solid rgba(148, 163, 184, .14);
+        color: #dbeafe;
+        box-shadow: 0 14px 32px rgba(2, 6, 23, .22);
+        opacity: 0;
+        transform: translateY(-6px);
+        pointer-events: none;
+        transition: opacity .18s ease, transform .18s ease;
+    }
+    .telemetry-page.is-loading .telemetry-loading-indicator {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .telemetry-spinner {
+        width: 15px;
+        height: 15px;
+        border: 2px solid rgba(191, 219, 254, .24);
+        border-top-color: #38bdf8;
+        border-radius: 50%;
+        animation: telemetry-spin .75s linear infinite;
+    }
+    .telemetry-live-hint {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        color: rgba(191, 219, 254, .74);
+        font-size: .76rem;
+        white-space: nowrap;
+    }
+    @keyframes telemetry-spin {
+        to {
+            transform: rotate(360deg);
+        }
     }
     .telemetry-command {
         display: grid;
@@ -82,6 +127,7 @@
     .telemetry-filter-actions {
         display: flex;
         gap: .6rem;
+        align-items: center;
     }
     .telemetry-summary {
         display: grid;
@@ -431,6 +477,28 @@
         color: #e2e8f0;
         border-color: rgba(148, 163, 184, .16);
     }
+    .telemetry-icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, .14);
+        background: rgba(30, 41, 59, .78);
+        color: #e2e8f0;
+        transition: transform .14s ease, filter .14s ease, border-color .14s ease;
+    }
+    .telemetry-icon-btn:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.06);
+        border-color: rgba(147, 197, 253, .28);
+    }
+    .telemetry-icon-btn.is-copied {
+        background: rgba(8, 47, 73, .9);
+        color: #7dd3fc;
+        border-color: rgba(56, 189, 248, .3);
+    }
     .telemetry-chip {
         display: inline-flex;
         align-items: center;
@@ -542,6 +610,19 @@
         font-size: .94rem;
         line-height: 1.5;
     }
+    .telemetry-payload-shell {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: .45rem;
+        min-height: 0;
+        height: 100%;
+    }
+    .telemetry-section-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        flex-wrap: wrap;
+    }
     .telemetry-payload-line {
         font-family: "Cascadia Code", "Consolas", monospace;
         white-space: pre-wrap;
@@ -636,6 +717,9 @@
     if ($selectedFingerprint !== '') {
         $selectedFingerprintLinkQuery['fingerprint'] = $selectedFingerprint;
     }
+    $selectedFingerprintExportQuery = $selectedFingerprint !== ''
+        ? ['fingerprint' => $selectedFingerprint]
+        : [];
     $selectedEventId = (int) ($selectedEvent['id'] ?? 0);
     $drawerCloseQuery = $baseQuery;
     if ($page > 1) {
@@ -656,6 +740,11 @@
 ?>
 
 <div class="telemetry-page" id="telemetry-page">
+    <div class="telemetry-loading-indicator" aria-live="polite" aria-atomic="true">
+        <span class="telemetry-spinner" aria-hidden="true"></span>
+        <span>Zoeken...</span>
+    </div>
+
     <section class="telemetry-command">
         <div class="telemetry-command-copy">
             <span class="telemetry-eyebrow"><i class="bi bi-grid-1x2"></i> Telemetry console</span>
@@ -675,15 +764,15 @@
             <div class="telemetry-filter-grid">
                 <div class="telemetry-field full">
                     <label class="form-label small text-muted">Zoeken in events</label>
-                    <input type="text" name="q" class="form-control" value="<?= esc($query) ?>" placeholder="event, kanaal, actie, data">
+                    <input type="text" name="q" class="form-control" value="<?= esc($query) ?>" placeholder="event, kanaal, actie, data" data-telemetry-live-input>
                 </div>
                 <div class="telemetry-field">
                     <label class="form-label small text-muted">Type</label>
-                    <input type="text" name="type" class="form-control" value="<?= esc($type) ?>" placeholder="player_error">
+                    <input type="text" name="type" class="form-control" value="<?= esc($type) ?>" placeholder="player_error" data-telemetry-live-input>
                 </div>
                 <div class="telemetry-field">
                     <label class="form-label small text-muted">Severity</label>
-                    <select name="severity" class="form-select">
+                    <select name="severity" class="form-select" data-telemetry-live-change>
                         <option value="">Alle</option>
                         <?php foreach (['info', 'warning', 'error'] as $option): ?>
                             <option value="<?= esc($option) ?>" <?= $severity === $option ? 'selected' : '' ?>><?= esc($option) ?></option>
@@ -692,13 +781,11 @@
                 </div>
                 <div class="telemetry-field">
                     <label class="form-label small text-muted">App versie</label>
-                    <input type="text" name="app_version" class="form-control" value="<?= esc($appVersion) ?>" placeholder="1.0.0">
+                    <input type="text" name="app_version" class="form-control" value="<?= esc($appVersion) ?>" placeholder="1.0.0" data-telemetry-live-input>
                 </div>
                 <div class="telemetry-field" style="align-content:end;">
                     <div class="telemetry-filter-actions">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-search me-1"></i>Filter
-                        </button>
+                        <span class="telemetry-live-hint"><i class="bi bi-lightning-charge"></i>Live zoeken vanaf 3 tekens</span>
                         <a href="<?= base_url('admin/telemetry') ?>" class="btn btn-outline-secondary" data-telemetry-nav>Reset</a>
                     </div>
                 </div>
@@ -733,9 +820,6 @@
         <div class="telemetry-toolbar-group">
             <a href="<?= base_url('admin/telemetry/export/csv') . ($baseQuery !== [] ? '?' . http_build_query($baseQuery) : '') ?>" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-download me-1"></i>Export CSV
-            </a>
-            <a href="<?= base_url('admin/telemetry/export/json') . ($baseQuery !== [] ? '?' . http_build_query($baseQuery) : '') ?>" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-filetype-json me-1"></i>Export JSON
             </a>
             <form method="post" action="<?= base_url('admin/telemetry/delete-filtered') ?>" onsubmit="return confirm('Weet je zeker dat je alle gefilterde telemetry events wilt verwijderen?');" class="d-inline-flex gap-2">
                 <?= csrf_field() ?>
@@ -795,11 +879,11 @@
                 <input type="hidden" name="page" value="1">
                 <div class="telemetry-field">
                     <label class="form-label small text-muted">Zoek fingerprint of device</label>
-                    <input type="text" name="group_query" class="form-control" value="<?= esc($groupQuery) ?>" placeholder="fingerprint, device, app versie, event type">
+                    <input type="text" name="group_query" class="form-control" value="<?= esc($groupQuery) ?>" placeholder="fingerprint, device, app versie, event type" data-telemetry-live-input>
                 </div>
                 <div class="telemetry-field">
                     <label class="form-label small text-muted">Sorteer op</label>
-                    <select name="sort" class="form-select">
+                    <select name="sort" class="form-select" data-telemetry-live-change>
                         <option value="latest" <?= $groupSort === 'latest' ? 'selected' : '' ?>>Laatst gezien</option>
                         <option value="errors" <?= $groupSort === 'errors' ? 'selected' : '' ?>>Meeste errors</option>
                         <option value="events" <?= $groupSort === 'events' ? 'selected' : '' ?>>Meeste events</option>
@@ -809,14 +893,14 @@
                 </div>
                 <div class="telemetry-field">
                     <label class="form-label small text-muted">Per pagina</label>
-                    <select name="per_page" class="form-select">
+                    <select name="per_page" class="form-select" data-telemetry-live-change>
                         <?php foreach ($perPageOptions as $option): ?>
                             <option value="<?= esc((string) $option) ?>" <?= $perPage === $option ? 'selected' : '' ?>><?= esc((string) $option) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="telemetry-filter-actions">
-                    <button type="submit" class="btn btn-outline-secondary">Toepassen</button>
+                    <span class="telemetry-live-hint"><i class="bi bi-lightning-charge"></i>Live zoeken</span>
                     <?php if ($groupQuery !== '' || $groupSort !== 'latest' || $perPage !== 25): ?>
                         <?php
                             $clearGroupQuery = $baseQuery;
@@ -950,8 +1034,8 @@
                     </div>
 
                     <div class="telemetry-drawer-actions">
-                        <a href="<?= base_url('admin/telemetry/export/json') . ($selectedFingerprintLinkQuery !== [] ? '?' . http_build_query($selectedFingerprintLinkQuery) : '') ?>" class="telemetry-action-btn primary">
-                            <i class="bi bi-filetype-json me-1"></i>Export fingerprint
+                        <a href="<?= base_url('admin/telemetry/export/json') . ($selectedFingerprintExportQuery !== [] ? '?' . http_build_query($selectedFingerprintExportQuery) : '') ?>" class="telemetry-action-btn primary">
+                            <i class="bi bi-filetype-json me-1"></i>Export alle JSON
                         </a>
                         <form method="post" action="<?= base_url('admin/telemetry/delete-filtered') ?>" onsubmit="return confirm('Weet je zeker dat je alle events van deze fingerprint wilt verwijderen?');" class="d-inline-flex gap-2">
                             <?= csrf_field() ?>
@@ -1043,9 +1127,12 @@
                             <section class="telemetry-drawer-section payload-detail">
                                 <div class="telemetry-drawer-section-head">
                                     <h4>Payload detail</h4>
-                                    <div class="telemetry-filter-pills">
+                                    <div class="telemetry-section-actions">
                                         <span class="telemetry-pill"><code><?= esc((string) ($selectedEvent['event_type'] ?? 'onbekend')) ?></code></span>
                                         <span class="<?= $selectedSeverityClass ?>"><?= esc((string) ($selectedEvent['severity'] ?? 'info')) ?></span>
+                                        <button type="button" class="telemetry-icon-btn" data-telemetry-copy-payload title="Kopieer gesaniteerde payload" aria-label="Kopieer gesaniteerde payload">
+                                            <i class="bi bi-clipboard"></i>
+                                        </button>
                                     </div>
                                 </div>
                                 <div style="padding: 1rem; display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: .9rem; min-height: 0; height: 100%;">
@@ -1083,9 +1170,9 @@
                                         </button>
                                     </form>
 
-                                    <div>
+                                    <div class="telemetry-payload-shell">
                                         <label class="form-label small text-muted">Gesaniteerde payload</label>
-                                        <div class="telemetry-payload-box">
+                                        <div class="telemetry-payload-box" data-telemetry-payload-content>
                                             <?php foreach ($payloadLines as $line): ?>
                                                 <div class="telemetry-payload-line"><?= esc($line) ?></div>
                                             <?php endforeach; ?>
@@ -1107,11 +1194,48 @@
 <script>
     (() => {
         let isNavigating = false;
+        const liveSearchTimers = new WeakMap();
+        const liveSearchDelayMs = 1000;
+        const liveSearchMinChars = 3;
 
         const getPageRoot = () => document.getElementById('telemetry-page');
         const getDrawerShell = (root = document) => root.querySelector('[data-telemetry-drawer-shell]');
         const getEventDetailsColumn = (root = document) => root.querySelector('[data-telemetry-event-details]');
         const getEventList = (root = document) => root.querySelector('[data-telemetry-events-list]');
+        const buildFormUrl = (form) => {
+            const action = form.getAttribute('action') || window.location.href;
+            const url = new URL(action, window.location.origin);
+            const params = new URLSearchParams(new FormData(form));
+            url.search = params.toString();
+            return url.toString();
+        };
+        const clearLiveSearchTimer = (form) => {
+            const timerId = liveSearchTimers.get(form);
+            if (timerId) {
+                window.clearTimeout(timerId);
+                liveSearchTimers.delete(form);
+            }
+        };
+        const queueLiveSearch = (form, delay = liveSearchDelayMs) => {
+            clearLiveSearchTimer(form);
+            const timerId = window.setTimeout(() => {
+                liveSearchTimers.delete(form);
+                fetchAndSwap(buildFormUrl(form));
+            }, delay);
+            liveSearchTimers.set(form, timerId);
+        };
+        const fallbackCopyText = (text) => {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.setAttribute('readonly', 'readonly');
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            textarea.style.pointerEvents = 'none';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            textarea.remove();
+        };
 
         const revealDrawer = (root = document) => {
             const shell = getDrawerShell(root);
@@ -1305,11 +1429,75 @@
             }
 
             event.preventDefault();
-            const action = form.getAttribute('action') || window.location.href;
-            const url = new URL(action, window.location.origin);
-            const params = new URLSearchParams(new FormData(form));
-            url.search = params.toString();
-            fetchAndSwap(url.toString());
+            clearLiveSearchTimer(form);
+            fetchAndSwap(buildFormUrl(form));
+        });
+
+        document.addEventListener('input', (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLInputElement) || !target.matches('[data-telemetry-live-input]')) {
+                return;
+            }
+
+            const form = target.form;
+            if (!(form instanceof HTMLFormElement) || !form.matches('[data-telemetry-form]')) {
+                return;
+            }
+
+            const value = target.value.trim();
+            if (value !== '' && value.length < liveSearchMinChars) {
+                clearLiveSearchTimer(form);
+                return;
+            }
+
+            queueLiveSearch(form);
+        });
+
+        document.addEventListener('change', (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLSelectElement) || !target.matches('[data-telemetry-live-change]')) {
+                return;
+            }
+
+            const form = target.form;
+            if (!(form instanceof HTMLFormElement) || !form.matches('[data-telemetry-form]')) {
+                return;
+            }
+
+            clearLiveSearchTimer(form);
+            fetchAndSwap(buildFormUrl(form));
+        });
+
+        document.addEventListener('click', async (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) {
+                return;
+            }
+
+            const copyButton = target.closest('[data-telemetry-copy-payload]');
+            if (!(copyButton instanceof HTMLButtonElement)) {
+                return;
+            }
+
+            event.preventDefault();
+            const section = copyButton.closest('.payload-detail');
+            const payload = section ? section.querySelector('[data-telemetry-payload-content]') : null;
+            const payloadText = payload ? payload.textContent?.trim() ?? '' : '';
+            if (!payloadText) {
+                return;
+            }
+
+            try {
+                if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                    await navigator.clipboard.writeText(payloadText);
+                } else {
+                    fallbackCopyText(payloadText);
+                }
+                copyButton.classList.add('is-copied');
+                window.setTimeout(() => copyButton.classList.remove('is-copied'), 1600);
+            } catch (error) {
+                console.debug('Telemetry payload copy failed.', error);
+            }
         });
 
         window.addEventListener('popstate', () => {
