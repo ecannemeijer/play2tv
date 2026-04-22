@@ -15,7 +15,7 @@ class ConfigController extends BaseApiController
         $this->telemetryConfig = new TelemetryConfigProvider();
     }
 
-    public function show()
+    public function show($id = null)
     {
         return $this->withCorsHeaders($this->respond($this->telemetryConfig->getConfig(), 200));
     }
