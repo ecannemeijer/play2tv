@@ -31,6 +31,9 @@ $routes->options('api/refresh', static function () {
 $routes->options('api/logout', static function () {
     return service('response')->setStatusCode(204);
 });
+$routes->options('config', static function () {
+    return service('response')->setStatusCode(204);
+});
 $routes->options('telemetry', static function () {
     return service('response')->setStatusCode(204);
 });
@@ -48,6 +51,7 @@ $routes->post('api/register', 'Api\AuthController::register');
 $routes->post('api/login',    'Api\AuthController::login');
 $routes->post('api/refresh',  'Api\AuthController::refresh');
 $routes->post('api/logout',   'Api\AuthController::logout');
+$routes->get('config', 'Api\ConfigController::show');
 $routes->post('api/diagnostics/upload', 'Api\DiagnosticsController::upload');
 $routes->post('telemetry', 'Api\TelemetryController::store');
 

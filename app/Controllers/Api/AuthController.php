@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
+use App\Libraries\TelemetryConfigProvider;
 use App\Models\UserModel;
 use App\Models\UserDeviceModel;
 use App\Models\UserIpsLogModel;
@@ -43,6 +44,7 @@ class AuthController extends BaseApiController
     private AuthTokenService $tokens;
     private SecurityThrottleService $throttle;
     private SecurityEventService $events;
+    private TelemetryConfigProvider $telemetryConfig;
 
     public function __construct()
     {
@@ -53,6 +55,7 @@ class AuthController extends BaseApiController
         $this->tokens      = new AuthTokenService();
         $this->throttle    = new SecurityThrottleService();
         $this->events      = new SecurityEventService();
+        $this->telemetryConfig = new TelemetryConfigProvider();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -223,15 +226,20 @@ class AuthController extends BaseApiController
         $this->ipsLogModel->log((int) $user['id'], $ip, $userAgent);
         $tokenPair = $this->tokens->issueTokenPair($user, $isPremium, $deviceId, $ip, $userAgent);
 
-        return $this->ok([
-            'user_id'       => (int) $user['id'],
-            'email'         => $user['email'],
-            'role'          => $user['role'] ?? 'user',
-            'premium'       => $isPremium,
-            'premium_until' => $user['premium_until'],
-            ...$this->buildLegacyClientPayload($user),
-            ...$tokenPair,
-        ], 'Inloggen geslaagd.');
+        return $this->withCorsHeaders($this->respond([
+            'success' => true,
+            'message' => 'Inloggen geslaagd.',
+            'data' => [
+                'user_id'       => (int) $user['id'],
+                'email'         => $user['email'],
+                'role'          => $user['role'] ?? 'user',
+                'premium'       => $isPremium,
+                'premium_until' => $user['premium_until'],
+                ...$this->buildLegacyClientPayload($user),
+                ...$tokenPair,
+            ],
+            'config' => $this->telemetryConfig->getConfig(),
+        ], 200));
     }
 
     public function refresh()
