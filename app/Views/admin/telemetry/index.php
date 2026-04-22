@@ -336,7 +336,7 @@
         width: min(860px, calc(100vw - 24px));
         height: 100%;
         display: grid;
-        grid-template-rows: auto auto 1fr;
+        grid-template-rows: auto 1fr;
         background: linear-gradient(180deg, rgba(10, 16, 28, .995), rgba(15, 23, 42, .99));
         border-left: 1px solid rgba(148, 163, 184, .12);
         box-shadow: -24px 0 60px rgba(2, 6, 23, .35);
@@ -346,12 +346,17 @@
     .telemetry-drawer-shell.is-visible .telemetry-drawer {
         transform: translateX(0);
     }
+    .telemetry-drawer-top {
+        display: grid;
+        gap: .72rem;
+        padding: 1.15rem 1.2rem .95rem;
+        border-bottom: 1px solid rgba(148, 163, 184, .09);
+    }
     .telemetry-drawer-head {
         display: flex;
         justify-content: space-between;
         gap: 1rem;
-        padding: 1.15rem 1.2rem 1rem;
-        border-bottom: 1px solid rgba(148, 163, 184, .09);
+        padding: 0;
     }
     .telemetry-drawer-head h3 {
         margin: 0;
@@ -380,8 +385,11 @@
         display: flex;
         flex-wrap: wrap;
         gap: .55rem;
-        padding: .9rem 1.2rem 0;
+        padding: 0;
         align-items: center;
+    }
+    .telemetry-drawer-actions {
+        align-items: flex-start;
     }
     .telemetry-drawer-actions > form,
     .telemetry-drawer-actions > a {
@@ -459,6 +467,11 @@
         border: 1px solid rgba(148, 163, 184, .1);
         overflow: hidden;
     }
+    .telemetry-drawer-section.events-list {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        min-height: 0;
+    }
     .telemetry-drawer-section.payload-detail {
         display: grid;
         grid-template-rows: auto minmax(0, 1fr);
@@ -480,7 +493,9 @@
     .telemetry-events {
         display: grid;
         gap: .75rem;
-        max-height: calc(100vh - 300px);
+        min-height: 0;
+        height: 100%;
+        max-height: none;
         overflow: auto;
         padding: 1rem;
     }
@@ -916,46 +931,48 @@
             <a href="<?= $drawerCloseUrl ?>" class="telemetry-drawer-backdrop" data-telemetry-close data-telemetry-nav aria-label="Sluit detailweergave"></a>
             <aside class="telemetry-drawer" role="dialog" aria-modal="true" aria-label="Fingerprint details">
                 <?php $selectedTypes = array_filter(array_map('trim', explode(',', (string) ($selectedFingerprintSummary['event_types_csv'] ?? '')))); ?>
-                <div class="telemetry-drawer-head">
-                    <div>
-                        <h3><?= esc($selectedFingerprintLabel) ?></h3>
-                        <p>Alle events van deze fingerprint, direct vanuit een slide-in detailweergave.</p>
+                <div class="telemetry-drawer-top">
+                    <div class="telemetry-drawer-head">
+                        <div>
+                            <h3><?= esc($selectedFingerprintLabel) ?></h3>
+                            <p>Alle events van deze fingerprint, direct vanuit een slide-in detailweergave.</p>
+                        </div>
+                        <a href="<?= $drawerCloseUrl ?>" class="telemetry-close" data-telemetry-close data-telemetry-nav aria-label="Sluiten"><i class="bi bi-x-lg"></i></a>
                     </div>
-                    <a href="<?= $drawerCloseUrl ?>" class="telemetry-close" data-telemetry-close data-telemetry-nav aria-label="Sluiten"><i class="bi bi-x-lg"></i></a>
-                </div>
 
-                <div class="telemetry-drawer-meta">
-                    <span class="telemetry-chip"><i class="bi bi-phone"></i><strong><?= esc((string) ($selectedFingerprintSummary['sample_device_name'] ?: 'Onbekend device')) ?></strong></span>
-                    <span class="telemetry-chip"><i class="bi bi-box"></i><strong><?= esc((string) ($selectedFingerprintSummary['sample_app_version'] ?: 'Onbekende versie')) ?></strong></span>
-                    <span class="telemetry-chip"><i class="bi bi-calendar-event"></i><strong><?= ! empty($selectedFingerprintSummary['latest_created_at']) ? esc(date('d-m-Y H:i:s', strtotime((string) ($selectedFingerprintSummary['latest_created_at'])))) : '—' ?></strong></span>
-                    <span class="telemetry-chip"><strong><?= number_format((int) ($selectedFingerprintSummary['total_events'] ?? 0)) ?></strong> events</span>
-                    <span class="telemetry-chip"><strong><?= number_format((int) ($selectedFingerprintSummary['error_events'] ?? 0)) ?></strong> errors</span>
-                    <span class="telemetry-chip"><strong><?= number_format((int) ($selectedFingerprintSummary['warning_events'] ?? 0)) ?></strong> warnings</span>
-                </div>
+                    <div class="telemetry-drawer-meta">
+                        <span class="telemetry-chip"><i class="bi bi-phone"></i><strong><?= esc((string) ($selectedFingerprintSummary['sample_device_name'] ?: 'Onbekend device')) ?></strong></span>
+                        <span class="telemetry-chip"><i class="bi bi-box"></i><strong><?= esc((string) ($selectedFingerprintSummary['sample_app_version'] ?: 'Onbekende versie')) ?></strong></span>
+                        <span class="telemetry-chip"><i class="bi bi-calendar-event"></i><strong><?= ! empty($selectedFingerprintSummary['latest_created_at']) ? esc(date('d-m-Y H:i:s', strtotime((string) ($selectedFingerprintSummary['latest_created_at'])))) : '—' ?></strong></span>
+                        <span class="telemetry-chip"><strong><?= number_format((int) ($selectedFingerprintSummary['total_events'] ?? 0)) ?></strong> events</span>
+                        <span class="telemetry-chip"><strong><?= number_format((int) ($selectedFingerprintSummary['error_events'] ?? 0)) ?></strong> errors</span>
+                        <span class="telemetry-chip"><strong><?= number_format((int) ($selectedFingerprintSummary['warning_events'] ?? 0)) ?></strong> warnings</span>
+                    </div>
 
-                <div class="telemetry-drawer-actions">
-                    <a href="<?= base_url('admin/telemetry/export/json') . ($selectedFingerprintLinkQuery !== [] ? '?' . http_build_query($selectedFingerprintLinkQuery) : '') ?>" class="telemetry-action-btn primary">
-                        <i class="bi bi-filetype-json me-1"></i>Export fingerprint
-                    </a>
-                    <form method="post" action="<?= base_url('admin/telemetry/delete-filtered') ?>" onsubmit="return confirm('Weet je zeker dat je alle events van deze fingerprint wilt verwijderen?');" class="d-inline-flex gap-2">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="group_query" value="<?= esc($groupQuery) ?>">
-                        <input type="hidden" name="sort" value="<?= esc($groupSort) ?>">
-                        <input type="hidden" name="per_page" value="<?= esc((string) $perPage) ?>">
-                        <input type="hidden" name="page" value="<?= esc((string) $page) ?>">
-                        <input type="hidden" name="fingerprint" value="<?= esc($selectedFingerprint) ?>">
-                        <button type="submit" class="telemetry-action-btn danger">
-                            <i class="bi bi-trash3 me-1"></i>Verwijder fingerprint
-                        </button>
-                    </form>
-                    <?php foreach (array_slice($selectedTypes, 0, 4) as $eventType): ?>
-                        <span class="telemetry-pill"><?= esc($eventType) ?></span>
-                    <?php endforeach; ?>
+                    <div class="telemetry-drawer-actions">
+                        <a href="<?= base_url('admin/telemetry/export/json') . ($selectedFingerprintLinkQuery !== [] ? '?' . http_build_query($selectedFingerprintLinkQuery) : '') ?>" class="telemetry-action-btn primary">
+                            <i class="bi bi-filetype-json me-1"></i>Export fingerprint
+                        </a>
+                        <form method="post" action="<?= base_url('admin/telemetry/delete-filtered') ?>" onsubmit="return confirm('Weet je zeker dat je alle events van deze fingerprint wilt verwijderen?');" class="d-inline-flex gap-2">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="group_query" value="<?= esc($groupQuery) ?>">
+                            <input type="hidden" name="sort" value="<?= esc($groupSort) ?>">
+                            <input type="hidden" name="per_page" value="<?= esc((string) $perPage) ?>">
+                            <input type="hidden" name="page" value="<?= esc((string) $page) ?>">
+                            <input type="hidden" name="fingerprint" value="<?= esc($selectedFingerprint) ?>">
+                            <button type="submit" class="telemetry-action-btn danger">
+                                <i class="bi bi-trash3 me-1"></i>Verwijder fingerprint
+                            </button>
+                        </form>
+                        <?php foreach (array_slice($selectedTypes, 0, 4) as $eventType): ?>
+                            <span class="telemetry-pill"><?= esc($eventType) ?></span>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
 
                 <div class="telemetry-drawer-body">
                     <div class="telemetry-drawer-column">
-                        <section class="telemetry-drawer-section">
+                        <section class="telemetry-drawer-section events-list">
                             <div class="telemetry-drawer-section-head">
                                 <div>
                                     <h4>Events</h4>
