@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Libraries;
 
 use App\Models\AppSettingModel;
+use Throwable;
 
 class TelemetryConfigProvider
 {
@@ -34,16 +35,32 @@ class TelemetryConfigProvider
         ];
     }
 
-    public function setTelemetryEnabled(bool $enabled): void
+    public function setTelemetryEnabled(bool $enabled): bool
     {
-        $this->appSettings->setValue(self::TELEMETRY_ENABLED_SETTING_KEY, $enabled ? '1' : '0');
+        try {
+            $this->appSettings->setValue(self::TELEMETRY_ENABLED_SETTING_KEY, $enabled ? '1' : '0');
+
+            return true;
+        } catch (Throwable $exception) {
+            log_message('warning', 'Unable to persist telemetry killswitch override: {message}', [
+                'message' => $exception->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 
     private function resolveTelemetryEnabled(): bool
     {
-        $override = $this->appSettings->getValue(self::TELEMETRY_ENABLED_SETTING_KEY);
-        if ($override !== null) {
-            return $this->parseBool($override);
+        try {
+            $override = $this->appSettings->getValue(self::TELEMETRY_ENABLED_SETTING_KEY);
+            if ($override !== null) {
+                return $this->parseBool($override);
+            }
+        } catch (Throwable $exception) {
+            log_message('warning', 'Unable to read telemetry killswitch override: {message}', [
+                'message' => $exception->getMessage(),
+            ]);
         }
 
         return $this->parseBool(env('telemetry.enabled', self::DEFAULT_ENABLED));

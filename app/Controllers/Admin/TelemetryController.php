@@ -78,7 +78,12 @@ class TelemetryController extends Controller
     public function toggleRemote(): ResponseInterface
     {
         $enabled = trim((string) ($this->request->getPost('enabled') ?? '')) === '1';
-        $this->telemetryConfig->setTelemetryEnabled($enabled);
+        if (! $this->telemetryConfig->setTelemetryEnabled($enabled)) {
+            return redirect()->back()->with(
+                'error',
+                'Telemetry killswitch kon niet worden opgeslagen. Controleer of de app_settings migratie is uitgevoerd.'
+            );
+        }
 
         return redirect()->back()->with(
             'success',
