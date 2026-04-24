@@ -70,7 +70,12 @@ class AuthController extends BaseApiController
     public function register()
     {
         $body = $this->getJsonBody(['email', 'password']);
+        log_message('debug', 'AuthController::register payload received email={email} device_id={device_id}', [
+            'email' => (string) ($body['email'] ?? ''),
+            'device_id' => (string) ($body['device_id'] ?? ''),
+        ]);
         if ($body === false) {
+            log_message('warning', 'AuthController::register invalid payload');
             return $this->error('Ongeldige registratiepayload.', 422, $this->getValidationErrors());
         }
 
@@ -79,6 +84,9 @@ class AuthController extends BaseApiController
             'password'  => 'required|min_length[12]|max_length[255]',
             'device_id' => 'permit_empty|max_length[255]',
         ])) {
+            log_message('warning', 'AuthController::register validation failed errors={errors}', [
+                'errors' => json_encode($this->getValidationErrors(), JSON_UNESCAPED_UNICODE),
+            ]);
             return $this->error('Registratievalidatie mislukt.', 422, $this->getValidationErrors());
         }
 
@@ -89,6 +97,7 @@ class AuthController extends BaseApiController
         $userAgent = $this->request->getUserAgent()->getAgentString();
 
         if ($this->userModel->findByEmail($email)) {
+            log_message('warning', 'AuthController::register duplicate email email={email}', ['email' => $email]);
             return $this->error('Dit e-mailadres is al in gebruik.', 409);
         }
 
@@ -100,11 +109,13 @@ class AuthController extends BaseApiController
         ]);
 
         if (! $userId) {
+            log_message('error', 'AuthController::register insert failed email={email}', ['email' => $email]);
             return $this->error('Registratie mislukt. Probeer opnieuw.', 500);
         }
 
         $user = $this->userModel->find($userId);
         if ($user === null) {
+            log_message('error', 'AuthController::register user lookup failed user_id={user_id}', ['user_id' => $userId]);
             return $this->error('Registratie mislukt. Probeer opnieuw.', 500);
         }
 
@@ -119,6 +130,12 @@ class AuthController extends BaseApiController
         );
 
         $tokenPair = $this->tokens->issueTokenPair($user, false, $deviceId, $ip, $userAgent);
+
+        log_message('debug', 'AuthController::register success user_id={user_id} email={email} device_id={device_id}', [
+            'user_id' => (int) $userId,
+            'email' => $email,
+            'device_id' => (string) ($deviceId ?? ''),
+        ]);
 
         return $this->respond([
             'success' => true,
