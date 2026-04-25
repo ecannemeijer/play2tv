@@ -111,20 +111,20 @@ class DeviceController extends BaseApiController
 
     public function unregister()
     {
-        $body = $this->getJsonBody(['user_id', 'device_id']);
+        $body = $this->getJsonBody(['user_id', 'target_device_id']);
         if ($body === false) {
             return $this->error('Ongeldige verwijderaanvraag.', 422, $this->getValidationErrors());
         }
 
         if (! $this->validatePayload($body, [
-            'user_id'   => 'required|integer|greater_than[0]',
-            'device_id' => 'required|max_length[255]',
+            'user_id'          => 'required|integer|greater_than[0]',
+            'target_device_id' => 'required|max_length[255]',
         ])) {
             return $this->error('Verwijdervalidatie mislukt.', 422, $this->getValidationErrors());
         }
 
         $userId = (int) ($body['user_id'] ?? 0);
-        $deviceId = $this->sanitizeText((string) ($body['device_id'] ?? ''), 255);
+        $deviceId = $this->sanitizeText((string) ($body['target_device_id'] ?? ''), 255);
 
         if ($userId !== $this->getAuthUserId()) {
             return $this->error('Geen toegang tot dit account.', 403);
