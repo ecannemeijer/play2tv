@@ -109,6 +109,50 @@ class DeviceController extends BaseApiController
         return $this->ok($this->buildDevicePayload($userId), 'Apparaat vervangen.');
     }
 
+    public function unregister()
+    {
+        $body = $this->getJsonBody(['user_id', 'device_id']);
+        if ($body === false) {
+            return $this->error('Ongeldige verwijderaanvraag.', 422, $this->getValidationErrors());
+        }
+
+        if (! $this->validatePayload($body, [
+            'user_id'   => 'required|integer|greater_than[0]',
+            'device_id' => 'required|max_length[255]',
+        ])) {
+            return $this->error('Verwijdervalidatie mislukt.', 422, $this->getValidationErrors());
+        }
+
+        $userId = (int) ($body['user_id'] ?? 0);
+        $deviceId = $this->sanitizeText((string) ($body['device_id'] ?? ''), 255);
+
+        if ($userId !== $this->getAuthUserId()) {
+            return $this->error('Geen toegang tot dit account.', 403);
+        }
+
+        $user = $this->userModel->find($userId);
+        if (! $user) {
+            return $this->error('Gebruiker niet gevonden.', 404);
+        }
+
+        if (! $this->userModel->isPremium($user)) {
+            return $this->error('Alleen premium accounts kunnen apparaten beheren.', 403);
+        }
+
+        if ($deviceId === '') {
+            return $this->error('Apparaat-ID is verplicht.', 422);
+        }
+
+        $existing = $this->deviceModel->findByUserAndDevice($userId, $deviceId);
+        if (! $existing) {
+            return $this->error('Het geselecteerde apparaat bestaat niet meer.', 404);
+        }
+
+        $this->deviceModel->delete((int) $existing['id']);
+
+        return $this->ok($this->buildDevicePayload($userId), 'Apparaat verwijderd.');
+    }
+
     private function guardDeviceAction(int $userId, string $deviceId, string $deviceName): ?\CodeIgniter\HTTP\ResponseInterface
     {
         if ($userId !== $this->getAuthUserId()) {

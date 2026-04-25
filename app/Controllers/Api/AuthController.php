@@ -119,9 +119,9 @@ class AuthController extends BaseApiController
             return $this->error('Registratie mislukt. Probeer opnieuw.', 500);
         }
 
-        if ($deviceId) {
-            $this->deviceModel->registerDevice((int) $userId, $deviceId, 'Primary Device', $ip);
-        }
+        // NOTE: Do NOT auto-register devices on account creation.
+        // Device registration is handled exclusively by the IPTV player app
+        // via POST /api/devices/register.
 
         $this->ipsLogModel->log(
             (int) $userId,
@@ -236,9 +236,10 @@ class AuthController extends BaseApiController
 
         $this->userModel->recordLogin((int) $user['id'], $ip);
 
-        if ($deviceId) {
-            $this->deviceModel->registerDevice((int) $user['id'], $deviceId, 'Primary Device', $ip);
-        }
+        // NOTE: Do NOT auto-register devices on login.
+        // Device registration is handled exclusively by the IPTV player app
+        // via POST /api/devices/register. The manager app must never consume
+        // a device slot.
 
         $this->ipsLogModel->log((int) $user['id'], $ip, $userAgent);
         $tokenPair = $this->tokens->issueTokenPair($user, $isPremium, $deviceId, $ip, $userAgent);

@@ -81,6 +81,7 @@ $routes->group('api', ['filter' => 'jwt'], function ($routes) {
     $routes->get('devices/(:num)', 'Api\DeviceController::show/$1');
     $routes->post('devices/register', 'Api\DeviceController::register');
     $routes->post('devices/replace', 'Api\DeviceController::replace');
+    $routes->post('devices/unregister', 'Api\DeviceController::unregister');
     $routes->post('register-device', 'Api\DeviceController::register');
 
     // Xtream content
