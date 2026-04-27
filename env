@@ -1,69 +1,113 @@
 #--------------------------------------------------------------------
-# Example Environment Configuration file
-#
-# This file can be used as a starting point for your own
-# custom .env files, and contains most of the possible settings
-# available in a default install.
-#
-# By default, all of the settings are commented out. If you want
-# to override the setting, you must un-comment it by removing the '#'
-# at the beginning of the line.
+# ENVIRONMENT - Copy this file to .env and fill in your values
 #--------------------------------------------------------------------
-
-#--------------------------------------------------------------------
-# ENVIRONMENT
-#--------------------------------------------------------------------
-
-# CI_ENVIRONMENT = production
+CI_ENVIRONMENT = development
 
 #--------------------------------------------------------------------
 # APP
+# Set baseURL to your actual domain with trailing slash
 #--------------------------------------------------------------------
-
-# app.baseURL = ''
-# If you have trouble with `.`, you could also use `_`.
-# app_baseURL = ''
-# app.forceGlobalSecureRequests = false
-# app.CSPEnabled = false
+#app.baseURL = 'https://api.play2tv.homearchive.nl/'
+app.baseURL = 'http://192.168.1.229/'
+#app.baseURL = 'https://api.velixatv.com/'
+app.forceHTTPS = false
+#app.forceHTTPS = true
+app.forceGlobalSecureRequests = true
 
 #--------------------------------------------------------------------
 # DATABASE
+# Create a dedicated MySQL user with only the required privileges
 #--------------------------------------------------------------------
-
-# database.default.hostname = localhost
-# database.default.database = ci4
-# database.default.username = root
-# database.default.password = root
-# database.default.DBDriver = MySQLi
-# database.default.DBPrefix =
-# database.default.port = 3306
-
-# If you use MySQLi as tests, first update the values of Config\Database::$tests.
-# database.tests.hostname = localhost
-# database.tests.database = ci4_test
-# database.tests.username = root
-# database.tests.password = root
-# database.tests.DBDriver = MySQLi
-# database.tests.DBPrefix =
-# database.tests.charset = utf8mb4
-# database.tests.DBCollat = utf8mb4_general_ci
-# database.tests.port = 3306
+database.default.hostname = db
+database.default.database = play2tv
+database.default.username = root
+database.default.password = powerup12
+database.default.DBDriver = MySQLi
+database.default.port = 3306
 
 #--------------------------------------------------------------------
-# ENCRYPTION
+# JWT SETTINGS
+# Generate a strong random secret: openssl rand -base64 64
+# NEVER share or commit this value!
 #--------------------------------------------------------------------
-
-# encryption.key =
-
-#--------------------------------------------------------------------
-# SESSION
-#--------------------------------------------------------------------
-
-# session.driver = 'CodeIgniter\Session\Handlers\FileHandler'
-# session.savePath = null
+jwt.secret = CHANGE_ME_JWT_SECRET_AT_LEAST_32_CHARACTERS_LONG_RANDOM_STRING
+jwt.expiry = 604800
 
 #--------------------------------------------------------------------
-# LOGGER
+# RATE LIMITING (login brute-force protection)
 #--------------------------------------------------------------------
+rateLimit.loginMaxAttempts = 5
+rateLimit.loginWindowSeconds = 300
 
-# logger.threshold = 4
+#--------------------------------------------------------------------
+# CORS - Comma separated allowed origins
+#--------------------------------------------------------------------
+cors.allowedOrigins = https://app.play2tv.nl,https://dashboard.play2tv.nl,https://user.velixatv.com
+
+#--------------------------------------------------------------------
+# LOGGING
+# 1=emergency, 2=alert, 3=critical, 4=error, 5=warning, 6=notice, 7=info, 8=debug
+#--------------------------------------------------------------------
+logger.threshold = 4
+
+
+#--------------------------------------------------------------------
+# DIAGNOSTICS UPLOAD
+# Add a private API key for support log uploads from the Android TV app.
+#--------------------------------------------------------------------
+diagnostics.uploadApiKey = P6WUu0mLknlaLPIO2ZBi7LsgHzQ3dAdE
+diagnostics.maxUploadBytes = 1048576
+
+#--------------------------------------------------------------------
+# TELEMETRY INGEST
+# Public anonymous telemetry endpoint for the Android TV app.
+# Tune these limits based on expected device volume.
+#--------------------------------------------------------------------
+telemetry.maxPayloadBytes = 131072
+telemetry.maxRequestsPerMinute = 240
+
+
+
+session.driver = redis
+session.redisSavePath = "tcp://redis:6379?database=1&prefix=play2tv_session:&auth=Dieselmax76%21"
+
+cache.handler = redis
+cache.backupHandler = file
+cache.redis.host = redis
+cache.redis.port = 6379
+cache.redis.password = "Dieselmax76!"
+cache.redis.database = 0
+cache.redis.persistent = false
+
+#--------------------------------------------------------------------
+# REDIS DASHBOARD
+#--------------------------------------------------------------------
+redis.host = redis
+redis.port = 6379
+redis.password = Dieselmax76!
+redis.database = 0
+redis.connectTimeout = 1.5
+redis.readTimeout = 1.5
+redis.prefix = play2tv:
+redis.scanCount = 200
+redis.scanSampleLimit = 500
+redis.keySearchLimit = 100
+redis.slowlogLimit = 25
+redis.keyDeleteEnabled = true
+redis.admin.allowedCommands = ping,info,ttl,pttl,type,exists,get,hgetall,hget,llen,scard,zcard,memory_usage
+redis.admin.flushablePrefixes = play2tv:,cache:,epg:,vod:
+redis.iptv.userPrefixes = play2tv:session:,play2tv:user:session:,iptv:user:
+redis.iptv.streamPrefixes = play2tv:stream:active:,iptv:stream:,stream:active:
+redis.iptv.epgHitKeys = play2tv:metrics:epg:hits,metrics:epg:hits,cache:epg:hits
+redis.iptv.vodHitKeys = play2tv:metrics:vod:hits,metrics:vod:hits,cache:vod:hits
+#redis.websocket.url = wss://api.play2tv.homearchive.nl/redis-ws
+redis.websocket.url = wss://api.velixatv.com/redis-ws
+redis.websocket.secret = 6d59f58ee579dfbb1d1db1dc5bc19a2f0eeb6e3d61c1e5f1c42dcfed1e65264f
+redis.websocket.intervalMs = 2000
+redis.websocket.bindHost = 0.0.0.0
+redis.websocket.bindPort = 8082
+redis.websocket.path = /redis-ws
+
+# Schakel beveiligde cookies uit voor onbeveiligde verbindingen (IP-adres)
+cookie.secure = false
+security.cookieSecure = false
