@@ -60,6 +60,12 @@ class DeviceController extends BaseApiController
         }
 
         $existing = $this->deviceModel->findByUserAndDevice($userId, $deviceId);
+        if ($existing) {
+            $this->deviceModel->registerDevice($userId, $deviceId, $deviceName, $this->request->getIPAddress());
+
+            return $this->ok($this->buildDevicePayload($userId), 'Apparaat bijgewerkt.');
+        }
+
         if (! $existing && $this->deviceModel->countDistinctDevicesForUser($userId) >= UserDeviceModel::MAX_DEVICES) {
             return $this->error('Apparaatlimiet bereikt. Vervang eerst een bestaand apparaat.', 409);
         }

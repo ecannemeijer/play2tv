@@ -7,7 +7,6 @@ namespace App\Controllers\Api;
 use App\Libraries\TelemetryConfigProvider;
 use App\Models\UserModel;
 use App\Models\UserDeviceModel;
-use App\Models\UserIpsLogModel;
 use App\Libraries\AuthTokenService;
 use App\Libraries\JwtLibrary;
 use App\Libraries\SecurityEventService;
@@ -39,7 +38,6 @@ class AuthController extends BaseApiController
 
     private UserModel       $userModel;
     private UserDeviceModel $deviceModel;
-    private UserIpsLogModel $ipsLogModel;
     private JwtLibrary      $jwt;
     private AuthTokenService $tokens;
     private SecurityThrottleService $throttle;
@@ -50,7 +48,6 @@ class AuthController extends BaseApiController
     {
         $this->userModel   = new UserModel();
         $this->deviceModel = new UserDeviceModel();
-        $this->ipsLogModel = new UserIpsLogModel();
         $this->jwt         = new JwtLibrary();
         $this->tokens      = new AuthTokenService();
         $this->throttle    = new SecurityThrottleService();
@@ -122,12 +119,6 @@ class AuthController extends BaseApiController
         // NOTE: Do NOT auto-register devices on account creation.
         // Device registration is handled exclusively by the IPTV player app
         // via POST /api/devices/register.
-
-        $this->ipsLogModel->log(
-            (int) $userId,
-            $ip,
-            $userAgent
-        );
 
         $tokenPair = $this->tokens->issueTokenPair($user, false, $deviceId, $ip, $userAgent);
 
@@ -241,7 +232,6 @@ class AuthController extends BaseApiController
         // via POST /api/devices/register. The manager app must never consume
         // a device slot.
 
-        $this->ipsLogModel->log((int) $user['id'], $ip, $userAgent);
         $tokenPair = $this->tokens->issueTokenPair($user, $isPremium, $deviceId, $ip, $userAgent);
 
         return $this->withCorsHeaders($this->respond([

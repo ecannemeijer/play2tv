@@ -54,7 +54,18 @@ class TelemetryController extends BaseApiController
 
             $records = [];
             foreach ($this->extractEvents($payload) as $eventPayload) {
-                $records[] = $this->buildRecord($eventPayload);
+                $record = $this->buildRecord($eventPayload);
+                if ($record === null) {
+                    continue;
+                }
+
+                $records[] = $record;
+            }
+
+            if ($records === []) {
+                return $this->ok([
+                    'received_count' => 0,
+                ], 'Telemetry genegeerd.');
             }
 
             $insertIds = [];
@@ -126,9 +137,9 @@ class TelemetryController extends BaseApiController
 
     /**
      * @param array<string, mixed> $payload
-     * @return array<string, mixed>
+     * @return array<string, mixed>|null
      */
-    private function buildRecord(array $payload): array
+    private function buildRecord(array $payload): ?array
     {
         if (! array_key_exists('type', $payload) || ! array_key_exists('timestamp', $payload) || ! array_key_exists('data', $payload)) {
             throw new InvalidArgumentException('Telemetry payload moet type, timestamp en data bevatten.');
@@ -141,6 +152,9 @@ class TelemetryController extends BaseApiController
         $normalizedType = $this->normalizeEventType((string) $payload['type']);
         if ($normalizedType === '') {
             throw new InvalidArgumentException('Telemetry type ontbreekt of is ongeldig.');
+        }
+        if (str_contains($normalizedType, 'speed_adjust')) {
+            return null;
         }
 
         $sanitizedData = $this->sanitizeValue($payload['data']);
