@@ -4,6 +4,11 @@
   "scripts": {
     "start": "npm --prefix tools/redis-admin-ws start",
     "redis:ws": "npm --prefix tools/redis-admin-ws start",
-    "redis:ws:install": "npm --prefix tools/redis-admin-ws install"
+    "redis:ws:install": "npm --prefix tools/redis-admin-ws install",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^4.86.0"
   }
 }
