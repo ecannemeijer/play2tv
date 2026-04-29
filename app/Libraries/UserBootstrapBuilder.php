@@ -16,6 +16,7 @@ class UserBootstrapBuilder
     private UserSettingsModel $settingsModel;
     private UserCategoryPrefModel $categoryPrefModel;
     private ApiCacheService $apiCache;
+    private TelemetryConfigProvider $telemetryConfig;
 
     public function __construct()
     {
@@ -24,6 +25,7 @@ class UserBootstrapBuilder
         $this->settingsModel = new UserSettingsModel();
         $this->categoryPrefModel = new UserCategoryPrefModel();
         $this->apiCache = new ApiCacheService();
+        $this->telemetryConfig = new TelemetryConfigProvider();
     }
 
     /**
@@ -41,6 +43,7 @@ class UserBootstrapBuilder
         }
 
         return [
+            'config' => $this->telemetryConfig->getConfig(),
             'profile' => $this->buildProfile($user),
             'devices' => [
                 'user_id' => $userId,
