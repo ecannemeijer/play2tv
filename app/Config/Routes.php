@@ -83,6 +83,7 @@ $routes->group('api', ['filter' => 'jwt'], function ($routes) {
     $routes->post('devices/replace', 'Api\DeviceController::replace');
     $routes->post('devices/unregister', 'Api\DeviceController::unregister');
     $routes->post('register-device', 'Api\DeviceController::register');
+    $routes->post('replace-device', 'Api\DeviceController::replace');
 
     // Xtream content
     $routes->get('content/categories', 'Api\XtreamContentController::categories');
