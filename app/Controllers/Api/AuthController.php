@@ -122,6 +122,13 @@ class AuthController extends BaseApiController
 
         // Activate 7-day free premium trial for new accounts
         $this->userModel->activateTrial($userId);
+
+        // Auto-register this device for the trial so the user doesn't get stuck
+        // at the device registration dialog after signup.
+        if ($deviceId !== null && $deviceId !== '') {
+            $this->deviceModel->registerDevice($userId, $deviceId, 'Android-apparaat', $ip);
+        }
+
         $user = $this->userModel->find($userId); // Refresh to get trial flags
         $isPremium = $user !== null && $this->userModel->isPremium($user);
 
