@@ -120,11 +120,17 @@ class AuthController extends BaseApiController
         // Device registration is handled exclusively by the IPTV player app
         // via POST /api/devices/register.
 
-        $tokenPair = $this->tokens->issueTokenPair($user, false, $deviceId, $ip, $userAgent);
+        // Activate 7-day free premium trial for new accounts
+        $this->userModel->activateTrial($userId);
+        $user = $this->userModel->find($userId); // Refresh to get trial flags
+        $isPremium = $user !== null && $this->userModel->isPremium($user);
 
-        log_message('debug', 'AuthController::register success user_id={user_id} email={email} device_id={device_id}', [
+        $tokenPair = $this->tokens->issueTokenPair($user, $isPremium, $deviceId, $ip, $userAgent);
+
+        log_message('debug', 'AuthController::register success user_id={user_id} email={email} premium={premium} device_id={device_id}', [
             'user_id' => (int) $userId,
             'email' => $email,
+            'premium' => $isPremium ? 'true' : 'false',
             'device_id' => (string) ($deviceId ?? ''),
         ]);
 
@@ -135,8 +141,8 @@ class AuthController extends BaseApiController
                 'user_id'       => $userId,
                 'email'         => $email,
                 'role'          => $user['role'] ?? 'user',
-                'premium'       => false,
-                'premium_until' => null,
+                'premium'       => $isPremium,
+                'premium_until' => $user['premium_until'] ?? null,
                 ...$this->buildLegacyClientPayload($user),
                 ...$tokenPair,
             ],

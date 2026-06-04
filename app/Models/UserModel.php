@@ -26,6 +26,7 @@ class UserModel extends Model
         'role',
         'premium',
         'premium_until',
+        'trial_used',
         'is_active',
         'auth_version',
         'locked_until',
@@ -155,6 +156,30 @@ class UserModel extends Model
     public function clearLock(int $userId): void
     {
         $this->update($userId, ['locked_until' => null]);
+    }
+
+    /**
+     * Activate a 7-day free premium trial for a new user.
+     * Only works once per account — guarded by the trial_used flag.
+     */
+    public function activateTrial(int $userId): bool
+    {
+        $user = $this->find($userId);
+        if (! $user) {
+            return false;
+        }
+
+        if (! empty($user['trial_used'])) {
+            return false;
+        }
+
+        $this->update($userId, [
+            'premium'       => 1,
+            'premium_until' => date('Y-m-d H:i:s', strtotime('+7 days')),
+            'trial_used'    => 1,
+        ]);
+
+        return true;
     }
 
     public function bumpAuthVersion(int $userId): void
