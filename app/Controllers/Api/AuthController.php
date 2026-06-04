@@ -138,11 +138,12 @@ class AuthController extends BaseApiController
             'success' => true,
             'message' => 'Registratie geslaagd.',
             'data'    => [
-                'user_id'       => $userId,
-                'email'         => $email,
-                'role'          => $user['role'] ?? 'user',
-                'premium'       => $isPremium,
-                'premium_until' => $user['premium_until'] ?? null,
+                'user_id'         => $userId,
+                'email'           => $email,
+                'role'            => $user['role'] ?? 'user',
+                'premium'         => $isPremium,
+                'premium_until'   => $user['premium_until'] ?? null,
+                'trial_activated' => $isPremium,
                 ...$this->buildLegacyClientPayload($user),
                 ...$tokenPair,
             ],
@@ -233,6 +234,15 @@ class AuthController extends BaseApiController
 
         $this->userModel->recordLogin((int) $user['id'], $ip);
 
+        // Activate 7-day free trial for non-premium users who haven't used it yet
+        $trialActivated = false;
+        if (! $isPremium && empty($user['trial_used'])) {
+            $this->userModel->activateTrial((int) $user['id']);
+            $user = $this->userModel->find((int) $user['id']);
+            $isPremium = $user !== null && $this->userModel->isPremium($user);
+            $trialActivated = $isPremium;
+        }
+
         // NOTE: Do NOT auto-register devices on login.
         // Device registration is handled exclusively by the IPTV player app
         // via POST /api/devices/register. The manager app must never consume
@@ -244,11 +254,12 @@ class AuthController extends BaseApiController
             'success' => true,
             'message' => 'Inloggen geslaagd.',
             'data' => [
-                'user_id'       => (int) $user['id'],
-                'email'         => $user['email'],
-                'role'          => $user['role'] ?? 'user',
-                'premium'       => $isPremium,
-                'premium_until' => $user['premium_until'],
+                'user_id'         => (int) $user['id'],
+                'email'           => $user['email'],
+                'role'            => $user['role'] ?? 'user',
+                'premium'         => $isPremium,
+                'premium_until'   => $user['premium_until'],
+                'trial_activated' => $trialActivated,
                 ...$this->buildLegacyClientPayload($user),
                 ...$tokenPair,
             ],
