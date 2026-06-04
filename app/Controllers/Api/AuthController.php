@@ -78,7 +78,7 @@ class AuthController extends BaseApiController
 
         if (! $this->validatePayload($body, [
             'email'     => 'required|valid_email|max_length[255]',
-            'password'  => 'required|min_length[12]|max_length[255]',
+            'password'  => 'required|min_length[6]|max_length[255]',
             'device_id' => 'permit_empty|max_length[255]',
         ])) {
             log_message('warning', 'AuthController::register validation failed errors={errors}', [
