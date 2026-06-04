@@ -52,6 +52,11 @@
                         <?php endif; ?>
                     </dd>
 
+                    <?php if (! empty($user['trial_used'])): ?>
+                        <dt class="col-5 text-muted">Proefperiode</dt>
+                        <dd class="col-7"><span class="badge bg-info">Gebruikt</span></dd>
+                    <?php endif; ?>
+
                     <dt class="col-5 text-muted">Punten</dt>
                     <dd class="col-7"><strong class="text-warning"><?= number_format($totalPoints) ?></strong></dd>
 
