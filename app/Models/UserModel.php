@@ -160,7 +160,8 @@ class UserModel extends Model
 
     /**
      * Activate a 7-day free premium trial for a new user.
-     * Only works once per account — guarded by the trial_used flag.
+     * Only works once per account — guarded by the trial_used flag
+     * or by checking whether premium_until was already set.
      */
     public function activateTrial(int $userId): bool
     {
@@ -169,15 +170,34 @@ class UserModel extends Model
             return false;
         }
 
-        if (! empty($user['trial_used'])) {
+        // Already has premium — don't overwrite a real subscription
+        if ($this->isPremium($user)) {
             return false;
         }
 
-        $this->update($userId, [
-            'premium'       => 1,
-            'premium_until' => date('Y-m-d H:i:s', strtotime('+7 days')),
-            'trial_used'    => 1,
-        ]);
+        // Guard: trial already used (column may not exist yet)
+        if (! empty($user['trial_used'] ?? null)) {
+            return false;
+        }
+
+        // Guard: premium_until was already set (fallback if trial_used column is missing)
+        if (! empty($user['premium_until'])) {
+            return false;
+        }
+
+        try {
+            $this->update($userId, [
+                'premium'       => 1,
+                'premium_until' => date('Y-m-d H:i:s', strtotime('+7 days')),
+                'trial_used'    => 1,
+            ]);
+        } catch (\Throwable) {
+            // Fallback if trial_used column doesn't exist yet (migration not run)
+            $this->update($userId, [
+                'premium'       => 1,
+                'premium_until' => date('Y-m-d H:i:s', strtotime('+7 days')),
+            ]);
+        }
 
         return true;
     }
