@@ -202,6 +202,20 @@ class UserModel extends Model
         return true;
     }
 
+    /**
+     * Activate premium for a user with a given duration.
+     *
+     * @param int    $userId   The user ID
+     * @param string $duration strtotime-compatible duration (e.g. '+1 year', '+10 years')
+     */
+    public function activatePremium(int $userId, string $duration): void
+    {
+        $this->update($userId, [
+            'premium'       => 1,
+            'premium_until' => date('Y-m-d H:i:s', strtotime($duration)),
+        ]);
+    }
+
     public function bumpAuthVersion(int $userId): void
     {
         $this->builder()
