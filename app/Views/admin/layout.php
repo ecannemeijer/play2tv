@@ -242,6 +242,10 @@
            class="nav-link <?= str_starts_with(uri_string(), 'admin/diagnostics') ? 'active' : '' ?>">
             <i class="bi bi-journal-text"></i> Diagnostics Logs
         </a>
+        <a href="<?= base_url('admin/billing') ?>"
+           class="nav-link <?= str_starts_with(uri_string(), 'admin/billing') ? 'active' : '' ?>">
+            <i class="bi bi-credit-card"></i> Billing
+        </a>
         <a href="<?= base_url('admin/telemetry') ?>"
            class="nav-link <?= str_starts_with(uri_string(), 'admin/telemetry') ? 'active' : '' ?>">
             <i class="bi bi-activity"></i> Telemetry

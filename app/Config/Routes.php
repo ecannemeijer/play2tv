@@ -162,8 +162,12 @@ $routes->group('admin', ['filter' => 'adminauth'], function ($routes) {
     $routes->post('users/(:num)/devices/delete-all', 'Admin\UserController::deleteAllDevices/$1');
     $routes->post('users/(:num)/xtream-diagnostics', 'Admin\UserController::xtreamDiagnostics/$1');
 
-    // Playlists
-    $routes->get('playlists',                    'Admin\PlaylistController::index');
+        // Billing
+        $routes->get('billing',        'Admin\BillingController::index');
+        $routes->get('billing/(:num)', 'Admin\BillingController::view/$1');
+
+        // Playlists
+        $routes->get('playlists',                    'Admin\PlaylistController::index');
     $routes->get('playlists/add',                'Admin\PlaylistController::addForm');
     $routes->post('playlists/add',               'Admin\PlaylistController::add');
     $routes->get('playlists/(:num)/edit',        'Admin\PlaylistController::editForm/$1');

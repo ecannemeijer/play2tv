@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
+use App\Models\BillingTransactionModel;
 use App\Models\UserModel;
 
 /**
  * BillingController
  *
  * Handles Google Play purchase verification for premium subscriptions.
+ * Logs every purchase to billing_transactions table for admin review.
  *
  * Endpoints:
  *   POST /api/billing/google-play/verify → Verifies a purchase token and activates premium
@@ -21,6 +23,7 @@ use App\Models\UserModel;
 class BillingController extends BaseApiController
 {
     private UserModel $userModel;
+    private BillingTransactionModel $billingTransactionModel;
 
     /** Known product IDs and their premium durations */
     private const PRODUCT_DURATIONS = [
@@ -31,6 +34,7 @@ class BillingController extends BaseApiController
     public function __construct()
     {
         $this->userModel = new UserModel();
+        $this->billingTransactionModel = new BillingTransactionModel();
     }
 
     /**
@@ -101,6 +105,19 @@ class BillingController extends BaseApiController
 
         // Activate premium with appropriate duration
         $this->userModel->activatePremium($userId, $duration);
+
+        // Log the transaction in billing_transactions table
+        $this->billingTransactionModel->logTransaction([
+            'user_id'          => $userId,
+            'product_id'       => $productId,
+            'purchase_token'   => $purchaseToken,
+            'plan_type'        => $this->billingTransactionModel->planTypeFromProductId($productId),
+            'amount'           => $body['amount'] ?? null,
+            'currency'         => $body['currency'] ?? null,
+            'google_order_id'  => $body['google_order_id'] ?? null,
+            'premium_duration' => $duration,
+            'raw_response'     => $body,
+        ]);
 
         // Refresh user data after update
         $user = $this->userModel->find($userId);
