@@ -53,7 +53,7 @@ class BillingController extends BaseController
 
         $result = $this->billingModel->getPaginated($page, $size, $search, $sortField, $sortDir);
 
-        // Format data for Tabulator display (badges, links)
+        // Format data for Tabulator display — ONLY include fields used by defined columns
         $data = array_map(function ($tx) {
             return [
                 'id'              => (int) $tx['id'],
@@ -62,9 +62,8 @@ class BillingController extends BaseController
                 'product_id'      => $tx['product_id'],
                 'plan_type'       => $tx['plan_type'] ?? 'unknown',
                 'amount'          => $tx['amount'] ?? '—',
-                'currency'        => $tx['currency'] ?? null,
+                'currency_display' => $tx['currency'] ?? '',
                 'status'          => $tx['status'] ?? 'unknown',
-                'google_order_id' => $tx['google_order_id'] ?? null,
                 'created_at'      => date('d-m-Y H:i', strtotime($tx['created_at'] ?? 'now')),
                 'created_at_raw'  => $tx['created_at'] ?? null,
             ];

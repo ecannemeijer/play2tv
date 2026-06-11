@@ -258,6 +258,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var baseUrl = '<?= base_url() ?>';
 
+    // Clear old cached column layouts from localStorage
+    try {
+        var keysToRemove = [];
+        for (var i = 0; i < localStorage.length; i++) {
+            var key = localStorage.key(i);
+            if (key && key.indexOf('admin-billing') === 0) {
+                keysToRemove.push(key);
+            }
+        }
+        for (var j = 0; j < keysToRemove.length; j++) {
+            localStorage.removeItem(keysToRemove[j]);
+        }
+    } catch (e) {}
+
     var table = new Tabulator('#billing-table', {
         ajaxURL: baseUrl + 'admin/billing/data',
         ajaxConfig: {
@@ -274,8 +288,12 @@ document.addEventListener('DOMContentLoaded', function () {
         filterMode: 'remote',
         sortMode: 'remote',
 
-        persistence: true,
-        persistenceID: 'admin-billing-table',
+        persistence: {
+            sort: true,
+            filter: true,
+            page: true,
+        },
+        persistenceID: 'admin-billing-v3',
         persistenceMode: 'local',
 
         autoColumns: false,
@@ -345,8 +363,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 formatter: function (cell) {
                     var row = cell.getRow().getData();
                     var amount = row.amount || '—';
-                    var currency = row.currency ? ' <small class="text-muted">' + row.currency + '</small>' : '';
-                    return amount + currency;
+                    var currencyDisplay = row.currency_display ? ' <small class="text-muted">' + row.currency_display + '</small>' : '';
+                    return amount + currencyDisplay;
                 },
             },
             {
