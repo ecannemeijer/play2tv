@@ -152,11 +152,16 @@ class CloudflareController extends Controller
             return redirect()->back()->with('error', 'Cloudflare API credentials not configured in .env');
         }
 
-        // Resolve zone IDs: try from .env first, then auto-list from account
-        $zones = $this->resolveZones($accountId);
+        // Resolve zone IDs: prefer .env (bypasses IP-restricted zone listing)
+        $zones = $this->resolveZones();
 
         if (empty($zones)) {
-            return redirect()->back()->with('error', 'Geen zone IDs gevonden. Vul cloudflare.zoneIds in .env of zorg dat de API token zones kan opvragen. Error: 9109 = IP niet toegestaan vanaf deze locatie.');
+            return redirect()->back()->with('error',
+                'Geen zone IDs gevonden. '
+                . 'Voeg je Zone ID toe aan cloudflare.zoneIds in .env. '
+                . 'Te vinden in Cloudflare Dashboard → Websites → jouwdomein.com → Overzicht → Zone ID (rechtsonder). '
+                . 'De /zones API listing is geblokkeerd door IP filtering op je API token (error 9109).'
+            );
         }
 
         $db    = db_connect();
@@ -176,12 +181,18 @@ class CloudflareController extends Controller
         $allStatuses     = [];
         $allBrowsers     = [];
         $allSubdomains   = [];
+        $zoneNames       = [];
 
         foreach ($zones as $zoneEntry) {
             $zoneId   = $zoneEntry['id'] ?? '';
             $zoneName = $zoneEntry['name'] ?? $zoneId;
 
             if (empty($zoneId)) continue;
+
+            // Try to resolve zone name from API
+            $zoneInfo = $this->cfRequest('GET', "/zones/{$zoneId}");
+            $resolvedName = $zoneInfo['result']['name'] ?? $zoneName;
+            $zoneNames[]  = $resolvedName;
 
             // Get analytics dashboard (last 24h)
             $analytics = $this->cfRequest('GET', "/zones/{$zoneId}/analytics/dashboard", [
@@ -224,8 +235,8 @@ class CloudflareController extends Controller
             ]);
             $aggBots += (int) ($bots['result']['totals']['requests']['all'] ?? 0);
 
-            // Track per-subdomain (based on zone name)
-            $allSubdomains[$zoneName] = ($allSubdomains[$zoneName] ?? 0) + (int) ($totals['requests']['all'] ?? 0);
+            // Track per-subdomain
+            $allSubdomains[$resolvedName] = ($allSubdomains[$resolvedName] ?? 0) + (int) ($totals['requests']['all'] ?? 0);
 
             $stored++;
         }
@@ -234,7 +245,7 @@ class CloudflareController extends Controller
         arsort($allCountries);
         arsort($allBrowsers);
 
-        $zoneCount = count($zones);
+        $zoneNameStr = ! empty($zoneNames) ? implode(', ', $zoneNames) : (count($zones) . ' zones');
 
         // Check if a snapshot for today already exists
         $existing = $db->table('cloudflare_analytics')
@@ -245,7 +256,7 @@ class CloudflareController extends Controller
         $snapshotData = [
             'snapshot_date'     => $today,
             'zone_id'           => $accountId,
-            'zone_name'         => $zoneCount . ' zones',
+            'zone_name'         => $zoneNameStr,
             'total_requests'    => $aggRequests,
             'cached_requests'   => $aggCached,
             'uncached_requests' => $aggUncached,
@@ -274,14 +285,21 @@ class CloudflareController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Resolve zone IDs: either from .env (cloudflare.zoneIds) or auto-list
+    // Resolve zone IDs: from .env (cloudflare.zoneIds) or fallback to API list
+    //
+    // IMPORTANT: If your API token has Client IP Address Filtering, the zone
+    // listing endpoint (/zones) returns error 9109 "Cannot use the access
+    // token from location". In that case you MUST set cloudflare.zoneIds.
+    //
+    // Find your Zone ID at:
+    //   Cloudflare Dashboard → Websites → yourdomain.com → Overview → Zone ID (right sidebar)
     // ─────────────────────────────────────────────────────────────────────────
-    private function resolveZones(string $accountId): array
+    private function resolveZones(): array
     {
         $envZoneIds = env('cloudflare.zoneIds', '');
         if (! empty($envZoneIds)) {
-            $ids    = array_map('trim', explode(',', $envZoneIds));
-            $zones  = [];
+            $ids   = array_map('trim', explode(',', $envZoneIds));
+            $zones = [];
             foreach ($ids as $id) {
                 if ($id !== '') {
                     $zones[] = ['id' => $id, 'name' => $id];
@@ -290,7 +308,7 @@ class CloudflareController extends Controller
             return $zones;
         }
 
-        // Fallback: list zones from API
+        // Fallback: list zones from API (fails with error 9109 if IP-restricted)
         $response = $this->cfRequest('GET', '/zones', [
             'per_page' => '50',
         ]);
@@ -303,11 +321,11 @@ class CloudflareController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Helper: make a Cloudflare API request
+    // Helper: make a Cloudflare API request via cURL
     // ─────────────────────────────────────────────────────────────────────────
     private function cfRequest(string $method, string $path, array $params = []): array
     {
-        $apiToken  = env('cloudflare.apiToken');
+        $apiToken = env('cloudflare.apiToken');
         $url = self::CF_BASE . $path;
 
         if (! empty($params)) {
