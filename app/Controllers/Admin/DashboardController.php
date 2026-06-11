@@ -37,6 +37,35 @@ class DashboardController extends Controller
         helper(['url', 'form']);
     }
 
+    public function prune()
+    {
+        $performance = config(Performance::class);
+        $db = \Config\Database::connect();
+        $deleted = [];
+
+        foreach ([
+            'auth_refresh_tokens' => ['expires_at', max(1, (int) $performance->retentionDays['refresh_tokens']), 'id'],
+            'security_events' => ['created_at', max(1, (int) $performance->retentionDays['security_events']), 'id'],
+            'user_ips_log' => ['created_at', max(1, (int) $performance->retentionDays['ip_logs']), 'id'],
+            'watch_history' => ['watched_at', max(1, (int) $performance->retentionDays['watch_history']), 'id'],
+            'ci_sessions' => ['timestamp', max(1, (int) $performance->retentionDays['sessions']), 'id'],
+        ] as $table => [$column, $days, $pk]) {
+            if (! $db->tableExists($table)) continue;
+            $cutoff = date('Y-m-d H:i:s', strtotime('-' . $days . ' days'));
+            $count = $db->table($table)->where($column . ' <', $cutoff)->countAllResults();
+            if ($count > 0) {
+                $db->table($table)->where($column . ' <', $cutoff)->delete();
+                $deleted[$table] = $count;
+            }
+        }
+
+        $total = array_sum($deleted);
+        return redirect()->to(base_url('admin/dashboard'))->with('success',
+            $total === 0 ? 'Geen oude records gevonden om op te schonen.' :
+            "{$total} oude records verwijderd uit " . count($deleted) . " tabellen."
+        );
+    }
+
     public function index()
     {
         $db = \Config\Database::connect();

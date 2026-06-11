@@ -55,7 +55,15 @@
 <div class="card mb-4">
     <div class="card-header py-3 d-flex justify-content-between align-items-center">
         <h6 class="mb-0"><i class="bi bi-heart-pulse me-2"></i>System Health</h6>
-        <small class="text-muted">DB, Redis, cache en prune-backlog</small>
+        <div class="d-flex align-items-center gap-2">
+            <small class="text-muted">DB, Redis, cache en prune-backlog</small>
+            <form method="post" action="<?= base_url('admin/dashboard/prune') ?>" class="d-inline ms-2">
+                <?= csrf_field() ?>
+                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Alle oude records (tokens, logs, sessions) definitief verwijderen?')">
+                    <i class="bi bi-eraser me-1"></i>Prune Now
+                </button>
+            </form>
+        </div>
     </div>
     <div class="card-body">
         <div class="row g-3">

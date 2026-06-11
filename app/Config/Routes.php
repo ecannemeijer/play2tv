@@ -112,6 +112,7 @@ $routes->get('admin/logout',  'Admin\AdminAuthController::logout');
 $routes->group('admin', ['filter' => 'adminauth'], function ($routes) {
     // Dashboard
     $routes->get('dashboard', 'Admin\DashboardController::index');
+    $routes->post('dashboard/prune', 'Admin\DashboardController::prune');
 
     // Redis
     $routes->get('redis', 'Admin\RedisController::index');
