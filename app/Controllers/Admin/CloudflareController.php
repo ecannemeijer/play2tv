@@ -12,13 +12,17 @@ use CodeIgniter\Controller;
  * Displays a rich analytics dashboard with Cloudflare security & traffic data.
  * Stores daily snapshots in the cloudflare_analytics table.
  *
+ * Uses Cloudflare GraphQL Analytics API (account-owned tokens are not
+ * supported by the deprecated REST Zone Analytics API — error 1016).
+ *
  * Routes (behind /admin prefix, protected by AdminAuthFilter):
  *   GET  /admin/cloudflare       → Main dashboard
  *   POST /admin/cloudflare/fetch → Trigger a fresh Cloudflare API fetch
  */
 class CloudflareController extends Controller
 {
-    private const CF_BASE = 'https://api.cloudflare.com/client/v4';
+    private const CF_BASE     = 'https://api.cloudflare.com/client/v4';
+    private const CF_GRAPHQL  = 'https://api.cloudflare.com/client/v4/graphql';
 
     public function __construct()
     {
@@ -141,7 +145,7 @@ class CloudflareController extends Controller
 
     // ─────────────────────────────────────────────────────────────────────────
     // POST /admin/cloudflare/fetch
-    // Calls Cloudflare API and stores snapshot
+    // Uses Cloudflare GraphQL Analytics API to fetch data
     // ─────────────────────────────────────────────────────────────────────────
     public function fetch()
     {
@@ -152,15 +156,14 @@ class CloudflareController extends Controller
             return redirect()->back()->with('error', 'Cloudflare API credentials not configured in .env');
         }
 
-        // Resolve zone IDs: prefer .env (bypasses IP-restricted zone listing)
+        // Resolve zone IDs from .env
         $zones = $this->resolveZones();
 
         if (empty($zones)) {
             return redirect()->back()->with('error',
                 'Geen zone IDs gevonden. '
                 . 'Voeg je Zone ID toe aan cloudflare.zoneIds in .env. '
-                . 'Te vinden in Cloudflare Dashboard → Websites → jouwdomein.com → Overzicht → Zone ID (rechtsonder). '
-                . 'De /zones API listing is geblokkeerd door IP filtering op je API token (error 9109).'
+                . 'Te vinden in Cloudflare Dashboard → Websites → jouwdomein.com → Overzicht → Zone ID (rechtsonder).'
             );
         }
 
@@ -183,65 +186,56 @@ class CloudflareController extends Controller
         $allSubdomains   = [];
         $zoneNames       = [];
 
+        // Fetch last 30 days of data via GraphQL
+        $dateSince = date('Y-m-d', strtotime('-30 days'));
+
         foreach ($zones as $zoneEntry) {
             $zoneId   = $zoneEntry['id'] ?? '';
             $zoneName = $zoneEntry['name'] ?? $zoneId;
 
             if (empty($zoneId)) continue;
 
-            // Try to resolve zone name from API
-            $zoneInfo = $this->cfRequest('GET', "/zones/{$zoneId}");
+            // Resolve zone name via REST API
+            $zoneInfo = $this->restRequest('GET', "/zones/{$zoneId}");
             $resolvedName = $zoneInfo['result']['name'] ?? $zoneName;
             $zoneNames[]  = $resolvedName;
 
-            // Get analytics dashboard (last 24h)
-            $analytics = $this->cfRequest('GET', "/zones/{$zoneId}/analytics/dashboard", [
-                'since' => '-1440', // last 24 hours
-            ]);
+            // Fetch analytics via GraphQL
+            $analyticsData = $this->fetchGraphQLAnalytics($zoneId, $dateSince);
 
-            if (! empty($analytics['result'])) {
-                $totals = $analytics['result']['totals'] ?? [];
-                $aggRequests  += (int) ($totals['requests']['all'] ?? 0);
-                $aggCached    += (int) ($totals['requests']['cached'] ?? 0);
-                $aggUncached  += (int) ($totals['requests']['uncached'] ?? 0);
-                $aggBandwidth += (int) ($totals['bandwidth']['all'] ?? 0);
-                $aggPageViews += (int) ($totals['pageviews']['all'] ?? 0);
-                $aggVisitors  += (int) ($totals['uniques']['all'] ?? 0);
-                $aggThreats   += (int) ($totals['threats']['all'] ?? 0);
+            if ($analyticsData !== null) {
+                $aggRequests  += $analyticsData['totalRequests'];
+                $aggCached    += $analyticsData['cachedRequests'];
+                $aggUncached  += ($analyticsData['totalRequests'] - $analyticsData['cachedRequests']);
+                $aggBandwidth += $analyticsData['bandwidthBytes'];
+                $aggPageViews += $analyticsData['pageViews'];
+                $aggVisitors  += $analyticsData['uniqueVisitors'];
+                $aggThreats   += $analyticsData['threats'];
+                $aggBots      += $analyticsData['botRequests'];
 
-                // Collect country data
-                $countries = $analytics['result']['totals']['country_map'] ?? [];
-                foreach ($countries as $code => $count) {
-                    $allCountries[$code] = ($allCountries[$code] ?? 0) + (int) $count;
+                // Merge country data
+                foreach ($analyticsData['countries'] as $country => $count) {
+                    $allCountries[$country] = ($allCountries[$country] ?? 0) + $count;
                 }
 
-                // Collect status codes
-                $statuses = $analytics['result']['totals']['response_status_map'] ?? [];
-                foreach ($statuses as $code => $count) {
-                    $allStatuses[$code] = ($allStatuses[$code] ?? 0) + (int) $count;
+                // Merge status data
+                foreach ($analyticsData['statusCodes'] as $code => $count) {
+                    $allStatuses[$code] = ($allStatuses[$code] ?? 0) + $count;
                 }
 
-                // Collect browser data
-                $browsers = $analytics['result']['totals']['client_http_map'] ?? [];
-                foreach ($browsers as $browser => $count) {
-                    $allBrowsers[$browser] = ($allBrowsers[$browser] ?? 0) + (int) $count;
+                // Merge browser data
+                foreach ($analyticsData['browsers'] as $browser => $count) {
+                    $allBrowsers[$browser] = ($allBrowsers[$browser] ?? 0) + $count;
                 }
+
+                // Track per-zone
+                $allSubdomains[$resolvedName] = ($allSubdomains[$resolvedName] ?? 0) + $analyticsData['totalRequests'];
             }
-
-            // Get bot analytics separately
-            $bots = $this->cfRequest('GET', "/zones/{$zoneId}/analytics/dashboard", [
-                'since'        => '-1440',
-                'bot_class'    => 'bot',
-            ]);
-            $aggBots += (int) ($bots['result']['totals']['requests']['all'] ?? 0);
-
-            // Track per-subdomain
-            $allSubdomains[$resolvedName] = ($allSubdomains[$resolvedName] ?? 0) + (int) ($totals['requests']['all'] ?? 0);
 
             $stored++;
         }
 
-        // Save snapshot to database (one row per day)
+        // Save snapshot to database
         arsort($allCountries);
         arsort($allBrowsers);
 
@@ -281,18 +275,141 @@ class CloudflareController extends Controller
         }
 
         return redirect()->to(base_url('admin/cloudflare'))
-            ->with('success', "Data opgehaald voor {$stored} zone(s). Totaal {$aggPageViews} pageviews, {$aggThreats} threats geblokkeerd.");
+            ->with('success', "Data opgehaald voor {$stored} zone(s) via GraphQL. Totaal {$aggPageViews} pageviews, {$aggThreats} threats geblokkeerd.");
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Resolve zone IDs: from .env (cloudflare.zoneIds) or fallback to API list
-    //
-    // IMPORTANT: If your API token has Client IP Address Filtering, the zone
-    // listing endpoint (/zones) returns error 9109 "Cannot use the access
-    // token from location". In that case you MUST set cloudflare.zoneIds.
-    //
-    // Find your Zone ID at:
-    //   Cloudflare Dashboard → Websites → yourdomain.com → Overview → Zone ID (right sidebar)
+    // Fetch analytics data via Cloudflare GraphQL API
+    // ─────────────────────────────────────────────────────────────────────────
+    private function fetchGraphQLAnalytics(string $zoneId, string $dateSince): ?array
+    {
+        // GraphQL query: get last 30 days of daily aggregates
+        $query = <<<GRAPHQL
+        {
+          viewer {
+            zones(filter: { zoneTag: "$zoneId" }) {
+              httpRequests1dGroups(
+                limit: 30,
+                filter: { date_gt: "$dateSince" }
+              ) {
+                sum {
+                  requests
+                  pageViews
+                  threats
+                  bytes
+                  cachedRequests
+                  uniqueVisitors
+                }
+                dimensions {
+                  date
+                }
+              }
+            }
+          }
+        }
+        GRAPHQL;
+
+        $dailyData = $this->graphqlRequest($query);
+
+        if ($dailyData === null) {
+            return null;
+        }
+
+        $groups = $dailyData['data']['viewer']['zones'][0]['httpRequests1dGroups'] ?? [];
+
+        // Aggregate all daily sums
+        $totalRequests   = 0;
+        $totalPageViews  = 0;
+        $totalThreats    = 0;
+        $totalBytes      = 0;
+        $totalCached     = 0;
+        $totalVisitors   = 0;
+
+        foreach ($groups as $group) {
+            $sum = $group['sum'] ?? [];
+            $totalRequests  += (int) ($sum['requests'] ?? 0);
+            $totalPageViews += (int) ($sum['pageViews'] ?? 0);
+            $totalThreats   += (int) ($sum['threats'] ?? 0);
+            $totalBytes     += (int) ($sum['bytes'] ?? 0);
+            $totalCached    += (int) ($sum['cachedRequests'] ?? 0);
+            $totalVisitors  += (int) ($sum['uniqueVisitors'] ?? 0);
+        }
+
+        // Now get detailed breakdowns: countries, status codes, browsers
+        $detailQuery = <<<GRAPHQL
+        {
+          viewer {
+            zones(filter: { zoneTag: "$zoneId" }) {
+              httpRequests1dGroups(
+                limit: 1,
+                filter: { date_gt: "$dateSince" }
+              ) {
+                sum {
+                  countryMap { clientCountryName requests }
+                  responseStatusMap { edgeResponseStatus requests }
+                  browserMap { uaBrowserFamily requests }
+                  botScoreGroups { botScore requests }
+                  clientRequestHTTPHostMap { clientRequestHTTPHost requests }
+                }
+              }
+            }
+          }
+        }
+        GRAPHQL;
+
+        $detailData = $this->graphqlRequest($detailQuery);
+        $detailSum  = $detailData['data']['viewer']['zones'][0]['httpRequests1dGroups'][0]['sum'] ?? [];
+
+        // Parse country data
+        $countries = [];
+        foreach ($detailSum['countryMap'] ?? [] as $item) {
+            $name = $item['clientCountryName'] ?? 'Unknown';
+            $countries[$name] = ($countries[$name] ?? 0) + (int) ($item['requests'] ?? 0);
+        }
+        arsort($countries);
+
+        // Parse status codes
+        $statusCodes = [];
+        foreach ($detailSum['responseStatusMap'] ?? [] as $item) {
+            $code = (string) ($item['edgeResponseStatus'] ?? '0');
+            $statusCodes[$code] = ($statusCodes[$code] ?? 0) + (int) ($item['requests'] ?? 0);
+        }
+        arsort($statusCodes);
+
+        // Parse browser data
+        $browsers = [];
+        foreach ($detailSum['browserMap'] ?? [] as $item) {
+            $name = $item['uaBrowserFamily'] ?? 'Unknown';
+            $browsers[$name] = ($browsers[$name] ?? 0) + (int) ($item['requests'] ?? 0);
+        }
+        arsort($browsers);
+
+        // Bot traffic: sum up requests with botScore >= 30 (Cloudflare's bot threshold)
+        $botRequests = 0;
+        foreach ($detailSum['botScoreGroups'] ?? [] as $item) {
+            $score = (int) ($item['botScore'] ?? 0);
+            if ($score >= 30) {
+                $botRequests += (int) ($item['requests'] ?? 0);
+            }
+        }
+
+        return [
+            'totalRequests'  => $totalRequests,
+            'cachedRequests' => $totalCached,
+            'bandwidthBytes' => $totalBytes,
+            'pageViews'      => $totalPageViews,
+            'uniqueVisitors' => $totalVisitors,
+            'threats'        => $totalThreats,
+            'botRequests'    => $botRequests,
+            'countries'      => $countries,
+            'statusCodes'    => $statusCodes,
+            'browsers'       => $browsers,
+            'subdomains'     => [],
+        ];
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Resolve zone IDs: from .env (cloudflare.zoneIds) or fallback
     // ─────────────────────────────────────────────────────────────────────────
     private function resolveZones(): array
     {
@@ -308,22 +425,56 @@ class CloudflareController extends Controller
             return $zones;
         }
 
-        // Fallback: list zones from API (fails with error 9109 if IP-restricted)
-        $response = $this->cfRequest('GET', '/zones', [
-            'per_page' => '50',
-        ]);
-
-        if (! empty($response['result']) && is_array($response['result'])) {
-            return $response['result'];
-        }
-
         return [];
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Helper: make a Cloudflare API request via cURL
+    // Helper: Cloudflare GraphQL request
     // ─────────────────────────────────────────────────────────────────────────
-    private function cfRequest(string $method, string $path, array $params = []): array
+    private function graphqlRequest(string $query): ?array
+    {
+        $apiToken = env('cloudflare.apiToken');
+
+        $ch = curl_init(self::CF_GRAPHQL);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 20,
+            CURLOPT_POST           => true,
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: Bearer ' . $apiToken,
+                'Content-Type: application/json',
+            ],
+            CURLOPT_POSTFIELDS     => json_encode(['query' => $query]),
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($response === false || $httpCode === 0) {
+            log_message('error', 'Cloudflare GraphQL unreachable: ' . ($curlError ?: 'timeout'));
+            return null;
+        }
+
+        $data = json_decode($response, true);
+        if (! is_array($data)) {
+            log_message('error', 'Cloudflare GraphQL invalid JSON');
+            return null;
+        }
+
+        if (! empty($data['errors'])) {
+            log_message('error', 'Cloudflare GraphQL errors: ' . json_encode($data['errors']));
+            return null;
+        }
+
+        return $data;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Helper: Cloudflare REST request (for zone info only)
+    // ─────────────────────────────────────────────────────────────────────────
+    private function restRequest(string $method, string $path, array $params = []): array
     {
         $apiToken = env('cloudflare.apiToken');
         $url = self::CF_BASE . $path;
@@ -351,20 +502,10 @@ class CloudflareController extends Controller
         curl_close($ch);
 
         if ($response === false || $httpCode === 0) {
-            log_message('error', 'Cloudflare API unreachable: ' . $path);
             return [];
         }
 
         $data = json_decode($response, true);
-        if (! is_array($data)) {
-            log_message('error', 'Cloudflare API invalid JSON: ' . $path);
-            return [];
-        }
-
-        if ($httpCode >= 400) {
-            log_message('error', "Cloudflare API error {$httpCode}: " . json_encode($data));
-        }
-
-        return $data;
+        return is_array($data) ? $data : [];
     }
 }
