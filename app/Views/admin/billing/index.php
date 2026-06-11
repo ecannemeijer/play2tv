@@ -1,185 +1,167 @@
 <?= $this->extend('admin/layout') ?>
 
 <?= $this->section('head') ?>
-<!-- Tabulator CSS (simple base, fully custom styled) -->
-<link href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/css/tabulator_simple.min.css" rel="stylesheet" />
+<!-- Tabulator JS + CSS (no theme - fully custom dark styling) -->
+<link href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/css/tabulator.min.css" rel="stylesheet" />
 <style>
-    /* ── Tabulator fully custom Play2TV dark theme ── */
-    :root {
-        --tbg-main: #0f0f1a;
-        --tbg-panel: #1a1a2e;
-        --tbg-panel-strong: #16213e;
-        --tborder: #2d2d44;
-        --ttext: #e2e8f0;
-        --ttext-soft: #cbd5e1;
-        --ttext-muted: #94a3b8;
-        --tpurple: #7c3aed;
-        --tpurple-light: #a78bfa;
-        --tpurple-dark: #5b21b6;
-    }
-
+    /* ── Tabulator dark table matching Play2TV layout ── */
     .tabulator {
-        background: transparent;
-        border: none;
+        background-color: var(--bg-panel, #1a1a2e) !important;
+        border: none !important;
         font-size: .875rem;
-        color: var(--ttext);
+        color: var(--text-main, #e2e8f0);
     }
 
     /* Header */
     .tabulator .tabulator-header {
-        background: var(--tbg-panel-strong);
-        border-bottom: 2px solid var(--tpurple);
+        background-color: var(--bg-panel-strong, #16213e) !important;
+        border-bottom: 2px solid #7c3aed !important;
     }
     .tabulator .tabulator-header .tabulator-col {
-        background: var(--tbg-panel-strong);
-        border-right-color: var(--tborder);
-        color: var(--tpurple-light);
+        background-color: var(--bg-panel-strong, #16213e) !important;
+        border-right-color: var(--border-color, #2d2d44) !important;
+        color: #a78bfa !important;
         font-size: .78rem;
         text-transform: uppercase;
         font-weight: 700;
         letter-spacing: .03em;
     }
     .tabulator .tabulator-header .tabulator-col.tabulator-sortable:hover {
-        background: rgba(124, 58, 237, .2);
-        color: #fff;
+        background-color: rgba(124, 58, 237, .25) !important;
+        color: #fff !important;
     }
     .tabulator .tabulator-header .tabulator-col.tabulator-sortable[aria-sort="ascending"] .tabulator-col-content .tabulator-arrow,
     .tabulator .tabulator-header .tabulator-col.tabulator-sortable[aria-sort="descending"] .tabulator-col-content .tabulator-arrow {
-        border-bottom-color: var(--tpurple-light);
+        border-bottom-color: #a78bfa !important;
+    }
+
+    /* Table holder */
+    .tabulator .tabulator-tableholder {
+        background-color: var(--bg-panel, #1a1a2e) !important;
     }
 
     /* Rows */
-    .tabulator .tabulator-tableholder {
-        background: transparent;
-    }
     .tabulator .tabulator-row {
-        background: transparent;
-        color: var(--ttext);
-        border-bottom: 1px solid rgba(45, 45, 68, .5);
+        background-color: var(--bg-panel, #1a1a2e) !important;
+        color: var(--text-main, #e2e8f0) !important;
+        border-bottom: 1px solid #1e2035 !important;
         min-height: 42px;
     }
     .tabulator .tabulator-row:hover {
-        background: rgba(124, 58, 237, .1) !important;
+        background-color: rgba(124, 58, 237, .1) !important;
     }
     .tabulator .tabulator-row.tabulator-row-even {
-        background: rgba(26, 26, 46, .35);
+        background-color: rgba(15, 15, 26, .5) !important;
+    }
+    .tabulator .tabulator-row.tabulator-row-odd {
+        background-color: var(--bg-panel, #1a1a2e) !important;
+    }
+    .tabulator .tabulator-row.tabulator-selected {
+        background-color: rgba(124, 58, 237, .2) !important;
     }
     .tabulator .tabulator-row .tabulator-cell {
-        border-right-color: transparent;
+        border-right-color: transparent !important;
         padding: .55rem .75rem;
     }
 
-    /* Selection highlight */
-    .tabulator .tabulator-row.tabulator-selected {
-        background: rgba(124, 58, 237, .2) !important;
-    }
-
-    /* Footer */
+    /* Footer / Pagination */
     .tabulator .tabulator-footer {
-        background: var(--tbg-panel-strong);
-        border-top: 2px solid var(--tpurple);
-        color: var(--ttext-soft);
+        background-color: var(--bg-panel-strong, #16213e) !important;
+        border-top: 2px solid #7c3aed !important;
+        color: #cbd5e1 !important;
         padding: .5rem .75rem;
     }
     .tabulator .tabulator-footer .tabulator-page {
-        background: var(--tbg-main);
-        border: 1px solid var(--tborder);
-        color: var(--ttext-soft);
+        background: var(--bg-main, #0f0f1a) !important;
+        border: 1px solid var(--border-color, #2d2d44) !important;
+        color: #cbd5e1 !important;
         border-radius: 6px;
         padding: .3rem .65rem;
         margin: 0 2px;
         font-size: .82rem;
     }
     .tabulator .tabulator-footer .tabulator-page.active {
-        background: var(--tpurple);
-        border-color: var(--tpurple);
-        color: #fff;
+        background: #7c3aed !important;
+        border-color: #7c3aed !important;
+        color: #fff !important;
         font-weight: 700;
         box-shadow: 0 0 8px rgba(124, 58, 237, .4);
     }
     .tabulator .tabulator-footer .tabulator-page:hover:not(.active):not(:disabled) {
-        background: rgba(124, 58, 237, .25);
-        color: #fff;
-        border-color: var(--tpurple-light);
+        background: rgba(124, 58, 237, .25) !important;
+        color: #fff !important;
+        border-color: #a78bfa !important;
     }
     .tabulator .tabulator-footer .tabulator-page:disabled {
-        opacity: .3;
-        cursor: not-allowed;
+        opacity: .3 !important;
     }
     .tabulator .tabulator-footer .tabulator-page-size {
-        background: var(--tbg-main);
-        border: 1px solid var(--tpurple);
-        color: var(--ttext);
+        background: var(--bg-main, #0f0f1a) !important;
+        border: 1px solid #7c3aed !important;
+        color: var(--text-main, #e2e8f0) !important;
         border-radius: 6px;
         padding: .25rem .5rem;
         margin-left: .5rem;
     }
-    .tabulator .tabulator-footer .tabulator-page-size:focus {
-        border-color: var(--tpurple-light);
-        outline: none;
-        box-shadow: 0 0 0 .2rem rgba(124, 58, 237, .3);
-    }
     .tabulator .tabulator-footer .tabulator-paginator {
-        color: var(--ttext-soft);
+        color: #cbd5e1 !important;
     }
 
-    /* Header filters (search inputs) */
+    /* Header filter inputs */
     .tabulator .tabulator-header-filter input {
-        background: var(--tbg-main);
-        border: 1px solid var(--tborder);
-        color: var(--ttext);
-        border-radius: 6px;
+        background: var(--bg-main, #0f0f1a) !important;
+        border: 1px solid var(--border-color, #2d2d44) !important;
+        color: var(--text-main, #e2e8f0) !important;
+        border-radius: 6px !important;
         padding: .3rem .55rem;
         font-size: .82rem;
         width: 100%;
         box-sizing: border-box;
     }
     .tabulator .tabulator-header-filter input:focus {
-        border-color: var(--tpurple);
+        border-color: #7c3aed !important;
         outline: none;
         box-shadow: 0 0 0 .15rem rgba(124, 58, 237, .3);
     }
     .tabulator .tabulator-header-filter input::placeholder {
         color: #64748b;
     }
-
-    /* Header filter select */
     .tabulator .tabulator-header-filter select {
-        background: var(--tbg-main);
-        border: 1px solid var(--tborder);
-        color: var(--ttext);
-        border-radius: 6px;
+        background: var(--bg-main, #0f0f1a) !important;
+        border: 1px solid var(--border-color, #2d2d44) !important;
+        color: var(--text-main, #e2e8f0) !important;
+        border-radius: 6px !important;
         padding: .25rem .4rem;
         font-size: .82rem;
     }
     .tabulator .tabulator-header-filter select:focus {
-        border-color: var(--tpurple);
+        border-color: #7c3aed !important;
         outline: none;
-        box-shadow: 0 0 0 .15rem rgba(124, 58, 237, .3);
     }
 
-    /* Loading indicator */
+    /* Loading spinner */
     .tabulator .tabulator-loader {
-        border-top-color: var(--tpurple) !important;
-        border-right-color: var(--tpurple) !important;
-        border-bottom-color: var(--tpurple) !important;
+        border-top-color: #7c3aed !important;
+        border-right-color: #7c3aed !important;
+        border-bottom-color: #7c3aed !important;
     }
 
     /* Empty state */
     .tabulator .tabulator-tableholder .tabulator-placeholder {
         padding: 2.5rem;
+        background-color: var(--bg-panel, #1a1a2e) !important;
     }
     .tabulator .tabulator-tableholder .tabulator-placeholder .tabulator-placeholder-contents {
-        color: var(--ttext-muted);
+        color: #94a3b8;
         font-size: .9rem;
     }
 
-    /* Progress/resize handles */
+    /* Row resize handle */
     .tabulator .tabulator-col-resize-handle:hover {
-        background-color: var(--tpurple-light);
+        background-color: #a78bfa !important;
     }
 
-    /* ── Badge styles ── */
+    /* ── Badge & link styles ── */
     .badge-pill { display: inline-block; padding: .25em .7em; font-size: .78rem; border-radius: 999px; font-weight: 600; line-height: 1.4; }
     .badge-success { background: #065f46; color: #6ee7b7; }
     .badge-primary { background: #5b21b6; color: #c4b5fd; }
@@ -194,11 +176,11 @@
         display: inline-flex;
         align-items: center;
         gap: .35rem;
-        padding: .3rem .65rem;
+        padding: .3rem .7rem;
         border-radius: 6px;
-        border: 1px solid var(--tpurple);
+        border: 1px solid #7c3aed;
         background: rgba(124, 58, 237, .15);
-        color: var(--tpurple-light);
+        color: #a78bfa;
         font-size: .8rem;
         font-weight: 500;
         text-decoration: none;
@@ -206,9 +188,9 @@
         white-space: nowrap;
     }
     .action-btn:hover {
-        background: var(--tpurple);
+        background: #7c3aed;
         color: #fff;
-        border-color: var(--tpurple-light);
+        border-color: #a78bfa;
         box-shadow: 0 0 10px rgba(124, 58, 237, .35);
     }
 </style>
@@ -274,9 +256,9 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    const baseUrl = '<?= base_url() ?>';
+    var baseUrl = '<?= base_url() ?>';
 
-    const table = new Tabulator('#billing-table', {
+    var table = new Tabulator('#billing-table', {
         ajaxURL: baseUrl + 'admin/billing/data',
         ajaxConfig: {
             method: 'GET',
@@ -292,7 +274,6 @@ document.addEventListener('DOMContentLoaded', function () {
         filterMode: 'remote',
         sortMode: 'remote',
 
-        // ── Persistence: onthoud pagina, page size, filters, sortering ──
         persistence: true,
         persistenceID: 'admin-billing-table',
         persistenceMode: 'local',
@@ -302,21 +283,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
         columns: [
             {
-                title: '#',
-                field: 'id',
-                visible: false,
-            },
-            {
                 title: 'Gebruiker',
                 field: 'user_email',
                 width: 200,
                 sorter: 'string',
                 headerFilter: 'input',
                 headerFilterPlaceholder: 'Zoek gebruiker...',
-                formatter: function (cell, formatterParams, onRendered) {
-                    const row = cell.getRow().getData();
-                    const email = cell.getValue() || 'Onbekend';
-                    const uid   = row.user_id;
+                formatter: function (cell) {
+                    var row = cell.getRow().getData();
+                    var email = cell.getValue() || 'Onbekend';
+                    var uid   = row.user_id;
                     return '<a href="' + baseUrl + 'admin/users/' + uid + '" class="user-link">'
                         + email + '</a>'
                         + '<br><small class="text-muted">ID: ' + uid + '</small>';
@@ -350,8 +326,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     clearable: true,
                 },
                 formatter: function (cell) {
-                    const val = cell.getValue() || 'unknown';
-                    const map = {
+                    var val = cell.getValue() || 'unknown';
+                    var map = {
                         'yearly':   '<span class="badge-pill badge-primary">Jaarlijks</span>',
                         'lifetime': '<span class="badge-pill badge-success">Lifetime</span>',
                         'monthly':  '<span class="badge-pill badge-warning">Maandelijks</span>',
@@ -366,9 +342,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 hozAlign: 'right',
                 sorter: 'number',
                 formatter: function (cell) {
-                    const row = cell.getRow().getData();
-                    let amount = row.amount || '—';
-                    let currency = row.currency ? ' <small class="text-muted">' + row.currency + '</small>' : '';
+                    var row = cell.getRow().getData();
+                    var amount = row.amount || '—';
+                    var currency = row.currency ? ' <small class="text-muted">' + row.currency + '</small>' : '';
                     return amount + currency;
                 },
             },
@@ -389,8 +365,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     clearable: true,
                 },
                 formatter: function (cell) {
-                    const val = cell.getValue() || 'unknown';
-                    const map = {
+                    var val = cell.getValue() || 'unknown';
+                    var map = {
                         'completed': '<span class="badge-pill badge-success">Voltooid</span>',
                         'refunded':  '<span class="badge-pill badge-warning">Terugbetaald</span>',
                         'cancelled': '<span class="badge-pill badge-danger">Geannuleerd</span>',
@@ -405,27 +381,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 width: 140,
                 sorter: 'string',
                 formatter: function (cell) {
-                    const row = cell.getRow().getData();
-                    const raw = row.created_at_raw || '';
+                    var row = cell.getRow().getData();
+                    var raw = row.created_at_raw || '';
                     return '<span title="' + raw + '">' + (cell.getValue() || '—') + '</span>';
                 },
             },
             {
                 title: 'Acties',
                 field: 'id',
-                width: 90,
+                width: 100,
                 hozAlign: 'center',
                 headerSort: false,
                 headerFilter: false,
                 formatter: function (cell) {
-                    const id = cell.getValue();
+                    var id = cell.getValue();
                     return '<a href="' + baseUrl + 'admin/billing/' + id + '" class="action-btn">'
                         + '<i class="bi bi-eye"></i> Bekijk</a>';
                 },
             },
         ],
 
-        // Nederlandse teksten
         locale: true,
         langs: {
             'nl': {
