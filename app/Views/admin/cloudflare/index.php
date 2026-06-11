@@ -51,9 +51,9 @@
             <?php endif; ?>
         </span>
     </div>
-    <form method="post" action="<?= base_url('admin/cloudflare/fetch') ?>" class="d-inline">
+    <form method="post" action="<?= base_url('admin/cloudflare/fetch') ?>" class="d-inline" id="fetchForm">
         <?= csrf_field() ?>
-        <button type="submit" class="btn btn-primary">
+        <button type="submit" class="btn btn-primary" id="fetchBtn">
             <i class="bi bi-cloud-download me-1"></i> Fetch Cloudflare Data
         </button>
     </form>
@@ -329,9 +329,22 @@
 
 <?php endif; ?>
 
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,15,26,0.85); z-index:9999; justify-content:center; align-items:center; flex-direction:column;">
+    <div class="spinner-border text-light" role="status" style="width:4rem; height:4rem;"></div>
+    <p class="text-light mt-3" style="font-size:1.1rem;">Fetching Cloudflare data...</p>
+</div>
+
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
+<script>
+document.getElementById('fetchForm').addEventListener('submit', function() {
+    document.getElementById('fetchBtn').disabled = true;
+    document.getElementById('fetchBtn').innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Fetching...';
+    document.getElementById('loadingOverlay').style.display = 'flex';
+});
+</script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 

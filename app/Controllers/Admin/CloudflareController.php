@@ -6,19 +6,6 @@ namespace App\Controllers\Admin;
 
 use CodeIgniter\Controller;
 
-/**
- * CloudflareController (Admin)
- *
- * Displays a rich analytics dashboard with Cloudflare security & traffic data.
- * Stores daily snapshots in the cloudflare_analytics table.
- *
- * Uses Cloudflare GraphQL Analytics API because account-owned tokens
- * are not supported by the deprecated REST Zone Analytics API (error 1016).
- *
- * Routes (behind /admin prefix, protected by AdminAuthFilter):
- *   GET  /admin/cloudflare       → Main dashboard
- *   POST /admin/cloudflare/fetch → Trigger a fresh Cloudflare API fetch
- */
 class CloudflareController extends Controller
 {
     private const CF_BASE    = 'https://api.cloudflare.com/client/v4';
@@ -29,307 +16,213 @@ class CloudflareController extends Controller
         helper(['url', 'number']);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // GET /admin/cloudflare
-    // ─────────────────────────────────────────────────────────────────────────
     public function index()
     {
         $db = db_connect();
-
-        // Get last 30 days of snapshots
         $snapshots = $db->table('cloudflare_analytics')
-            ->orderBy('snapshot_date', 'DESC')
-            ->limit(30)
-            ->get()
-            ->getResultArray();
+            ->orderBy('snapshot_date', 'DESC')->limit(30)->get()->getResultArray();
 
-        // For the chart, reverse so chronologically ordered
         $chartSnapshots = array_reverse($snapshots);
-
-        // Latest snapshot for summary cards
         $latest = $snapshots[0] ?? null;
 
-        // Aggregate totals
-        $totals = $db->table('cloudflare_analytics')
-            ->select([
-                'SUM(total_requests) AS total_requests',
-                'SUM(page_views) AS page_views',
-                'SUM(unique_visitors) AS unique_visitors',
-                'SUM(bandwidth_bytes) AS bandwidth_bytes',
-                'SUM(threats_blocked) AS threats_blocked',
-                'SUM(bot_requests) AS bot_requests',
-                'SUM(cached_requests) AS cached_requests',
-                'SUM(uncached_requests) AS uncached_requests',
-            ])
-            ->get()
-            ->getRowArray();
+        $totals = $db->table('cloudflare_analytics')->select([
+            'SUM(total_requests) AS total_requests',
+            'SUM(page_views) AS page_views',
+            'SUM(unique_visitors) AS unique_visitors',
+            'SUM(bandwidth_bytes) AS bandwidth_bytes',
+            'SUM(threats_blocked) AS threats_blocked',
+            'SUM(bot_requests) AS bot_requests',
+            'SUM(cached_requests) AS cached_requests',
+            'SUM(uncached_requests) AS uncached_requests',
+        ])->get()->getRowArray();
 
         $cacheHitRate = 0;
-        $totalCache   = (int) ($totals['cached_requests'] ?? 0) + (int) ($totals['uncached_requests'] ?? 0);
+        $totalCache = (int) ($totals['cached_requests'] ?? 0) + (int) ($totals['uncached_requests'] ?? 0);
         if ($totalCache > 0) {
             $cacheHitRate = round(((int) ($totals['cached_requests'] ?? 0) / $totalCache) * 100, 1);
         }
 
-        // Collect country data across all snapshots
         $countryTotals = [];
         foreach ($snapshots as $s) {
             if (empty($s['countries_data'])) continue;
             $data = json_decode((string) $s['countries_data'], true);
             if (! is_array($data)) continue;
-            foreach ($data as $country => $count) {
-                $countryTotals[$country] = ($countryTotals[$country] ?? 0) + (int) $count;
+            foreach ($data as $c => $n) {
+                $countryTotals[$c] = ($countryTotals[$c] ?? 0) + (int) $n;
             }
         }
         arsort($countryTotals);
         $topCountries = array_slice($countryTotals, 0, 15);
 
-        // Collect browser data
         $browserTotals = [];
         foreach ($snapshots as $s) {
             if (empty($s['browser_data'])) continue;
             $data = json_decode((string) $s['browser_data'], true);
             if (! is_array($data)) continue;
-            foreach ($data as $browser => $count) {
-                $browserTotals[$browser] = ($browserTotals[$browser] ?? 0) + (int) $count;
+            foreach ($data as $b => $n) {
+                $browserTotals[$b] = ($browserTotals[$b] ?? 0) + (int) $n;
             }
         }
         arsort($browserTotals);
         $topBrowsers = array_slice($browserTotals, 0, 10);
 
-        // Collect subdomain data
         $subdomainTotals = [];
         foreach ($snapshots as $s) {
             if (empty($s['subdomain_data'])) continue;
             $data = json_decode((string) $s['subdomain_data'], true);
             if (! is_array($data)) continue;
-            foreach ($data as $sub => $count) {
-                $subdomainTotals[$sub] = ($subdomainTotals[$sub] ?? 0) + (int) $count;
+            foreach ($data as $sub => $n) {
+                $subdomainTotals[$sub] = ($subdomainTotals[$sub] ?? 0) + (int) $n;
             }
         }
         arsort($subdomainTotals);
 
-        // Prepare chart data (last 30 days)
-        $chartLabels     = [];
-        $chartPageViews  = [];
-        $chartVisitors   = [];
-        $chartRequests   = [];
-        $chartThreats    = [];
-        $chartBandwidth  = [];
-
+        $chartLabels = $chartPageViews = $chartVisitors = $chartRequests = $chartThreats = $chartBandwidth = [];
         foreach ($chartSnapshots as $s) {
             $chartLabels[]    = $s['snapshot_date'];
             $chartPageViews[] = (int) ($s['page_views'] ?? 0);
             $chartVisitors[]  = (int) ($s['unique_visitors'] ?? 0);
             $chartRequests[]  = (int) ($s['total_requests'] ?? 0);
             $chartThreats[]   = (int) ($s['threats_blocked'] ?? 0);
-            $chartBandwidth[] = round(((int) ($s['bandwidth_bytes'] ?? 0)) / (1024 * 1024), 2); // MB
+            $chartBandwidth[] = round(((int) ($s['bandwidth_bytes'] ?? 0)) / (1024 * 1024), 2);
         }
 
         return view('admin/cloudflare/index', [
-            'title'          => 'Cloudflare Analytics — Play2TV Admin',
-            'latest'         => $latest,
-            'totals'         => $totals,
-            'cacheHitRate'   => $cacheHitRate,
-            'snapshots'      => $snapshots,
-            'topCountries'   => $topCountries,
-            'topBrowsers'    => $topBrowsers,
-            'subdomainTotals'=> $subdomainTotals,
-            'chartLabels'    => $chartLabels,
-            'chartPageViews' => $chartPageViews,
-            'chartVisitors'  => $chartVisitors,
-            'chartRequests'  => $chartRequests,
-            'chartThreats'   => $chartThreats,
-            'chartBandwidth' => $chartBandwidth,
+            'title' => 'Cloudflare Analytics — Play2TV Admin',
+            'latest' => $latest, 'totals' => $totals, 'cacheHitRate' => $cacheHitRate,
+            'snapshots' => $snapshots, 'topCountries' => $topCountries,
+            'topBrowsers' => $topBrowsers, 'subdomainTotals' => $subdomainTotals,
+            'chartLabels' => $chartLabels, 'chartPageViews' => $chartPageViews,
+            'chartVisitors' => $chartVisitors, 'chartRequests' => $chartRequests,
+            'chartThreats' => $chartThreats, 'chartBandwidth' => $chartBandwidth,
         ]);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // POST /admin/cloudflare/fetch
-    // Uses Cloudflare GraphQL Analytics API to fetch data
-    // ─────────────────────────────────────────────────────────────────────────
     public function fetch()
     {
         $accountId = env('cloudflare.accountId');
         $apiToken  = env('cloudflare.apiToken');
-
         if (empty($accountId) || empty($apiToken)) {
             return redirect()->back()->with('error', 'Cloudflare API credentials not configured in .env');
         }
 
-        // Resolve zone IDs from .env
         $zones = $this->resolveZones();
-
         if (empty($zones)) {
-            return redirect()->back()->with('error',
-                'Geen zone IDs gevonden. '
-                . 'Voeg je Zone ID toe aan cloudflare.zoneIds in .env.'
-            );
+            return redirect()->back()->with('error', 'Geen zone IDs gevonden. Voeg cloudflare.zoneIds toe in .env.');
         }
 
-        $db    = db_connect();
+        $db = db_connect();
         $today = date('Y-m-d');
-        $stored = 0;
-        $errors = [];
-
-        // Track aggregates across zones for this snapshot
-        $aggRequests     = 0;
-        $aggCached       = 0;
-        $aggUncached     = 0;
-        $aggBandwidth    = 0;
-        $aggPageViews    = 0;
-        $aggVisitors     = 0;
-        $aggThreats      = 0;
-        $aggBots         = 0;
-        $allCountries    = [];
-        $allStatuses     = [];
-        $allBrowsers     = [];
-        $allSubdomains   = [];
-        $zoneNames       = [];
-
-        // Fetch last 30 days of data via GraphQL
+        $stored = $errors = [];
         $dateSince = date('Y-m-d', strtotime('-30 days'));
 
-        foreach ($zones as $zoneEntry) {
-            $zoneId   = $zoneEntry['id'] ?? '';
-            $zoneName = $zoneEntry['name'] ?? $zoneId;
+        $agg = ['requests' => 0, 'cached' => 0, 'bandwidth' => 0, 'pageViews' => 0,
+                'threats' => 0, 'bots' => 0];
+        $allCountries = $allStatuses = $allBrowsers = $allSubdomains = $zoneNames = [];
 
+        foreach ($zones as $ze) {
+            $zoneId = $ze['id'] ?? '';
             if (empty($zoneId)) continue;
 
-            // Resolve zone name via REST API
-            $zoneInfo = $this->restRequest('GET', "/zones/{$zoneId}");
-            $resolvedName = $zoneInfo['result']['name'] ?? $zoneName;
-            $zoneNames[]  = $resolvedName;
+            $zoneInfo = $this->restGet("/zones/{$zoneId}");
+            $zName = $zoneInfo['result']['name'] ?? $ze['name'] ?? $zoneId;
+            $zoneNames[] = $zName;
 
-            // Fetch analytics via GraphQL
-            $analyticsData = $this->fetchGraphQLAnalytics($zoneId, $dateSince);
-
-            if ($analyticsData === null) {
-                $errors[] = "Zone {$resolvedName}: GraphQL API gaf geen data terug.";
+            $data = $this->fetchAnalytics($zoneId, $dateSince);
+            if ($data === null) {
+                $errors[] = "Zone {$zName}: GraphQL API call failed.";
+                continue;
+            }
+            if (! empty($data['error'])) {
+                $errors[] = "Zone {$zName}: {$data['error']}";
                 continue;
             }
 
-            if (! empty($analyticsData['error'])) {
-                $errors[] = "Zone {$resolvedName}: " . $analyticsData['error'];
-                continue;
-            }
+            $agg['requests']  += $data['requests'];
+            $agg['cached']    += $data['cached'];
+            $agg['bandwidth'] += $data['bandwidth'];
+            $agg['pageViews'] += $data['pageViews'];
+            $agg['threats']   += $data['threats'];
+            $agg['bots']      += $data['bots'];
 
-            $aggRequests  += $analyticsData['totalRequests'];
-            $aggCached    += $analyticsData['cachedRequests'];
-            $aggUncached  += ($analyticsData['totalRequests'] - $analyticsData['cachedRequests']);
-            $aggBandwidth += $analyticsData['bandwidthBytes'];
-            $aggPageViews += $analyticsData['pageViews'];
-            $aggVisitors  += $analyticsData['uniqueVisitors'];
-            $aggThreats   += $analyticsData['threats'];
-            $aggBots      += $analyticsData['botRequests'];
-
-            foreach ($analyticsData['countries'] as $country => $count) {
-                $allCountries[$country] = ($allCountries[$country] ?? 0) + $count;
+            foreach ($data['countries'] as $c => $n) {
+                $allCountries[$c] = ($allCountries[$c] ?? 0) + $n;
             }
-            foreach ($analyticsData['statusCodes'] as $code => $count) {
-                $allStatuses[$code] = ($allStatuses[$code] ?? 0) + $count;
+            foreach ($data['statusCodes'] as $c => $n) {
+                $allStatuses[$c] = ($allStatuses[$c] ?? 0) + $n;
             }
-            foreach ($analyticsData['browsers'] as $browser => $count) {
-                $allBrowsers[$browser] = ($allBrowsers[$browser] ?? 0) + $count;
+            foreach ($data['browsers'] as $b => $n) {
+                $allBrowsers[$b] = ($allBrowsers[$b] ?? 0) + $n;
             }
-            $allSubdomains[$resolvedName] = ($allSubdomains[$resolvedName] ?? 0) + $analyticsData['totalRequests'];
-
-            $stored++;
+            $allSubdomains[$zName] = ($allSubdomains[$zName] ?? 0) + $data['requests'];
+            $stored[] = $zName;
         }
 
-        // Show errors if all zones failed
-        if ($stored === 0 && ! empty($errors)) {
+        if (empty($stored) && ! empty($errors)) {
             return redirect()->back()->with('error', implode(' | ', $errors));
         }
 
-        // Save snapshot to database
         arsort($allCountries);
         arsort($allBrowsers);
+        $zNameStr = implode(', ', $zoneNames);
 
-        $zoneNameStr = ! empty($zoneNames) ? implode(', ', $zoneNames) : (count($zones) . ' zones');
-
-        $existing = $db->table('cloudflare_analytics')
-            ->where('snapshot_date', $today)
-            ->get()
-            ->getRowArray();
-
-        $snapshotData = [
-            'snapshot_date'     => $today,
-            'zone_id'           => $accountId,
-            'zone_name'         => $zoneNameStr,
-            'total_requests'    => $aggRequests,
-            'cached_requests'   => $aggCached,
-            'uncached_requests' => $aggUncached,
-            'bandwidth_bytes'   => $aggBandwidth,
-            'page_views'        => $aggPageViews,
-            'unique_visitors'   => $aggVisitors,
-            'threats_blocked'   => $aggThreats,
-            'bot_requests'      => $aggBots,
-            'countries_data'    => ! empty($allCountries) ? json_encode($allCountries) : null,
-            'http_status_data'  => ! empty($allStatuses) ? json_encode($allStatuses) : null,
-            'browser_data'      => ! empty($allBrowsers) ? json_encode($allBrowsers) : null,
-            'subdomain_data'    => ! empty($allSubdomains) ? json_encode($allSubdomains) : null,
-            'created_at'        => date('Y-m-d H:i:s'),
+        $existing = $db->table('cloudflare_analytics')->where('snapshot_date', $today)->get()->getRowArray();
+        $row = [
+            'snapshot_date' => $today, 'zone_id' => $accountId, 'zone_name' => $zNameStr,
+            'total_requests' => $agg['requests'], 'cached_requests' => $agg['cached'],
+            'uncached_requests' => $agg['requests'] - $agg['cached'],
+            'bandwidth_bytes' => $agg['bandwidth'], 'page_views' => $agg['pageViews'],
+            'unique_visitors' => 0, 'threats_blocked' => $agg['threats'],
+            'bot_requests' => $agg['bots'],
+            'countries_data' => ! empty($allCountries) ? json_encode($allCountries) : null,
+            'http_status_data' => ! empty($allStatuses) ? json_encode($allStatuses) : null,
+            'browser_data' => ! empty($allBrowsers) ? json_encode($allBrowsers) : null,
+            'subdomain_data' => ! empty($allSubdomains) ? json_encode($allSubdomains) : null,
+            'created_at' => date('Y-m-d H:i:s'),
         ];
 
         if ($existing) {
-            $db->table('cloudflare_analytics')->where('id', $existing['id'])->update($snapshotData);
+            $db->table('cloudflare_analytics')->where('id', $existing['id'])->update($row);
         } else {
-            $db->table('cloudflare_analytics')->insert($snapshotData);
+            $db->table('cloudflare_analytics')->insert($row);
         }
 
-        $msg = "Data opgehaald voor {$stored} zone(s) via GraphQL. Totaal {$aggPageViews} pageviews, {$aggThreats} threats geblokkeerd.";
-        if (! empty($errors)) {
-            $msg .= ' (Let op: ' . implode('; ', $errors) . ')';
-        }
-
+        $msg = "Data opgehaald voor " . count($stored) . " zone(s): {$zNameStr}. {$agg['pageViews']} pageviews, {$agg['threats']} threats.";
+        if (! empty($errors)) $msg .= ' (' . implode('; ', $errors) . ')';
         return redirect()->to(base_url('admin/cloudflare'))->with('success', $msg);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Fetch analytics data via Cloudflare GraphQL API
-    // Returns array with keys OR ['error' => '...'] on failure
-    // ─────────────────────────────────────────────────────────────────────────
-    private function fetchGraphQLAnalytics(string $zoneId, string $dateSince): ?array
+    private function fetchAnalytics(string $zoneId, string $dateSince): ?array
     {
-        // --- Step 1: Daily aggregates for last 30 days ---
-        $dailyQuery = json_encode([
-            'query' => '{ viewer { zones(filter: { zoneTag: "' . $zoneId . '" }) { httpRequests1dGroups(limit: 30, filter: { date_gt: "' . $dateSince . '" }) { sum { requests pageViews threats bytes cachedRequests uniqueVisitors } dimensions { date } } } } }'
+        // Aggregate query — only working fields
+        $q1 = json_encode(['query' =>
+            '{ viewer { zones(filter: { zoneTag: "' . $zoneId . '" }) {'
+            . ' httpRequests1dGroups(limit: 30, filter: { date_gt: "' . $dateSince . '" }) {'
+            . ' sum { requests pageViews threats bytes cachedRequests } dimensions { date } } } } }'
         ]);
+        $r1 = $this->graphqlCall($q1);
+        if ($r1 === null) return ['error' => 'GraphQL aggregate query failed'];
 
-        $dailyData = $this->callGraphQL($dailyQuery);
-
-        if ($dailyData === null) {
-            return ['error' => 'GraphQL daily aggregates call failed'];
+        $groups = $r1['data']['viewer']['zones'][0]['httpRequests1dGroups'] ?? [];
+        $req = $pv = $threats = $bytes = $cached = 0;
+        foreach ($groups as $g) {
+            $s = $g['sum'] ?? [];
+            $req     += (int) ($s['requests'] ?? 0);
+            $pv      += (int) ($s['pageViews'] ?? 0);
+            $threats += (int) ($s['threats'] ?? 0);
+            $bytes   += (int) ($s['bytes'] ?? 0);
+            $cached  += (int) ($s['cachedRequests'] ?? 0);
         }
 
-        $groups = $dailyData['data']['viewer']['zones'][0]['httpRequests1dGroups'] ?? [];
-
-        $totalRequests   = 0;
-        $totalPageViews  = 0;
-        $totalThreats    = 0;
-        $totalBytes      = 0;
-        $totalCached     = 0;
-        $totalVisitors   = 0;
-
-        foreach ($groups as $group) {
-            $sum = $group['sum'] ?? [];
-            $totalRequests  += (int) ($sum['requests'] ?? 0);
-            $totalPageViews += (int) ($sum['pageViews'] ?? 0);
-            $totalThreats   += (int) ($sum['threats'] ?? 0);
-            $totalBytes     += (int) ($sum['bytes'] ?? 0);
-            $totalCached    += (int) ($sum['cachedRequests'] ?? 0);
-            $totalVisitors  += (int) ($sum['uniqueVisitors'] ?? 0);
-        }
-
-        // --- Step 2: Detailed breakdowns (countries, statuses, browsers, bots) ---
-        $detailQuery = json_encode([
-            'query' => '{ viewer { zones(filter: { zoneTag: "' . $zoneId . '" }) { httpRequests1dGroups(limit: 1, filter: { date_gt: "' . $dateSince . '" }) { sum { countryMap { clientCountryName requests } responseStatusMap { edgeResponseStatus requests } browserMap { uaBrowserFamily requests } botScoreGroups { botScore requests } } } } } }'
+        // Country map detail query
+        $q2 = json_encode(['query' =>
+            '{ viewer { zones(filter: { zoneTag: "' . $zoneId . '" }) {'
+            . ' httpRequests1dGroups(limit: 1, filter: { date_gt: "' . $dateSince . '" }) {'
+            . ' sum { countryMap { clientCountryName requests } } } } } }'
         ]);
+        $r2 = $this->graphqlCall($q2);
+        $detailSum = $r2['data']['viewer']['zones'][0]['httpRequests1dGroups'][0]['sum'] ?? [];
 
-        $detailData = $this->callGraphQL($detailQuery);
-        $detailSum  = $detailData['data']['viewer']['zones'][0]['httpRequests1dGroups'][0]['sum'] ?? [];
-
-        // --- Parse country data ---
         $countries = [];
         foreach ($detailSum['countryMap'] ?? [] as $item) {
             $name = $item['clientCountryName'] ?? 'Unknown';
@@ -337,132 +230,53 @@ class CloudflareController extends Controller
         }
         arsort($countries);
 
-        // --- Parse status codes ---
-        $statusCodes = [];
-        foreach ($detailSum['responseStatusMap'] ?? [] as $item) {
-            $code = (string) ($item['edgeResponseStatus'] ?? '0');
-            $statusCodes[$code] = ($statusCodes[$code] ?? 0) + (int) ($item['requests'] ?? 0);
-        }
-        arsort($statusCodes);
-
-        // --- Parse browser data ---
-        $browsers = [];
-        foreach ($detailSum['browserMap'] ?? [] as $item) {
-            $name = $item['uaBrowserFamily'] ?? 'Unknown';
-            $browsers[$name] = ($browsers[$name] ?? 0) + (int) ($item['requests'] ?? 0);
-        }
-        arsort($browsers);
-
-        // --- Bot traffic ---
-        $botRequests = 0;
-        foreach ($detailSum['botScoreGroups'] ?? [] as $item) {
-            if ((int) ($item['botScore'] ?? 0) >= 30) {
-                $botRequests += (int) ($item['requests'] ?? 0);
-            }
-        }
-
         return [
-            'totalRequests'  => $totalRequests,
-            'cachedRequests' => $totalCached,
-            'bandwidthBytes' => $totalBytes,
-            'pageViews'      => $totalPageViews,
-            'uniqueVisitors' => $totalVisitors,
-            'threats'        => $totalThreats,
-            'botRequests'    => $botRequests,
-            'countries'      => $countries,
-            'statusCodes'    => $statusCodes,
-            'browsers'       => $browsers,
+            'requests' => $req, 'cached' => $cached, 'bandwidth' => $bytes,
+            'pageViews' => $pv, 'threats' => $threats, 'bots' => 0,
+            'countries' => $countries, 'statusCodes' => [], 'browsers' => [],
         ];
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Resolve zone IDs from .env
-    // ─────────────────────────────────────────────────────────────────────────
     private function resolveZones(): array
     {
-        $envZoneIds = env('cloudflare.zoneIds', '');
-        if (! empty($envZoneIds)) {
-            $ids   = array_map('trim', explode(',', $envZoneIds));
-            $zones = [];
-            foreach ($ids as $id) {
-                if ($id !== '') {
-                    $zones[] = ['id' => $id, 'name' => $id];
-                }
-            }
-            return $zones;
+        $env = env('cloudflare.zoneIds', '');
+        if (empty($env)) return [];
+        $zones = [];
+        foreach (array_map('trim', explode(',', $env)) as $id) {
+            if ($id !== '') $zones[] = ['id' => $id, 'name' => $id];
         }
-        return [];
+        return $zones;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Call Cloudflare GraphQL API with pre-encoded JSON body
-    // ─────────────────────────────────────────────────────────────────────────
-    private function callGraphQL(string $jsonBody): ?array
+    private function graphqlCall(string $jsonBody): ?array
     {
-        $apiToken = env('cloudflare.apiToken');
-
         $ch = curl_init(self::CF_GRAPHQL);
         curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 25,
-            CURLOPT_POST           => true,
-            CURLOPT_HTTPHEADER     => [
-                'Authorization: Bearer ' . $apiToken,
-                'Content-Type: application/json',
-            ],
-            CURLOPT_POSTFIELDS     => $jsonBody,
+            CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 25, CURLOPT_POST => true,
+            CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . env('cloudflare.apiToken'), 'Content-Type: application/json'],
+            CURLOPT_POSTFIELDS => $jsonBody,
         ]);
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
+        $resp = curl_exec($ch);
+        $err  = curl_error($ch);
         curl_close($ch);
-
-        if ($response === false || $httpCode === 0) {
-            log_message('error', 'CF GraphQL curl error: ' . ($curlError ?: 'timeout'));
-            return null;
-        }
-
-        $data = json_decode($response, true);
-        if (! is_array($data)) {
-            log_message('error', 'CF GraphQL invalid JSON response');
-            return null;
-        }
-
-        if (! empty($data['errors'])) {
-            log_message('error', 'CF GraphQL errors: ' . json_encode($data['errors']));
-            return null;
-        }
-
+        if ($resp === false) { log_message('error', 'CF GraphQL: ' . ($err ?: 'timeout')); return null; }
+        $data = json_decode($resp, true);
+        if (! is_array($data)) { log_message('error', 'CF GraphQL: invalid JSON'); return null; }
+        if (! empty($data['errors'])) { log_message('error', 'CF GraphQL errors: ' . json_encode($data['errors'])); return null; }
         return $data;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Cloudflare REST request (zone info only)
-    // ─────────────────────────────────────────────────────────────────────────
-    private function restRequest(string $method, string $path, array $params = []): array
+    private function restGet(string $path): array
     {
-        $apiToken = env('cloudflare.apiToken');
-        $url = self::CF_BASE . $path . (! empty($params) ? '?' . http_build_query($params) : '');
-
-        $ch = curl_init($url);
+        $ch = curl_init(self::CF_BASE . $path);
         curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 15,
-            CURLOPT_HTTPHEADER     => [
-                'Authorization: Bearer ' . $apiToken,
-                'Content-Type: application/json',
-            ],
+            CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15,
+            CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . env('cloudflare.apiToken'), 'Content-Type: application/json'],
         ]);
-        if ($method === 'POST') {
-            curl_setopt($ch, CURLOPT_POST, true);
-        }
-
-        $response = curl_exec($ch);
+        $resp = curl_exec($ch);
         curl_close($ch);
-
-        if ($response === false) return [];
-        $data = json_decode($response, true);
+        if ($resp === false) return [];
+        $data = json_decode($resp, true);
         return is_array($data) ? $data : [];
     }
 }
