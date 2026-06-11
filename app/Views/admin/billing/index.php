@@ -1,151 +1,215 @@
 <?= $this->extend('admin/layout') ?>
 
 <?= $this->section('head') ?>
-<!-- Tabulator CSS -->
-<link href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/css/tabulator_midnight.min.css" rel="stylesheet" />
+<!-- Tabulator CSS (simple base, fully custom styled) -->
+<link href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/css/tabulator_simple.min.css" rel="stylesheet" />
 <style>
-    /* ── Tabulator dark theme overrides ── */
+    /* ── Tabulator fully custom Play2TV dark theme ── */
+    :root {
+        --tbg-main: #0f0f1a;
+        --tbg-panel: #1a1a2e;
+        --tbg-panel-strong: #16213e;
+        --tborder: #2d2d44;
+        --ttext: #e2e8f0;
+        --ttext-soft: #cbd5e1;
+        --ttext-muted: #94a3b8;
+        --tpurple: #7c3aed;
+        --tpurple-light: #a78bfa;
+        --tpurple-dark: #5b21b6;
+    }
+
     .tabulator {
         background: transparent;
         border: none;
         font-size: .875rem;
+        color: var(--ttext);
     }
+
+    /* Header */
     .tabulator .tabulator-header {
-        background: var(--bg-panel-strong, #16213e);
-        border-bottom: 1px solid var(--border-color, #2d2d44);
+        background: var(--tbg-panel-strong);
+        border-bottom: 2px solid var(--tpurple);
     }
     .tabulator .tabulator-header .tabulator-col {
-        background: var(--bg-panel-strong, #16213e);
-        border-right-color: var(--border-color, #2d2d44);
-        color: var(--text-muted-dark, #94a3b8);
-        font-size: .8rem;
+        background: var(--tbg-panel-strong);
+        border-right-color: var(--tborder);
+        color: var(--tpurple-light);
+        font-size: .78rem;
         text-transform: uppercase;
-        font-weight: 600;
+        font-weight: 700;
+        letter-spacing: .03em;
     }
     .tabulator .tabulator-header .tabulator-col.tabulator-sortable:hover {
-        background: rgba(124, 58, 237, .15);
+        background: rgba(124, 58, 237, .2);
         color: #fff;
     }
     .tabulator .tabulator-header .tabulator-col.tabulator-sortable[aria-sort="ascending"] .tabulator-col-content .tabulator-arrow,
     .tabulator .tabulator-header .tabulator-col.tabulator-sortable[aria-sort="descending"] .tabulator-col-content .tabulator-arrow {
-        border-bottom-color: #a78bfa;
+        border-bottom-color: var(--tpurple-light);
     }
+
+    /* Rows */
     .tabulator .tabulator-tableholder {
         background: transparent;
     }
     .tabulator .tabulator-row {
         background: transparent;
-        color: var(--text-main, #e2e8f0);
-        border-bottom-color: #1e2035;
+        color: var(--ttext);
+        border-bottom: 1px solid rgba(45, 45, 68, .5);
+        min-height: 42px;
     }
     .tabulator .tabulator-row:hover {
-        background: rgba(124, 58, 237, .08);
+        background: rgba(124, 58, 237, .1) !important;
     }
     .tabulator .tabulator-row.tabulator-row-even {
-        background: rgba(26, 26, 46, .4);
+        background: rgba(26, 26, 46, .35);
     }
     .tabulator .tabulator-row .tabulator-cell {
         border-right-color: transparent;
         padding: .55rem .75rem;
     }
+
+    /* Selection highlight */
+    .tabulator .tabulator-row.tabulator-selected {
+        background: rgba(124, 58, 237, .2) !important;
+    }
+
+    /* Footer */
     .tabulator .tabulator-footer {
-        background: var(--bg-panel-strong, #16213e);
-        border-top: 1px solid var(--border-color, #2d2d44);
-        color: var(--text-muted-dark, #94a3b8);
+        background: var(--tbg-panel-strong);
+        border-top: 2px solid var(--tpurple);
+        color: var(--ttext-soft);
+        padding: .5rem .75rem;
     }
     .tabulator .tabulator-footer .tabulator-page {
-        background: var(--bg-main, #0f0f1a);
-        border-color: var(--border-color, #2d2d44);
-        color: var(--text-muted-dark, #94a3b8);
+        background: var(--tbg-main);
+        border: 1px solid var(--tborder);
+        color: var(--ttext-soft);
         border-radius: 6px;
-        padding: .25rem .6rem;
+        padding: .3rem .65rem;
         margin: 0 2px;
         font-size: .82rem;
     }
     .tabulator .tabulator-footer .tabulator-page.active {
-        background: #7c3aed;
-        border-color: #7c3aed;
+        background: var(--tpurple);
+        border-color: var(--tpurple);
         color: #fff;
+        font-weight: 700;
+        box-shadow: 0 0 8px rgba(124, 58, 237, .4);
     }
-    .tabulator .tabulator-footer .tabulator-page:hover {
+    .tabulator .tabulator-footer .tabulator-page:hover:not(.active):not(:disabled) {
         background: rgba(124, 58, 237, .25);
         color: #fff;
+        border-color: var(--tpurple-light);
     }
     .tabulator .tabulator-footer .tabulator-page:disabled {
-        opacity: .4;
+        opacity: .3;
         cursor: not-allowed;
     }
     .tabulator .tabulator-footer .tabulator-page-size {
-        background: var(--bg-main, #0f0f1a);
-        border-color: var(--border-color, #2d2d44);
-        color: var(--text-main, #e2e8f0);
+        background: var(--tbg-main);
+        border: 1px solid var(--tpurple);
+        color: var(--ttext);
         border-radius: 6px;
-        padding: .2rem .4rem;
+        padding: .25rem .5rem;
         margin-left: .5rem;
     }
     .tabulator .tabulator-footer .tabulator-page-size:focus {
-        border-color: #7c3aed;
+        border-color: var(--tpurple-light);
         outline: none;
+        box-shadow: 0 0 0 .2rem rgba(124, 58, 237, .3);
+    }
+    .tabulator .tabulator-footer .tabulator-paginator {
+        color: var(--ttext-soft);
     }
 
-    /* Search input in header filter */
+    /* Header filters (search inputs) */
     .tabulator .tabulator-header-filter input {
-        background: var(--bg-main, #0f0f1a);
-        border: 1px solid var(--border-color, #2d2d44);
-        color: var(--text-main, #e2e8f0);
+        background: var(--tbg-main);
+        border: 1px solid var(--tborder);
+        color: var(--ttext);
         border-radius: 6px;
-        padding: .25rem .5rem;
+        padding: .3rem .55rem;
         font-size: .82rem;
+        width: 100%;
+        box-sizing: border-box;
     }
     .tabulator .tabulator-header-filter input:focus {
-        border-color: #7c3aed;
+        border-color: var(--tpurple);
         outline: none;
-        box-shadow: 0 0 0 .15rem rgba(124, 58, 237, .25);
+        box-shadow: 0 0 0 .15rem rgba(124, 58, 237, .3);
     }
     .tabulator .tabulator-header-filter input::placeholder {
-        color: var(--text-faint, #64748b);
+        color: #64748b;
+    }
+
+    /* Header filter select */
+    .tabulator .tabulator-header-filter select {
+        background: var(--tbg-main);
+        border: 1px solid var(--tborder);
+        color: var(--ttext);
+        border-radius: 6px;
+        padding: .25rem .4rem;
+        font-size: .82rem;
+    }
+    .tabulator .tabulator-header-filter select:focus {
+        border-color: var(--tpurple);
+        outline: none;
+        box-shadow: 0 0 0 .15rem rgba(124, 58, 237, .3);
     }
 
     /* Loading indicator */
     .tabulator .tabulator-loader {
-        border-color: #7c3aed;
+        border-top-color: var(--tpurple) !important;
+        border-right-color: var(--tpurple) !important;
+        border-bottom-color: var(--tpurple) !important;
     }
 
     /* Empty state */
     .tabulator .tabulator-tableholder .tabulator-placeholder {
-        padding: 2rem;
+        padding: 2.5rem;
     }
     .tabulator .tabulator-tableholder .tabulator-placeholder .tabulator-placeholder-contents {
-        color: var(--text-muted-dark, #94a3b8);
+        color: var(--ttext-muted);
         font-size: .9rem;
     }
 
+    /* Progress/resize handles */
+    .tabulator .tabulator-col-resize-handle:hover {
+        background-color: var(--tpurple-light);
+    }
+
     /* ── Badge styles ── */
-    .badge-pill { display: inline-block; padding: .2em .6em; font-size: .78rem; border-radius: 999px; font-weight: 600; }
+    .badge-pill { display: inline-block; padding: .25em .7em; font-size: .78rem; border-radius: 999px; font-weight: 600; line-height: 1.4; }
     .badge-success { background: #065f46; color: #6ee7b7; }
     .badge-primary { background: #5b21b6; color: #c4b5fd; }
     .badge-warning { background: #78350f; color: #fcd34d; }
     .badge-danger { background: #7f1d1d; color: #fca5a5; }
     .badge-secondary { background: #1e293b; color: #94a3b8; }
 
-    .user-link { color: #c4b5fd; text-decoration: none; }
+    .user-link { color: #c4b5fd; text-decoration: none; font-weight: 500; }
     .user-link:hover { color: #ddd6fe; text-decoration: underline; }
 
     .action-btn {
-        display: inline-block;
-        padding: .25rem .55rem;
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .3rem .65rem;
         border-radius: 6px;
-        border: 1px solid #475569;
-        background: transparent;
-        color: #94a3b8;
+        border: 1px solid var(--tpurple);
+        background: rgba(124, 58, 237, .15);
+        color: var(--tpurple-light);
         font-size: .8rem;
+        font-weight: 500;
         text-decoration: none;
         transition: all .15s;
+        white-space: nowrap;
     }
     .action-btn:hover {
-        background: rgba(124, 58, 237, .15);
+        background: var(--tpurple);
         color: #fff;
-        border-color: #7c3aed;
+        border-color: var(--tpurple-light);
+        box-shadow: 0 0 10px rgba(124, 58, 237, .35);
     }
 </style>
 <?= $this->endSection() ?>
@@ -218,7 +282,6 @@ document.addEventListener('DOMContentLoaded', function () {
             method: 'GET',
         },
         ajaxResponse: function (url, params, response) {
-            // Tabulator expects { last_page, data }
             return response;
         },
         pagination: true,
@@ -226,11 +289,7 @@ document.addEventListener('DOMContentLoaded', function () {
         paginationSize: 25,
         paginationSizeSelector: [10, 25, 50, 100],
         paginationCounter: 'rows',
-
-        // Search (header filter per column, combined)
         filterMode: 'remote',
-
-        // Sorting
         sortMode: 'remote',
 
         // ── Persistence: onthoud pagina, page size, filters, sortering ──
@@ -238,20 +297,14 @@ document.addEventListener('DOMContentLoaded', function () {
         persistenceID: 'admin-billing-table',
         persistenceMode: 'local',
 
-        // Layout
         layout: 'fitDataStretch',
         height: 'auto',
 
-        // Columns
         columns: [
             {
                 title: '#',
                 field: 'id',
-                width: 70,
-                hozAlign: 'right',
-                sorter: 'number',
-                headerFilter: 'input',
-                headerFilterPlaceholder: 'Zoek ID...',
+                visible: false,
             },
             {
                 title: 'Gebruiker',
@@ -403,7 +456,6 @@ document.addEventListener('DOMContentLoaded', function () {
         },
     });
 
-    // Instellen op Nederlands
     table.setLocale('nl');
 
 });
