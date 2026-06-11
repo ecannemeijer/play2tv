@@ -254,18 +254,28 @@ class CloudflareController extends Controller
     private function graphqlCall(string $jsonBody): array
     {
         if (! function_exists('curl_init')) {
-            return ['_error' => 'PHP cURL extension is not installed/enabled'];
+            return ['_error' => 'PHP cURL extension not enabled'];
         }
 
         $apiToken = env('cloudflare.apiToken');
         if (empty($apiToken)) {
-            return ['_error' => 'cloudflare.apiToken is empty or not found in .env — check .env file on this server'];
+            return ['_error' => 'cloudflare.apiToken not found in .env'];
         }
 
-        // Debug: show token prefix to confirm it's being read
-        $tokenPrefix = substr($apiToken, 0, 10);
-        $tokenDebug = "token prefix: {$tokenPrefix}..., length: " . strlen($apiToken);
-        log_message('debug', 'CF GraphQL auth: ' . $tokenDebug);
+        // First verify the token is valid via REST
+        $tokenVerify = curl_init('https://api.cloudflare.com/client/v4/user/tokens/verify');
+        curl_setopt_array($tokenVerify, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 10,
+            CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $apiToken],
+        ]);
+        $tvResp = curl_exec($tokenVerify);
+        $tvCode = curl_getinfo($tokenVerify, CURLINFO_HTTP_CODE);
+        curl_close($tokenVerify);
+        if ($tvResp === false || $tvCode !== 200) {
+            $body = $tvResp ? substr($tvResp, 0, 300) : 'no response';
+            return ['_error' => "Token verification failed (HTTP {$tvCode}): {$body} — check if token is valid and Account Analytics: Read is enabled"];
+        }
 
         $ch = curl_init(self::CF_GRAPHQL);
         if ($ch === false) {
