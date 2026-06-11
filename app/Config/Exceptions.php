@@ -67,6 +67,16 @@ class Exceptions extends BaseConfig
         'server/HTTP_XTREAM_PASSWORD',
     ];
 
+    public function __construct()
+    {
+        parent::__construct();
+
+        // PHP can omit trace args entirely, which breaks CI 4.7.0's masking pass.
+        if ((int) ini_get('zend.exception_ignore_args') === 1) {
+            $this->sensitiveDataInTrace = [];
+        }
+    }
+
     /**
      * --------------------------------------------------------------------------
      * WHETHER TO THROW AN EXCEPTION ON DEPRECATED ERRORS
