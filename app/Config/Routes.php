@@ -96,8 +96,6 @@ $routes->group('api', ['filter' => 'jwt'], function ($routes) {
     $routes->get('content/cast/live-playlist', 'Api\XtreamContentController::castLivePlaylist');
     $routes->get('content/cast/media', 'Api\XtreamContentController::castMedia');
 
-    // Playlist (premium only — checked inside controller)
-    $routes->get('playlist', 'Api\PlaylistController::index');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -166,15 +164,10 @@ $routes->group('admin', ['filter' => 'adminauth'], function ($routes) {
         $routes->get('billing',        'Admin\BillingController::index');
         $routes->get('billing/(:num)', 'Admin\BillingController::view/$1');
 
-        // Playlists
-        $routes->get('playlists',                    'Admin\PlaylistController::index');
-    $routes->get('playlists/add',                'Admin\PlaylistController::addForm');
-    $routes->post('playlists/add',               'Admin\PlaylistController::add');
-    $routes->get('playlists/(:num)/edit',        'Admin\PlaylistController::editForm/$1');
-    $routes->post('playlists/(:num)/edit',       'Admin\PlaylistController::edit/$1');
-    $routes->get('playlists/(:num)/activate',    'Admin\PlaylistController::activate/$1');
-    $routes->get('playlists/(:num)/delete',      'Admin\PlaylistController::delete/$1');
-});
+        // Cloudflare Analytics
+        $routes->get('cloudflare', 'Admin\CloudflareController::index');
+        $routes->post('cloudflare/fetch', 'Admin\CloudflareController::fetch');
+    });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DEFAULT (redirect /admin to login)

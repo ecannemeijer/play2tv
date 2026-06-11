@@ -18,7 +18,6 @@ class AddPerformanceIndexes extends Migration
         $this->addIndexIfMissing('watch_history', 'idx_watch_history_content', ['content_type', 'content_id']);
         $this->addIndexIfMissing('user_ips_log', 'idx_user_ips_log_created_at', ['created_at']);
         $this->addIndexIfMissing('user_ips_log', 'idx_user_ips_log_user_created_at', ['user_id', 'created_at']);
-        $this->addIndexIfMissing('playlists', 'idx_playlists_active_updated', ['is_active', 'updated_at']);
         $this->addIndexIfMissing('auth_refresh_tokens', 'idx_refresh_tokens_revoked_expires', ['revoked_at', 'expires_at']);
         $this->addIndexIfMissing('security_events', 'idx_security_events_created_at', ['created_at']);
         $this->addIndexIfMissing('security_events', 'idx_security_events_route_created_at', ['route', 'created_at']);
@@ -34,7 +33,6 @@ class AddPerformanceIndexes extends Migration
         $this->dropIndexIfExists('watch_history', 'idx_watch_history_content');
         $this->dropIndexIfExists('user_ips_log', 'idx_user_ips_log_created_at');
         $this->dropIndexIfExists('user_ips_log', 'idx_user_ips_log_user_created_at');
-        $this->dropIndexIfExists('playlists', 'idx_playlists_active_updated');
         $this->dropIndexIfExists('auth_refresh_tokens', 'idx_refresh_tokens_revoked_expires');
         $this->dropIndexIfExists('security_events', 'idx_security_events_created_at');
         $this->dropIndexIfExists('security_events', 'idx_security_events_route_created_at');

@@ -9,8 +9,6 @@ use Config\Services;
 
 class ApiCacheService
 {
-    private const PLAYLIST_VERSION_KEY = 'perf-playlist-version';
-
     private \CodeIgniter\Cache\CacheInterface $cache;
     private Performance $config;
 
@@ -36,21 +34,6 @@ class ApiCacheService
         $this->cache->save($key, $value, $ttl);
 
         return $value;
-    }
-
-    /**
-     * @param callable():array<string, mixed>|null $resolver
-     * @return array<string, mixed>|null
-     */
-    public function rememberActivePlaylist(callable $resolver): ?array
-    {
-        $key = implode('-', [
-            'perf',
-            'playlist',
-            $this->getPlaylistVersion(),
-        ]);
-
-        return $this->remember($key, $this->ttl('playlist'), $resolver);
     }
 
     /**
@@ -111,22 +94,6 @@ class ApiCacheService
         return $this->remember($key, $this->ttl('bootstrap_categories'), $resolver);
     }
 
-    public function bumpPlaylistVersion(): void
-    {
-        $this->cache->save(self::PLAYLIST_VERSION_KEY, $this->newVersionToken(), DAY);
-    }
-
-    private function getPlaylistVersion(): string
-    {
-        $version = $this->cache->get(self::PLAYLIST_VERSION_KEY);
-        if (! is_string($version) || $version === '') {
-            $version = $this->newVersionToken();
-            $this->cache->save(self::PLAYLIST_VERSION_KEY, $version, DAY);
-        }
-
-        return $version;
-    }
-
     /**
      * @param array<string, mixed> $user
      */
@@ -142,10 +109,5 @@ class ApiCacheService
     private function ttl(string $key): int
     {
         return max(30, (int) ($this->config->apiCacheTtl[$key] ?? 60));
-    }
-
-    private function newVersionToken(): string
-    {
-        return bin2hex(random_bytes(8));
     }
 }

@@ -230,9 +230,9 @@
            class="nav-link <?= str_starts_with(uri_string(), 'admin/users') ? 'active' : '' ?>">
             <i class="bi bi-people"></i> Gebruikers
         </a>
-        <a href="<?= base_url('admin/playlists') ?>"
-           class="nav-link <?= str_starts_with(uri_string(), 'admin/playlists') ? 'active' : '' ?>">
-            <i class="bi bi-collection-play"></i> Playlists
+        <a href="<?= base_url('admin/cloudflare') ?>"
+           class="nav-link <?= str_starts_with(uri_string(), 'admin/cloudflare') ? 'active' : '' ?>">
+            <i class="bi bi-cloud-check"></i> Cloudflare
         </a>
         <a href="<?= base_url('admin/security/events') ?>"
            class="nav-link <?= str_starts_with(uri_string(), 'admin/security') ? 'active' : '' ?>">

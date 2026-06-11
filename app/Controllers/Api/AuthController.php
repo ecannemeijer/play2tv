@@ -383,14 +383,11 @@ class AuthController extends BaseApiController
      */
     private function buildLegacyClientPayload(array $user): array
     {
-        $playlistUrl = base_url('api/playlist');
-
         return [
             'xtream_server' => $user['xtream_server'] ?? null,
             'xtream_username' => $user['xtream_username'] ?? null,
             'xtream_password' => $user['xtream_password'] ?? null,
             'has_xtream_password' => ! empty($user['xtream_password']),
-            'playlist_url' => $playlistUrl,
         ];
     }
 }
