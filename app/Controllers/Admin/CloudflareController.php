@@ -145,24 +145,21 @@ class CloudflareController extends Controller
     // ─────────────────────────────────────────────────────────────────────────
     public function fetch()
     {
-        $accountId = getenv('cloudflare.accountId');
-        $apiToken  = getenv('cloudflare.apiToken');
+        $accountId = env('cloudflare.accountId');
+        $apiToken  = env('cloudflare.apiToken');
 
         if (empty($accountId) || empty($apiToken)) {
             return redirect()->back()->with('error', 'Cloudflare API credentials not configured in .env');
         }
 
-        // 1. List zones for this account
-        $zones = $this->cfRequest('GET', '/zones', [
-            'account.id'   => $accountId,
-            'per_page'     => '50',
-        ]);
+        // Resolve zone IDs: try from .env first, then auto-list from account
+        $zones = $this->resolveZones($accountId);
 
-        if (empty($zones['result'])) {
-            return redirect()->back()->with('error', 'Geen zones gevonden voor dit Cloudflare account.');
+        if (empty($zones)) {
+            return redirect()->back()->with('error', 'Geen zone IDs gevonden. Vul cloudflare.zoneIds in .env of zorg dat de API token zones kan opvragen. Error: 9109 = IP niet toegestaan vanaf deze locatie.');
         }
 
-        $db = db_connect();
+        $db    = db_connect();
         $today = date('Y-m-d');
         $stored = 0;
 
@@ -180,9 +177,9 @@ class CloudflareController extends Controller
         $allBrowsers     = [];
         $allSubdomains   = [];
 
-        foreach ($zones['result'] as $zone) {
-            $zoneId   = $zone['id'] ?? '';
-            $zoneName = $zone['name'] ?? '';
+        foreach ($zones as $zoneEntry) {
+            $zoneId   = $zoneEntry['id'] ?? '';
+            $zoneName = $zoneEntry['name'] ?? $zoneId;
 
             if (empty($zoneId)) continue;
 
@@ -237,6 +234,8 @@ class CloudflareController extends Controller
         arsort($allCountries);
         arsort($allBrowsers);
 
+        $zoneCount = count($zones);
+
         // Check if a snapshot for today already exists
         $existing = $db->table('cloudflare_analytics')
             ->where('snapshot_date', $today)
@@ -246,7 +245,7 @@ class CloudflareController extends Controller
         $snapshotData = [
             'snapshot_date'     => $today,
             'zone_id'           => $accountId,
-            'zone_name'         => count($zones['result']) . ' zones',
+            'zone_name'         => $zoneCount . ' zones',
             'total_requests'    => $aggRequests,
             'cached_requests'   => $aggCached,
             'uncached_requests' => $aggUncached,
@@ -275,11 +274,40 @@ class CloudflareController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Resolve zone IDs: either from .env (cloudflare.zoneIds) or auto-list
+    // ─────────────────────────────────────────────────────────────────────────
+    private function resolveZones(string $accountId): array
+    {
+        $envZoneIds = env('cloudflare.zoneIds', '');
+        if (! empty($envZoneIds)) {
+            $ids    = array_map('trim', explode(',', $envZoneIds));
+            $zones  = [];
+            foreach ($ids as $id) {
+                if ($id !== '') {
+                    $zones[] = ['id' => $id, 'name' => $id];
+                }
+            }
+            return $zones;
+        }
+
+        // Fallback: list zones from API
+        $response = $this->cfRequest('GET', '/zones', [
+            'per_page' => '50',
+        ]);
+
+        if (! empty($response['result']) && is_array($response['result'])) {
+            return $response['result'];
+        }
+
+        return [];
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Helper: make a Cloudflare API request
     // ─────────────────────────────────────────────────────────────────────────
     private function cfRequest(string $method, string $path, array $params = []): array
     {
-        $apiToken  = getenv('cloudflare.apiToken');
+        $apiToken  = env('cloudflare.apiToken');
         $url = self::CF_BASE . $path;
 
         if (! empty($params)) {
