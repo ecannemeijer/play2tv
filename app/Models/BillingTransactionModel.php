@@ -93,6 +93,56 @@ class BillingTransactionModel extends Model
     }
 
     /**
+     * Get paginated transactions for Tabulator server-side processing.
+     *
+     * @param int    $page   Current page (1-based)
+     * @param int    $limit  Items per page
+     * @param string $search Search term (matches user_id, product_id, plan_type, status, purchase_token, user email)
+     * @param string|null $sortField Field to sort by
+     * @param string $sortDir Direction ('asc' or 'desc')
+     * @return array{last_page: int, data: array}
+     */
+    public function getPaginated(int $page = 1, int $limit = 25, string $search = '', ?string $sortField = null, string $sortDir = 'desc'): array
+    {
+        $builder = $this->select('billing_transactions.*, users.email as user_email')
+            ->join('users', 'users.id = billing_transactions.user_id', 'left');
+
+        // Apply search filter
+        if ($search !== '') {
+            $builder->groupStart()
+                ->like('billing_transactions.user_id', $search)
+                ->orLike('billing_transactions.product_id', $search)
+                ->orLike('billing_transactions.plan_type', $search)
+                ->orLike('billing_transactions.status', $search)
+                ->orLike('billing_transactions.purchase_token', $search)
+                ->orLike('users.email', $search)
+                ->groupEnd();
+        }
+
+        $total = $builder->countAllResults(false);
+
+        // Apply sorting
+        $allowedSortFields = ['id', 'user_email', 'product_id', 'plan_type', 'amount', 'status', 'created_at'];
+        if ($sortField && in_array($sortField, $allowedSortFields, true)) {
+            // Prefix table name for ambiguous columns
+            $prefix = in_array($sortField, ['id', 'product_id', 'plan_type', 'amount', 'status', 'created_at'], true)
+                ? 'billing_transactions.' . $sortField
+                : $sortField;
+            $builder->orderBy($prefix, $sortDir === 'asc' ? 'asc' : 'desc');
+        } else {
+            $builder->orderBy('billing_transactions.created_at', 'DESC');
+        }
+
+        $offset = ($page - 1) * $limit;
+        $data   = $builder->limit($limit, $offset)->get()->getResultArray();
+
+        return [
+            'last_page' => (int) ceil($total / $limit),
+            'data'      => $data,
+        ];
+    }
+
+    /**
      * Get summary statistics.
      */
     public function getStats(): array

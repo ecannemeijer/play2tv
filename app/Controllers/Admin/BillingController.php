@@ -18,17 +18,61 @@ class BillingController extends BaseController
 
     /**
      * GET /admin/billing
-     * Overview of all billing transactions.
+     * Overview page with stats (Tabulator loads data via AJAX).
      */
     public function index(): string
     {
-        $transactions = $this->billingModel->getAllWithUser();
-        $stats        = $this->billingModel->getStats();
+        $stats = $this->billingModel->getStats();
 
         return view('admin/billing/index', [
-            'title'        => 'Billing transacties',
-            'transactions' => $transactions,
-            'stats'        => $stats,
+            'title' => 'Billing transacties',
+            'stats' => $stats,
+        ]);
+    }
+
+    /**
+     * GET /admin/billing/data (AJAX)
+     * Returns JSON for Tabulator server-side pagination/search/sort.
+     */
+    public function getData(): \CodeIgniter\HTTP\ResponseInterface
+    {
+        $page   = (int) ($this->request->getGet('page') ?? 1);
+        $size   = (int) ($this->request->getGet('size') ?? 25);
+        $search = '';
+
+        // Tabulator sends filters as filters[0][value], filters[0][field], etc.
+        $filters = $this->request->getGet('filters') ?? [];
+        if (! empty($filters) && isset($filters[0]['value'])) {
+            $search = trim((string) $filters[0]['value']);
+        }
+
+        // Sorting: Tabulator sends sorters[0][field] and sorters[0][dir]
+        $sorters   = $this->request->getGet('sorters') ?? [];
+        $sortField = $sorters[0]['field'] ?? null;
+        $sortDir   = $sorters[0]['dir'] ?? 'desc';
+
+        $result = $this->billingModel->getPaginated($page, $size, $search, $sortField, $sortDir);
+
+        // Format data for Tabulator display (badges, links)
+        $data = array_map(function ($tx) {
+            return [
+                'id'              => (int) $tx['id'],
+                'user_id'         => (int) $tx['user_id'],
+                'user_email'      => $tx['user_email'] ?? 'Onbekend',
+                'product_id'      => $tx['product_id'],
+                'plan_type'       => $tx['plan_type'] ?? 'unknown',
+                'amount'          => $tx['amount'] ?? '—',
+                'currency'        => $tx['currency'] ?? null,
+                'status'          => $tx['status'] ?? 'unknown',
+                'google_order_id' => $tx['google_order_id'] ?? null,
+                'created_at'      => date('d-m-Y H:i', strtotime($tx['created_at'] ?? 'now')),
+                'created_at_raw'  => $tx['created_at'] ?? null,
+            ];
+        }, $result['data']);
+
+        return $this->response->setJSON([
+            'last_page'  => $result['last_page'],
+            'data'       => $data,
         ]);
     }
 

@@ -163,6 +163,7 @@ $routes->group('admin', ['filter' => 'adminauth'], function ($routes) {
 
         // Billing
         $routes->get('billing',        'Admin\BillingController::index');
+        $routes->get('billing/data',   'Admin\BillingController::getData');
         $routes->get('billing/(:num)', 'Admin\BillingController::view/$1');
 
         // Cloudflare Analytics
