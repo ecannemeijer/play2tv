@@ -99,7 +99,7 @@
         </div>
     </div>
     <div class="col-md-4 col-lg-2">
-        <div class="cf-stat-card red position-relative">
+        <div class="cf-stat-card red position-relative" style="cursor:pointer" onclick="showThreatsModal()" title="Klik voor threat details">
             <i class="bi bi-shield-exclamation cf-stat-icon"></i>
             <div class="cf-stat-value"><?= number_format((int) ($totals['threats_blocked'] ?? 0)) ?></div>
             <div class="cf-stat-label">Threats Blocked</div>
@@ -335,9 +335,69 @@
     <p class="text-light mt-3" style="font-size:1.1rem;">Fetching Cloudflare data...</p>
 </div>
 
+<!-- Threats Modal -->
+<div class="modal fade" id="threatsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background:var(--bg-panel);border:1px solid var(--border-color);color:var(--text-main)">
+            <div class="modal-header" style="border-color:var(--border-color)">
+                <h5 class="modal-title"><i class="bi bi-shield-exclamation me-2" style="color:#f87171"></i>Threat Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <?php
+                $threatData = null;
+                if (! empty($latest['threats_data'])) {
+                    $threatData = json_decode((string) $latest['threats_data'], true);
+                }
+                ?>
+                <?php if (empty($threatData)): ?>
+                    <p class="text-muted">Geen threat details beschikbaar. Fetch eerst nieuwe data.</p>
+                <?php else: ?>
+                    <h6 class="mb-3">Threat Types (laatste 7 dagen)</h6>
+                    <?php if (empty($threatData['byType'])): ?>
+                        <p class="text-muted">Geen specifieke threat types gedetecteerd.</p>
+                    <?php else: ?>
+                        <table class="table table-sm mb-4">
+                            <thead><tr><th>Type</th><th class="text-end">Requests</th><th class="text-end">%</th></tr></thead>
+                            <tbody>
+                                <?php $tt = array_sum($threatData['byType']); ?>
+                                <?php foreach ($threatData['byType'] as $type => $count): ?>
+                                <tr>
+                                    <td><span class="badge bg-danger"><?= esc($type) ?></span></td>
+                                    <td class="text-end"><?= number_format((int)$count) ?></td>
+                                    <td class="text-end"><?= $tt > 0 ? round(($count/$tt)*100,1) : 0 ?>%</td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php endif; ?>
+                    <h6 class="mb-3">Threats Per Day</h6>
+                    <?php if (empty($threatData['byDay'])): ?>
+                        <p class="text-muted">Geen dagelijkse threat data.</p>
+                    <?php else: ?>
+                        <table class="table table-sm">
+                            <thead><tr><th>Date</th><th class="text-end">Threats</th></tr></thead>
+                            <tbody>
+                                <?php foreach ($threatData['byDay'] as $d => $c): ?>
+                                <tr><td><?= esc($d) ?></td><td class="text-end fw-bold"><?= number_format((int)$c) ?></td></tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php endif; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
+<script>
+function showThreatsModal() {
+    new bootstrap.Modal(document.getElementById('threatsModal')).show();
+}
+</script>
 <script>
 document.getElementById('fetchForm').addEventListener('submit', function() {
     document.getElementById('fetchBtn').disabled = true;

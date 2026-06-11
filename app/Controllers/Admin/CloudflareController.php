@@ -102,6 +102,7 @@ class CloudflareController extends Controller
             'total_requests'=>$agg['requests'],'cached_requests'=>$agg['cached'],
             'uncached_requests'=>$agg['requests']-$agg['cached'],'bandwidth_bytes'=>$agg['bandwidth'],
             'page_views'=>$agg['pageViews'],'unique_visitors'=>0,'threats_blocked'=>$agg['threats'],
+            'threats_data'=>!empty($threatDetails)?json_encode($threatDetails):null,
             'bot_requests'=>$agg['bots'],
             'countries_data'=>!empty($allCountries)?json_encode($allCountries):null,
             'http_status_data'=>!empty($allStatuses)?json_encode($allStatuses):null,
@@ -135,7 +136,27 @@ class CloudflareController extends Controller
         foreach($detailSum['countryMap']??[] as $item){$n=$item['clientCountryName']??'Unknown';$countries[$n]=($countries[$n]??0)+(int)($item['requests']??0);}
         arsort($countries);
 
-        return ['requests'=>$req,'cached'=>$cached,'bandwidth'=>$bytes,'pageViews'=>$pv,'threats'=>$threats,'bots'=>0,'countries'=>$countries,'statusCodes'=>[],'browsers'=>[]];
+        // Threat details query
+        $q3=json_encode(['query'=>'{ viewer { zones(filter: { zoneTag: "'.$zoneId.'" }) { httpRequests1dGroups(limit: 7, filter: { date_gt: "'.$dateSince.'" }) { sum { threats threatPathingMap { requests threatPathingName } } dimensions { date } } } } }']);
+        $r3=$this->graphqlCall($q3);
+        $threatDetails=['total'=>(int)$threats,'byType'=>[],'byDay'=>[]];
+        if(empty($r3['_error'])){
+            $tg=$r3['data']['viewer']['zones'][0]['httpRequests1dGroups']??[];
+            $typeTotals=[];
+            foreach($tg as $g){
+                $d=$g['dimensions']['date']??'';
+                $ts=$g['sum']['threats']??0;
+                $threatDetails['byDay'][$d]=(int)$ts;
+                foreach($g['sum']['threatPathingMap']??[] as $tm){
+                    $tn=$tm['threatPathingName']??'Unknown';
+                    $typeTotals[$tn]=($typeTotals[$tn]??0)+(int)($tm['requests']??0);
+                }
+            }
+            arsort($typeTotals);
+            $threatDetails['byType']=$typeTotals;
+        }
+
+        return ['requests'=>$req,'cached'=>$cached,'bandwidth'=>$bytes,'pageViews'=>$pv,'threats'=>$threats,'bots'=>0,'countries'=>$countries,'statusCodes'=>[],'browsers'=>[],'threatDetails'=>$threatDetails];
     }
 
     private function resolveZones(): array
