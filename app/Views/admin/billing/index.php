@@ -278,6 +278,7 @@ document.addEventListener('DOMContentLoaded', function () {
         persistenceID: 'admin-billing-table',
         persistenceMode: 'local',
 
+        autoColumns: false,
         layout: 'fitDataStretch',
         height: 'auto',
 
