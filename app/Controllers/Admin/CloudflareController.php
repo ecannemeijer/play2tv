@@ -259,8 +259,13 @@ class CloudflareController extends Controller
 
         $apiToken = env('cloudflare.apiToken');
         if (empty($apiToken)) {
-            return ['_error' => 'cloudflare.apiToken is empty in .env'];
+            return ['_error' => 'cloudflare.apiToken is empty or not found in .env — check .env file on this server'];
         }
+
+        // Debug: show token prefix to confirm it's being read
+        $tokenPrefix = substr($apiToken, 0, 10);
+        $tokenDebug = "token prefix: {$tokenPrefix}..., length: " . strlen($apiToken);
+        log_message('debug', 'CF GraphQL auth: ' . $tokenDebug);
 
         $ch = curl_init(self::CF_GRAPHQL);
         if ($ch === false) {
