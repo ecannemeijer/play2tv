@@ -130,7 +130,7 @@ class CloudflareController extends Controller
 
             $data = $this->fetchAnalytics($zoneId, $dateSince);
             if ($data === null) {
-                $errors[] = "Zone {$zName}: GraphQL API call failed.";
+                $errors[] = "Zone {$zName}: fetchAnalytics returned null (unexpected)";
                 continue;
             }
             if (! empty($data['error'])) {
@@ -194,14 +194,14 @@ class CloudflareController extends Controller
 
     private function fetchAnalytics(string $zoneId, string $dateSince): ?array
     {
-        // Aggregate query — only working fields
+        // Aggregate query
         $q1 = json_encode(['query' =>
             '{ viewer { zones(filter: { zoneTag: "' . $zoneId . '" }) {'
             . ' httpRequests1dGroups(limit: 30, filter: { date_gt: "' . $dateSince . '" }) {'
             . ' sum { requests pageViews threats bytes cachedRequests } dimensions { date } } } } }'
         ]);
         $r1 = $this->graphqlCall($q1);
-        if ($r1 === null) return ['error' => 'GraphQL aggregate query failed'];
+        if (! empty($r1['_error'])) return ['error' => $r1['_error']];
 
         $groups = $r1['data']['viewer']['zones'][0]['httpRequests1dGroups'] ?? [];
         $req = $pv = $threats = $bytes = $cached = 0;
@@ -214,14 +214,17 @@ class CloudflareController extends Controller
             $cached  += (int) ($s['cachedRequests'] ?? 0);
         }
 
-        // Country map detail query
+        // Country detail query
         $q2 = json_encode(['query' =>
             '{ viewer { zones(filter: { zoneTag: "' . $zoneId . '" }) {'
             . ' httpRequests1dGroups(limit: 1, filter: { date_gt: "' . $dateSince . '" }) {'
             . ' sum { countryMap { clientCountryName requests } } } } } }'
         ]);
         $r2 = $this->graphqlCall($q2);
-        $detailSum = $r2['data']['viewer']['zones'][0]['httpRequests1dGroups'][0]['sum'] ?? [];
+        $detailSum = [];
+        if (empty($r2['_error'])) {
+            $detailSum = $r2['data']['viewer']['zones'][0]['httpRequests1dGroups'][0]['sum'] ?? [];
+        }
 
         $countries = [];
         foreach ($detailSum['countryMap'] ?? [] as $item) {
@@ -248,27 +251,64 @@ class CloudflareController extends Controller
         return $zones;
     }
 
-    private function graphqlCall(string $jsonBody): ?array
+    private function graphqlCall(string $jsonBody): array
     {
+        if (! function_exists('curl_init')) {
+            return ['_error' => 'PHP cURL extension is not installed/enabled'];
+        }
+
+        $apiToken = env('cloudflare.apiToken');
+        if (empty($apiToken)) {
+            return ['_error' => 'cloudflare.apiToken is empty in .env'];
+        }
+
         $ch = curl_init(self::CF_GRAPHQL);
+        if ($ch === false) {
+            return ['_error' => 'curl_init failed — possibly URL blocked or libcurl issue'];
+        }
+
         curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 25, CURLOPT_POST => true,
-            CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . env('cloudflare.apiToken'), 'Content-Type: application/json'],
-            CURLOPT_POSTFIELDS => $jsonBody,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 25,
+            CURLOPT_POST           => true,
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: Bearer ' . $apiToken,
+                'Content-Type: application/json',
+            ],
+            CURLOPT_POSTFIELDS     => $jsonBody,
         ]);
+
         $resp = curl_exec($ch);
-        $err  = curl_error($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
         curl_close($ch);
-        if ($resp === false) { log_message('error', 'CF GraphQL: ' . ($err ?: 'timeout')); return null; }
+
+        if ($resp === false) {
+            return ['_error' => 'cURL error: ' . ($curlErr ?: 'timeout')];
+        }
+
+        if ($httpCode >= 400) {
+            $body = substr($resp, 0, 500);
+            return ['_error' => "HTTP {$httpCode} — body: {$body}"];
+        }
+
         $data = json_decode($resp, true);
-        if (! is_array($data)) { log_message('error', 'CF GraphQL: invalid JSON'); return null; }
-        if (! empty($data['errors'])) { log_message('error', 'CF GraphQL errors: ' . json_encode($data['errors'])); return null; }
+        if (! is_array($data)) {
+            return ['_error' => 'Invalid JSON response: ' . substr($resp, 0, 200)];
+        }
+
+        if (! empty($data['errors'])) {
+            return ['_error' => 'GraphQL errors: ' . json_encode($data['errors'])];
+        }
+
         return $data;
     }
 
     private function restGet(string $path): array
     {
+        if (! function_exists('curl_init')) return [];
         $ch = curl_init(self::CF_BASE . $path);
+        if ($ch === false) return [];
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15,
             CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . env('cloudflare.apiToken'), 'Content-Type: application/json'],
